@@ -1,0 +1,19 @@
+name: 'SecHealth Secrets'
+description: 'Inject SecHealth secrets as masked environment variables'
+inputs:
+  url:
+    description: 'SecHealth instance URL'
+    required: true
+  token:
+    description: 'SecHealth API token (sk_...)'
+    required: true
+  project:
+    description: 'Project name or ID'
+    required: true
+  environment:
+    description: 'Environment name (dev/staging/prod)'
+    required: true
+    default: 'prod'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

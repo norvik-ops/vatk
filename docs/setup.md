@@ -1,0 +1,510 @@
+# Vakt — Deployment Guide
+
+> Selbst-gehostete Security & Compliance Dokumentationsplattform. Alle Daten bleiben in deiner eigenen Infrastruktur.
+
+---
+
+## 1. Voraussetzungen
+
+### Software
+
+Vakt benötigt **Docker Engine 24+** und **Docker Compose v2**.
+
+> **Wichtig: Compose v1 vs. v2**
+> Docker Compose v1 war ein separates Python-Tool (`docker-compose`). Seit Docker Desktop 3.6 und Docker Engine 23+ ist Compose v2 direkt in Docker integriert und wird als `docker compose` (ohne Bindestrich) aufgerufen. Stelle sicher, dass du die neue Version verwendest:
+> ```bash
+> docker compose version   # sollte "Docker Compose version v2.x.x" ausgeben
+> ```
+
+**Empfohlene Betriebssysteme:**
+- Ubuntu 22.04 LTS (empfohlen)
+- Debian 12 (Bookworm)
+- Rocky Linux 9 / AlmaLinux 9
+
+### Netzwerk
+
+- Port **80** (HTTP) und **443** (HTTPS) müssen von außen erreichbar sein
+- Eine öffentliche IP-Adresse oder ein DNS-Eintrag für HTTPS
+
+### Systemanforderungen
+
+| Ressource | Minimum | Empfohlen | Mit KI-Berater (Standard) |
+|---|---|---|---|
+| CPU | 2 vCPUs | 4 vCPUs | 4 vCPUs (kein GPU nötig) |
+| RAM | 2 GB | 4 GB | 4 GB (+2 GB für Ollama-Modell) |
+| Disk | 20 GB SSD | 50 GB SSD | 50 GB SSD (+3 GB für Modell) |
+| Betriebssystem | Linux 64-bit | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
+
+> **Hinweis:** Der KI-Berater ist standardmäßig aktiviert und läuft lokal via Ollama auf der CPU — kein GPU, kein Cloud-API-Key nötig. Einmalig nach dem ersten Start das Modell laden: `docker compose exec ollama ollama pull llama3.2:3b`
+
+---
+
+## 2. Schnellstart (5 Minuten)
+
+```bash
+# 1. Docker installieren (Ubuntu / Debian)
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER   # Neuanmeldung danach erforderlich
+
+# 2. Vakt klonen
+git clone https://github.com/Matharnica/vakt-app
+cd vakt-app
+
+# 3. Konfiguration
+cp .env.example .env
+
+# Secret Key generieren und automatisch eintragen:
+sed -i "s/changeme_generate_with_openssl_rand_hex_32/$(openssl rand -hex 32)/" .env
+
+# 4. Starten
+docker compose up -d
+
+# 5. Status prüfen (alle Container sollten "healthy" sein)
+docker compose ps
+```
+
+Nach dem Start ist Vakt erreichbar unter:
+
+- **http://deine-server-ip** (nach HTTPS-Einrichtung: https://deine-domain.com)
+
+Wenn `VAKT_DEMO=true` gesetzt wurde, gibt es zwei vorkonfigurierte Benutzer:
+
+| Benutzer | Passwort | Rolle |
+|---|---|---|
+| admin@vakt.local | admin1234 | Administrator |
+| analyst@vakt.local | analyst1234 | Analyst |
+
+> **Hinweis:** Demo-Zugangsdaten **niemals** in Produktionsumgebungen mit echten Daten verwenden.
+
+---
+
+## 3. Produktions-Deployment
+
+### HTTPS mit Caddy (empfohlen)
+
+Caddy ist ein moderner Webserver, der **automatisch Let's Encrypt-Zertifikate** holt und erneuert — ohne manuelle Konfiguration.
+
+Erstelle eine Datei `Caddyfile` im Projektverzeichnis:
+
+```
+yourdomain.com {
+    reverse_proxy api:8080
+    file_server {
+        root /usr/share/nginx/html
+    }
+}
+```
+
+Ergänze `docker-compose.prod.yml` um den Caddy-Service:
+
+```yaml
+services:
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+```
+
+Starten mit:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+### Firewall einrichten (ufw)
+
+```bash
+ufw allow 22/tcp    # SSH
+ufw allow 80/tcp    # HTTP (wird von Caddy zu HTTPS weitergeleitet)
+ufw allow 443/tcp   # HTTPS
+ufw enable
+ufw status
+```
+
+---
+
+## 4. Datenbankmigrationen
+
+Vakt verwendet [golang-migrate](https://github.com/golang-migrate/migrate) für versionierte Datenbankmigrationen.
+
+**Migrationen laufen automatisch** — ein dedizierter `migrate`-Container führt alle ausstehenden Migrationen aus, bevor `api` und `worker` starten. Die Startreihenfolge wird über `depends_on` in `docker-compose.yml` erzwungen: `api` und `worker` warten, bis `migrate` erfolgreich abgeschlossen ist.
+
+Es ist kein manuelles Eingreifen und keine `AUTO_MIGRATE`-Umgebungsvariable erforderlich.
+
+**Manuelle Migration** (z. B. um den Zeitpunkt bei größeren Updates selbst zu kontrollieren):
+
+```bash
+# Backup zuerst (immer empfohlen)
+docker compose exec postgres pg_dump -U vakt vakt > backup_pre_migration_$(date +%Y%m%d).sql
+
+# Migration manuell ausführen
+docker compose run --rm migrate
+```
+
+> Vor jeder Migration ein Backup anlegen. Nach einem fehlgeschlagenen Update lässt sich so der Ausgangszustand wiederherstellen.
+
+> **Erstmaliger Einsatz der neuen migrate-Service-Konfiguration:** Wer noch eine ältere `docker-compose.yml` ohne den `migrate`-Service verwendet, führt einmalig `docker compose run --rm migrate` manuell aus und startet danach mit `docker compose up -d`.
+
+---
+
+## 5. Backups
+
+### Manuelles Backup
+
+```bash
+# PostgreSQL-Dump erstellen
+docker compose exec postgres pg_dump -U vakt vakt > backup_$(date +%Y%m%d).sql
+
+# Backup einspielen (Restore)
+cat backup_20260511.sql | docker compose exec -T postgres psql -U vakt vakt
+```
+
+### Automatisches tägliches Backup (crontab)
+
+```bash
+# crontab -e
+0 2 * * * cd /opt/vakt && docker compose exec postgres pg_dump -U vakt vakt > /backups/backup_$(date +\%Y\%m\%d).sql
+```
+
+Backups am besten auf einem separaten Volume oder externen Speicher ablegen.
+
+---
+
+## 6. Update-Benachrichtigungen
+
+Vakt prüft **nicht automatisch** auf Updates (kein Phone-Home). Es gibt zwei opt-in Mechanismen:
+
+### Option 1 — In-App-Banner (empfohlen)
+
+Aktiviere in deiner `.env`:
+```
+VAKT_UPDATE_CHECK=true
+```
+
+Vakt prüft einmal täglich gegen die [GitHub Releases API](https://github.com/norvik-ops/vakt/releases), ob eine neuere Version verfügbar ist. Administratoren und Eigentümer sehen dann einen Hinweis-Banner in der Oberfläche. Dabei werden **keine Daten gesendet** — es ist ein einfacher GET-Request gegen die öffentliche GitHub-API, ohne Instanz-ID oder sonstige Informationen.
+
+### Option 2 — Watchtower (automatische Updates)
+
+Watchtower aktualisiert Docker-Container automatisch, wenn ein neues Image verfügbar ist. Aktiviere es in `docker-compose.yml`:
+
+```yaml
+watchtower:
+  image: containrrr/watchtower:latest
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+  command: --schedule "0 0 3 * * *" --cleanup api worker
+  restart: unless-stopped
+```
+
+> Nur für nicht-kritische Instanzen oder wenn du den Update-Pfad getestet hast.
+
+### Manuelle Updates
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+---
+
+## 7. Updates (manuell / automatisch)
+
+Hier ist beschrieben, was zu tun ist, wenn ein neues Feature oder eine neue Version ausgerollt werden soll.
+
+---
+
+### Automatisch (wenn Watchtower läuft)
+
+Watchtower holt nächtlich neue Images von GHCR, startet betroffene Container neu und der `migrate`-Service läuft dabei automatisch zuerst. Es ist nichts weiter zu tun — nur die Logs gelegentlich prüfen:
+
+```bash
+docker compose logs migrate
+docker compose ps
+```
+
+---
+
+### Manuell / nach einem eigenen Build
+
+1. **Neuesten Stand holen:**
+   ```bash
+   git pull
+   ```
+
+2. **Images aktualisieren** — eine der beiden Varianten:
+   ```bash
+   docker compose build          # selbst bauen (für lokale Änderungen)
+   # ODER
+   docker compose pull           # fertige Images von GHCR holen
+   ```
+
+3. **Dienste neu starten:**
+   ```bash
+   docker compose up -d
+   ```
+   `docker compose up -d` startet den `migrate`-Container automatisch zuerst — `api` und `worker` warten, bis die Migrationen abgeschlossen sind.
+
+   > **Hinweis für Profile-basierte Deployments (Demo/Staging):** Wenn deine `docker-compose.yml` Docker Compose Profiles verwendet (`profiles: [demo]`, `profiles: [staging]`), muss das `--profile`-Flag bei jedem Befehl angegeben werden:
+   > ```bash
+   > docker compose --profile demo pull
+   > docker compose --profile demo up -d
+   > ```
+   > Ohne `--profile` werden nur die Default-Services (z. B. Caddy) gestartet — die App-Container werden ignoriert.
+
+4. **Migrationen prüfen:**
+   ```bash
+   docker compose logs -f migrate
+   ```
+   Der Container sollte mit Exit-Code 0 beendet sein und alle Migrationen als erfolgreich melden.
+
+5. **Alle Container prüfen:**
+   ```bash
+   docker compose ps
+   ```
+   Alle Container sollten den Status `healthy` bzw. `running` haben.
+
+---
+
+### Neue Feature-Entwicklung (als Entwickler)
+
+1. Feature entwickeln, committen und pushen:
+   ```bash
+   git commit -m "feat: ..."
+   git push origin main
+   ```
+
+2. CI baut neue Docker-Images und veröffentlicht sie auf GHCR.
+
+3. Auf dem Live-Server übernimmt **Watchtower automatisch** — oder manuell:
+   ```bash
+   docker compose pull && docker compose up -d
+   ```
+
+4. `migrate` läuft automatisch beim Neustart — keine manuelle Migration nötig.
+
+---
+
+### Sonderfall: Erstmaliger Einsatz der neuen migrate-Service-Konfiguration
+
+Wer noch eine ältere `docker-compose.yml` **ohne** den `migrate`-Service hat, führt einmalig folgendes aus:
+
+```bash
+docker compose run --rm migrate   # Migrationen einmalig manuell anstoßen
+docker compose up -d              # Danach normal starten
+```
+
+Ab diesem Zeitpunkt läuft `migrate` bei jedem `docker compose up -d` automatisch.
+
+---
+
+## 8. Admin-CLI
+
+Der API-Container enthält ein Admin-Werkzeug für Wartungsaufgaben.
+
+```bash
+# Health-Check
+docker compose exec api /admin health-check
+
+# Alle Organisationen auflisten
+docker compose exec api /admin list-orgs
+
+# Benutzer einer Organisation auflisten
+docker compose exec api /admin list-users --org meine-firma
+
+# Passwort zurücksetzen
+docker compose exec api /admin reset-password user@example.com neues-passwort
+```
+
+Mit lokaler Go-Installation alternativ:
+
+```bash
+cd backend && go run ./cmd/admin --help
+```
+
+---
+
+## 9. KI-Compliance-Berater konfigurieren
+
+Vakt enthält einen KI-Berater, der auf Basis der echten Compliance-Lücken priorisierte Handlungsempfehlungen generiert ("Was soll ich diese Woche tun?"). Er ist **standardmäßig aktiviert** und läuft lokal auf der CPU — kein GPU, kein Cloud-Account nötig.
+
+### Standard: Ollama lokal (kein GPU, kein API-Key)
+
+Ollama startet automatisch mit `docker compose up`. Einmalig nach dem ersten Start das Modell laden (~2 GB):
+
+```bash
+docker compose exec ollama ollama pull llama3.2:3b
+```
+
+Empfohlene CPU-taugliche Modelle (alle ~2 GB RAM, kein VRAM):
+
+| Modell | Stärke |
+|---|---|
+| `llama3.2:3b` | Standard — gutes Deutsch, schnell |
+| `phi3.5:mini` | Sehr schnell, gutes Reasoning |
+| `qwen2.5:3b` | Starkes Mehrsprachigkeit / Deutsch |
+
+Das Modell wird einmalig in das Volume `ollama_models` geladen und bleibt über Updates hinweg erhalten.
+
+### KI deaktivieren
+
+```env
+VAKT_AI_PROVIDER=disabled
+```
+
+### Alternative: Cloud-Provider (EU, DSGVO-freundlich)
+
+[Mistral AI](https://mistral.ai) (Paris) — ca. **€0,001 pro Anfrage**, keine US-Datenweitergabe:
+
+```env
+VAKT_AI_PROVIDER=openai
+VAKT_AI_BASE_URL=https://api.mistral.ai/v1
+VAKT_AI_API_KEY=sk-...
+VAKT_AI_MODEL=mistral-small-latest
+```
+
+Funktioniert auch mit OpenAI, Groq, LM Studio oder jedem anderen OpenAI-kompatiblen Anbieter.
+
+---
+
+## 10. Monitoring
+
+### Health-Endpunkte
+
+| Endpunkt | Beschreibung | Verwendung |
+|---|---|---|
+| `GET /health` | Liveness-Check | Kubernetes liveness probe |
+| `GET /health/ready` | Readiness-Check (DB + Redis) | Kubernetes readiness probe, Load Balancer |
+
+### Prometheus-Metriken
+
+```
+http://localhost:8080/metrics
+```
+
+Für Produktionsmonitoring empfehlen wir **Grafana + Prometheus**. Eine fertige `docker-compose.monitoring.yml` mit vorkonfigurierten Dashboards ist in Planung.
+
+---
+
+## 11. Kubernetes (Helm)
+
+```bash
+helm install vakt ./helm/vakt \
+  --set secret.key=$(openssl rand -hex 32) \
+  --set database.url=postgres://vakt:pass@postgres:5432/vakt?sslmode=disable \
+  --set redis.url=redis://redis:6379
+```
+
+Alle verfügbaren Helm-Werte sind in `helm/vakt/values.yaml` dokumentiert.
+
+---
+
+## 12. Troubleshooting
+
+### Container-Logs anzeigen
+
+```bash
+docker compose logs -f api       # API-Logs
+docker compose logs -f worker    # Worker-Logs
+docker compose logs -f postgres  # Datenbank-Logs
+```
+
+### Häufige Probleme
+
+**Datenbank nicht erreichbar beim Start**
+
+```bash
+# Healthcheck-Status aller Container prüfen
+docker compose ps
+
+# PostgreSQL-Logs anzeigen
+docker compose logs postgres
+```
+
+Der API-Container startet erst, wenn PostgreSQL als `healthy` gemeldet ist. Das dauert normalerweise 5–15 Sekunden.
+
+**Migrationen fehlgeschlagen**
+
+```bash
+docker compose logs migrate
+```
+
+Häufige Ursache: `VAKT_DB_URL` ist falsch konfiguriert oder der Datenbankbenutzer hat keine ausreichenden Rechte.
+
+**DB unavailable — all routes disabled**
+
+```
+{"level":"warn","message":"DB unavailable — all routes disabled"}
+```
+
+Die API deaktiviert alle Routes wenn sie die Datenbank nicht erreicht. Ursache ist fast immer ein Passwort-Mismatch zwischen `.env` und der PostgreSQL-Volume.
+
+Diagnose:
+
+```bash
+docker compose logs api | head -5
+```
+
+Fix — DB-Passwort aktualisieren:
+
+```bash
+# 1. Starkes Passwort in .env setzen
+nano .env   # VAKT_DB_PASS=<neues_passwort>
+
+# 2. DB-User-Passwort anpassen
+docker compose exec postgres psql -U vakt -c \
+  "ALTER USER vakt WITH PASSWORD '<neues_passwort>';"
+
+# 3. API neu starten
+docker compose up -d api
+```
+
+> **Wichtig:** Das Passwort in der PostgreSQL-Volume wird beim ersten Start des DB-Containers gesetzt und danach **nicht** automatisch geändert, selbst wenn `.env` aktualisiert wird. Nach einer Volume-Neuerstellung oder einem Passwort-Wechsel muss der `ALTER USER`-Befehl manuell ausgeführt werden.
+
+**migrate-Container schlägt fehl**
+
+```bash
+# Logs des migrate-Containers prüfen
+docker compose logs migrate
+
+# Sicherstellen, dass PostgreSQL healthy ist
+docker compose ps postgres
+```
+
+Wenn PostgreSQL noch nicht bereit ist, einfach erneut versuchen:
+
+```bash
+docker compose run --rm migrate
+```
+
+Starte erst danach `api` und `worker` mit `docker compose up -d`.
+
+**Port bereits belegt**
+
+```bash
+ss -tlnp | grep :80
+ss -tlnp | grep :443
+```
+
+Den blockierenden Prozess beenden oder Vakt auf einem anderen Port starten (Nginx-Konfiguration in `nginx/nginx.conf` anpassen).
+
+**Secret Key fehlt oder ist der Standard-Wert**
+
+```bash
+grep VAKT_SECRET_KEY .env
+```
+
+Der Wert darf nicht `changeme_generate_with_openssl_rand_hex_32` sein. Neuen Key generieren:
+
+```bash
+openssl rand -hex 32
+```
+
+> Den generierten Key sicher aufbewahren. Wird er nach dem ersten Start geändert, sind alle verschlüsselten Daten in der Datenbank nicht mehr lesbar.

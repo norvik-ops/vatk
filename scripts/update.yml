@@ -1,0 +1,140 @@
+---
+# SecHealth — Ansible Update Playbook
+#
+# Usage:
+#   ansible-playbook scripts/update.yml -i inventory.yml
+#   ansible-playbook scripts/update.yml -i inventory.yml --extra-vars "force_update=true"
+#
+# Inventory example (inventory.yml):
+#   all:
+#     hosts:
+#       customer-a:
+#         ansible_host: 10.0.1.10
+#         ansible_user: deploy
+#         sechealth_dir: /opt/sechealth
+#       customer-b:
+#         ansible_host: 10.0.1.11
+#         ansible_user: deploy
+#         sechealth_dir: /opt/sechealth
+#
+# Requirements on target hosts:
+#   - docker, docker compose plugin
+#   - deploy user in the `docker` group
+#   - sechealth_dir contains docker-compose.yml and .env
+
+- name: Update SecHealth instances
+  hosts: all
+  become: false
+  gather_facts: true
+
+  vars:
+    sechealth_dir: /opt/sechealth
+    compose_file: docker-compose.yml
+    backup_dir: "{{ sechealth_dir }}/backups"
+    force_update: false
+    github_repo: sechealth-app/sechealth
+    update_script: "{{ sechealth_dir }}/scripts/update.sh"
+
+  tasks:
+    - name: Check that sechealth_dir exists
+      ansible.builtin.stat:
+        path: "{{ sechealth_dir }}/{{ compose_file }}"
+      register: compose_stat
+      failed_when: not compose_stat.stat.exists
+
+    - name: Check latest release from GitHub
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/{{ github_repo }}/releases/latest"
+        return_content: true
+        status_code: [200, 403, 404]
+      register: github_response
+      failed_when: false
+
+    - name: Parse latest version
+      ansible.builtin.set_fact:
+        latest_version: "{{ (github_response.json.tag_name | default('unknown')) | regex_replace('^v', '') }}"
+      when: github_response.status == 200
+
+    - name: Set latest_version to unknown if GitHub unreachable
+      ansible.builtin.set_fact:
+        latest_version: "unknown"
+      when: github_response.status != 200
+
+    - name: Create backup directory
+      ansible.builtin.file:
+        path: "{{ backup_dir }}"
+        state: directory
+        mode: "0750"
+
+    - name: Create pre-update database backup
+      ansible.builtin.shell: |
+        docker compose -f {{ sechealth_dir }}/{{ compose_file }} exec -T postgres \
+          pg_dump -U sechealth sechealth | \
+          gzip > {{ backup_dir }}/pre-update-$(date +%Y%m%d_%H%M%S).sql.gz
+      args:
+        chdir: "{{ sechealth_dir }}"
+      register: backup_result
+      failed_when: false
+
+    - name: Warn if backup failed
+      ansible.builtin.debug:
+        msg: "WARNING: Database backup failed on {{ inventory_hostname }}. Proceeding anyway."
+      when: backup_result.rc != 0
+
+    - name: Pull latest container images
+      ansible.builtin.shell: |
+        docker compose -f {{ compose_file }} pull api worker
+      args:
+        chdir: "{{ sechealth_dir }}"
+
+    - name: Restart worker service
+      ansible.builtin.shell: |
+        docker compose -f {{ compose_file }} up -d --no-deps worker
+      args:
+        chdir: "{{ sechealth_dir }}"
+
+    - name: Restart API service (runs migrations automatically)
+      ansible.builtin.shell: |
+        docker compose -f {{ compose_file }} up -d --no-deps api
+      args:
+        chdir: "{{ sechealth_dir }}"
+
+    - name: Wait for API to become healthy
+      ansible.builtin.shell: |
+        docker compose -f {{ compose_file }} exec -T api \
+          wget -qO- http://localhost:8080/health/ready 2>/dev/null | grep -q ready
+      args:
+        chdir: "{{ sechealth_dir }}"
+      retries: 15
+      delay: 4
+      register: health_check
+      until: health_check.rc == 0
+
+    - name: Rebuild and update frontend
+      ansible.builtin.shell: |
+        docker compose -f {{ compose_file }} up -d --no-deps --build frontend
+      args:
+        chdir: "{{ sechealth_dir }}"
+
+    - name: Reload nginx to pick up new frontend assets
+      ansible.builtin.shell: |
+        docker compose -f {{ compose_file }} exec -T nginx nginx -s reload
+      args:
+        chdir: "{{ sechealth_dir }}"
+      failed_when: false
+
+    - name: Verify deployment health
+      ansible.builtin.shell: |
+        docker compose -f {{ compose_file }} exec -T api \
+          wget -qO- http://localhost:8080/health/ready 2>/dev/null
+      args:
+        chdir: "{{ sechealth_dir }}"
+      register: final_health
+      failed_when: "'ready' not in final_health.stdout"
+
+    - name: Update complete
+      ansible.builtin.debug:
+        msg: >
+          SecHealth updated successfully on {{ inventory_hostname }}.
+          Latest available: {{ latest_version }}.
+          Backups in {{ backup_dir }}.
