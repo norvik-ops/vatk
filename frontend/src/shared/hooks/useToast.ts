@@ -44,3 +44,18 @@ export function toast(message: string, variant: ToastVariant = 'info') {
     _addToast(message, variant)
   }
 }
+
+/**
+ * shadcn-compatible hook shim for components that use { toast } = useToast().
+ */
+export function useToast() {
+  const toastFn = useCallback(
+    ({ title, description, variant }: { title: string; description?: string; variant?: string }) => {
+      const msg = description ? `${title}: ${description}` : title
+      const v: ToastVariant = variant === 'destructive' ? 'error' : variant === 'default' ? 'success' : 'info'
+      if (_addToast) _addToast(msg, v)
+    },
+    []
+  )
+  return { toast: toastFn }
+}

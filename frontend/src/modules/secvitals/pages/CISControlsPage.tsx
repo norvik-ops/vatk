@@ -15,7 +15,7 @@ import {
 } from '../../../components/ui/table'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { cn } from '../../../lib/utils'
-import { apiFetch, getAuthToken } from '../../../api/client'
+import { getAuthToken } from '../../../api/client'
 import { useFrameworks, useFrameworkControls } from '../hooks/useFrameworks'
 import type { Control } from '../types'
 

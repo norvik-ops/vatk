@@ -146,7 +146,6 @@ export default function ApprovalsPage() {
       <PageHeader
         title="Genehmigungen"
         description="Ausstehende Anträge zur Statusänderung von Controls"
-        icon={ShieldCheck}
       />
 
       {isLoading ? (

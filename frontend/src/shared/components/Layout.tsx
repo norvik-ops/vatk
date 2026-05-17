@@ -5,7 +5,7 @@ import {
   ShieldCheck, ShieldAlert, Siren, BookOpen, ClipboardList,
   FileText, FileSearch, Handshake, AlertTriangle, Users,
   Server, ScanSearch, BarChart2, Clock, Search, Bell,
-  User, Trash2, MonitorSmartphone, Palette, Shield, Sparkles, FlaskConical,
+  User, Trash2, MonitorSmartphone, Palette, Shield, FlaskConical,
   Building2, Bot, PackageX, Mail, GraduationCap, Target, Flag, LayoutTemplate, UserCog, Activity, UserCheck,
   Plug, ClipboardCheck, CalendarClock, Inbox, ExternalLink, Menu, X, ArrowUpCircle, ScrollText, HeartPulse, CalendarDays,
 } from 'lucide-react'

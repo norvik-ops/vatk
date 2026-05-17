@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
   CalendarDays, Plus, ChevronLeft, ChevronRight, CheckCircle2, Trash2,
 } from 'lucide-react'
@@ -430,21 +429,6 @@ export default function CertificationTimelinePage() {
     .filter(m => m.status === 'upcoming')
     .sort((a, b) => a.milestone_date.localeCompare(b.milestone_date))
     .slice(0, 3)
-
-  function CompleteMilestoneButton({ m }: { m: AuditMilestone }) {
-    const update = useUpdateMilestone(m.id)
-    return (
-      <button
-        onClick={() => update.mutate({ status: 'completed' })}
-        className="hidden"
-      />
-    )
-  }
-
-  function handleComplete(m: AuditMilestone) {
-    // We use a local inline mutation — hook per milestone
-    return { id: m.id }
-  }
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-6xl mx-auto">
