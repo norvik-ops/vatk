@@ -124,7 +124,6 @@ export function GlobalSearch() {
   if (!open) return null
 
   return (
-    {/* WCAG 2.1.1: Escape closes via global keydown handler above; backdrop is click-to-close */}
     <div
       className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-black/40"
       onClick={() => setOpen(false)}
