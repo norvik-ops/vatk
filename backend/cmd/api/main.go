@@ -4,6 +4,9 @@
 
 package main
 
+// version is injected at build time via -ldflags "-X main.version=..."
+var version = "dev"
+
 import (
 	"context"
 	"encoding/hex"
@@ -488,6 +491,10 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal().Err(err).Msg("config load failed")
+	}
+
+	if version != "dev" {
+		cfg.Version = version
 	}
 
 	if cfg.SecretKey == "" {
