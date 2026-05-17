@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ShieldCheck, ShieldOff, Copy, Check, RefreshCw } from 'lucide-react'
 import { PageHeader } from '../shared/components/PageHeader'
+import { RecoveryCodesDialog } from '../shared/components/RecoveryCodesDialog'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -30,6 +31,11 @@ interface SetupResponse {
 
 interface ConfirmResponse {
   backup_codes: string[]
+  recovery_codes: string[]
+}
+
+interface RegenerateResponse {
+  recovery_codes: string[]
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -73,6 +79,15 @@ function useDisable2FA() {
   })
 }
 
+function useRegenerateRecoveryCodes() {
+  return useMutation<RegenerateResponse, Error>({
+    mutationFn: () =>
+      apiFetch<RegenerateResponse>('/auth/2fa/recovery-codes/regenerate', {
+        method: 'POST',
+      }),
+  })
+}
+
 // ─── Setup Dialog ─────────────────────────────────────────────────────────────
 
 type SetupStep = 'qr' | 'confirm' | 'backup'
@@ -81,6 +96,8 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
   const [step, setStep] = useState<SetupStep>('qr')
   const [code, setCode] = useState('')
   const [backupCodes, setBackupCodes] = useState<string[]>([])
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([])
+  const [recoveryDialogOpen, setRecoveryDialogOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [setupData, setSetupData] = useState<SetupResponse | null>(null)
   const [codeError, setCodeError] = useState('')
@@ -103,6 +120,9 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
       {
         onSuccess: (data) => {
           setBackupCodes(data.backup_codes)
+          if (data.recovery_codes && data.recovery_codes.length > 0) {
+            setRecoveryCodes(data.recovery_codes)
+          }
           setStep('backup')
         },
         onError: (err) => {
@@ -116,6 +136,8 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
     setStep('qr')
     setCode('')
     setBackupCodes([])
+    setRecoveryCodes([])
+    setRecoveryDialogOpen(false)
     setCopied(false)
     setSetupData(null)
     setCodeError('')
@@ -261,6 +283,15 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
                 </>
               )}
             </Button>
+            {recoveryCodes.length > 0 && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setRecoveryDialogOpen(true)}
+              >
+                Wiederherstellungscodes anzeigen
+              </Button>
+            )}
             <DialogFooter>
               <Button onClick={handleClose} className="w-full">
                 2FA ist jetzt aktiv
@@ -269,6 +300,12 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
           </div>
         )}
       </DialogContent>
+
+      <RecoveryCodesDialog
+        open={recoveryDialogOpen}
+        codes={recoveryCodes}
+        onClose={() => setRecoveryDialogOpen(false)}
+      />
     </Dialog>
   )
 }
@@ -353,6 +390,19 @@ export default function AccountSettingsPage() {
   const { data: totpStatus, isLoading } = useTOTPStatus()
   const [setupOpen, setSetupOpen] = useState(false)
   const [disableOpen, setDisableOpen] = useState(false)
+  const [regeneratedCodes, setRegeneratedCodes] = useState<string[]>([])
+  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false)
+
+  const regenerate = useRegenerateRecoveryCodes()
+
+  function handleRegenerate() {
+    regenerate.mutate(undefined, {
+      onSuccess: (data) => {
+        setRegeneratedCodes(data.recovery_codes)
+        setRegenerateDialogOpen(true)
+      },
+    })
+  }
 
   const is2FAEnabled = totpStatus?.enabled ?? false
 
@@ -425,32 +475,44 @@ export default function AccountSettingsPage() {
         </div>
       </Card>
 
-      {/* ── Backup-Codes ─────────────────────────────────────────────────── */}
+      {/* ── Wiederherstellungscodes ───────────────────────────────────────── */}
       {is2FAEnabled && (
         <Card className="p-6 space-y-4">
           <div className="space-y-1">
             <h2 className="text-base font-semibold flex items-center gap-2">
               <RefreshCw className="h-4 w-4" />
-              Backup-Codes
+              Wiederherstellungscodes
             </h2>
             <p className="text-sm text-muted-foreground">
-              Falls du keinen Zugriff auf deine Authenticator-App hast, kannst du
-              neue Backup-Codes generieren. Bestehende Codes werden dabei
-              ungültig.
+              Falls du keinen Zugriff auf deine Authenticator-App hast, kannst du einen
+              Wiederherstellungscode zum Einloggen verwenden. Neue Codes generieren
+              macht alle bestehenden Codes ungültig.
             </p>
           </div>
           <Button
             variant="outline"
-            onClick={() => setSetupOpen(true)}
+            onClick={handleRegenerate}
+            disabled={regenerate.isPending}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Neue Backup-Codes generieren
+            {regenerate.isPending ? 'Generiere...' : 'Neue Wiederherstellungscodes generieren'}
           </Button>
+          {regenerate.isError && (
+            <p className="text-xs text-destructive">{regenerate.error.message}</p>
+          )}
         </Card>
       )}
 
       <SetupDialog open={setupOpen} onClose={() => setSetupOpen(false)} />
       <DisableDialog open={disableOpen} onClose={() => setDisableOpen(false)} />
+      <RecoveryCodesDialog
+        open={regenerateDialogOpen}
+        codes={regeneratedCodes}
+        onClose={() => {
+          setRegenerateDialogOpen(false)
+          setRegeneratedCodes([])
+        }}
+      />
     </div>
   )
 }

@@ -19,6 +19,9 @@ const (
 
 	// TaskCCMRunDue is the task type for running all due CCM checks.
 	TaskCCMRunDue = "secvitals:ccm:run_due"
+
+	// TaskScoreSnapshot is the task type for daily compliance score snapshots.
+	TaskScoreSnapshot = "secvitals:score_snapshot"
 )
 
 // NewEvidenceExpiryAlertTask creates a new evidence expiry alert task.
@@ -43,4 +46,10 @@ func NewCertExpiryCheckTask() *asynq.Task {
 // The Unique option prevents duplicate tasks within a 23-hour window.
 func NewCCMRunDueTask() *asynq.Task {
 	return asynq.NewTask(TaskCCMRunDue, nil, asynq.Unique(23*time.Hour))
+}
+
+// NewScoreSnapshotTask creates a new daily compliance score snapshot task.
+// The Unique option prevents duplicate tasks within a 23-hour window.
+func NewScoreSnapshotTask() *asynq.Task {
+	return asynq.NewTask(TaskScoreSnapshot, nil, asynq.Unique(23*time.Hour))
 }

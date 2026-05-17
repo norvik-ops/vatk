@@ -104,23 +104,24 @@ type TISAXGapAnalysis struct {
 
 // Evidence represents a piece of compliance evidence attached to a control.
 type Evidence struct {
-	ID            string     `json:"id"`
-	ControlID     string     `json:"control_id"`
-	OrgID         string     `json:"org_id"`
-	Title         string     `json:"title"`
-	Description   string     `json:"description,omitempty"`
-	Source        string     `json:"source"`
-	FilePath      string     `json:"file_path,omitempty"`
-	FileSize      int64      `json:"file_size,omitempty"`
-	CollectorData []byte     `json:"collector_data,omitempty"`
-	Status        string     `json:"status"`
-	Version       int        `json:"version"`
-	ExpiresAt     *time.Time `json:"expires_at,omitempty"`
-	UploadedBy    string     `json:"uploaded_by,omitempty"`
-	ReviewedBy    string     `json:"reviewed_by,omitempty"`
-	ReviewedAt    *time.Time `json:"reviewed_at,omitempty"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
+	ID                string     `json:"id"`
+	ControlID         string     `json:"control_id"`
+	OrgID             string     `json:"org_id"`
+	Title             string     `json:"title"`
+	Description       string     `json:"description,omitempty"`
+	Source            string     `json:"source"`
+	FilePath          string     `json:"file_path,omitempty"`
+	FileSize          int64      `json:"file_size,omitempty"`
+	CollectorData     []byte     `json:"collector_data,omitempty"`
+	Status            string     `json:"status"`
+	Version           int        `json:"version"`
+	ExpiresAt         *time.Time `json:"expires_at,omitempty"`
+	ExpiryNotifiedAt  *time.Time `json:"expiry_notified_at,omitempty"`
+	UploadedBy        string     `json:"uploaded_by,omitempty"`
+	ReviewedBy        string     `json:"reviewed_by,omitempty"`
+	ReviewedAt        *time.Time `json:"reviewed_at,omitempty"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
 }
 
 // Review represents a control review assignment.

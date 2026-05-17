@@ -87,3 +87,12 @@ export function useAlertDeliveryLog() {
     staleTime: 30_000,
   })
 }
+
+export function useChannelDeliveries(channelId: string, enabled: boolean) {
+  return useQuery<DeliveryLogEntry[]>({
+    queryKey: ['alerting', 'channel-deliveries', channelId],
+    queryFn: () => apiFetch<DeliveryLogEntry[]>(`/alerting/channels/${channelId}/deliveries`),
+    staleTime: 30_000,
+    enabled,
+  })
+}

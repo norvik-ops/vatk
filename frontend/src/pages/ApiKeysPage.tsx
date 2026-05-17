@@ -9,6 +9,7 @@ import { Card } from '../components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { apiFetch } from '../api/client'
 import { ProGate } from '../shared/components/ProGate'
+import { toast } from '../shared/hooks/useToast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -146,7 +147,9 @@ function CreateKeyDialog({ open, onOpenChange, onCreated }: CreateDialogProps) {
       onSuccess: (result) => {
         handleClose(false)
         onCreated(result.raw_key)
+        toast('API-Key erstellt', 'success')
       },
+      onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
     })
   }
 
@@ -288,8 +291,14 @@ function ApiKeysContent() {
   function handleRevoke() {
     if (!revokingKey) return
     revoke.mutate(revokingKey.id, {
-      onSuccess: () => setRevokingKey(null),
-      onError: () => setRevokingKey(null),
+      onSuccess: () => {
+        setRevokingKey(null)
+        toast('API-Key widerrufen', 'success')
+      },
+      onError: (err) => {
+        setRevokingKey(null)
+        toast(`Fehler: ${err.message}`, 'error')
+      },
     })
   }
 

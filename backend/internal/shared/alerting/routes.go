@@ -18,6 +18,8 @@ func Register(g *echo.Group, db *pgxpool.Pool, masterKey []byte, smtpCfg SMTPCon
 	channels.DELETE("/:id", h.DeleteChannel)
 	channels.PUT("/:id/toggle", h.ToggleChannel)
 	channels.POST("/:id/test", h.TestChannel)
+	// CRITICAL: /deliveries must be registered BEFORE any bare /:id routes to avoid route conflicts.
+	channels.GET("/:id/deliveries", h.ListChannelDeliveries)
 
 	g.GET("/alerting/history", h.ListDeliveryLog, auth)
 }

@@ -7,7 +7,7 @@ import {
   Server, ScanSearch, BarChart2, Clock, Search, Bell,
   User, Trash2, MonitorSmartphone, Palette, Shield, Sparkles, FlaskConical,
   Building2, Bot, PackageX, Mail, GraduationCap, Target, Flag, LayoutTemplate, UserCog, Activity, UserCheck,
-  Plug, ClipboardCheck, CalendarClock, Inbox, ExternalLink, Menu, X, ArrowUpCircle, ScrollText, HeartPulse,
+  Plug, ClipboardCheck, CalendarClock, Inbox, ExternalLink, Menu, X, ArrowUpCircle, ScrollText, HeartPulse, CalendarDays,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
@@ -22,7 +22,9 @@ import { LicenseExpiryBanner } from './LicenseExpiryBanner'
 import { WhatsNewModal } from './WhatsNewModal'
 import { useOverdueControls } from '../../modules/secvitals/hooks/useControlReviews'
 import { useAutoEvidence } from '../../modules/secvitals/hooks/useEvidenceAuto'
+import { usePendingApprovalCount } from '../../modules/secvitals/hooks/useApprovals'
 import { useUpdateCheck } from '../hooks/useUpdateCheck'
+import { Toaster } from './Toaster'
 
 interface NavItem {
   path: string
@@ -70,6 +72,8 @@ const MODULES_NAV: NavItem[] = [
       { path: '/secvitals/capas',          label: 'Korrekturmaßnahmen', icon: ClipboardCheck },
       { path: '/secvitals/overdue-reviews', label: 'Überfällige Kontrollen', icon: CalendarClock },
       { path: '/secvitals/evidence/auto', label: 'Nachweise-Eingang', icon: Inbox },
+      { path: '/secvitals/approvals',     label: 'Genehmigungen',     icon: UserCheck },
+      { path: '/secvitals/certification-timeline', label: 'Zertifizierungs-Timeline', icon: CalendarDays },
     ],
   },
   { path: '/secvault',   label: 'Vakt Vault',    icon: Key },
@@ -126,6 +130,8 @@ export default function Layout() {
   const overdueCount = overdueControls?.length ?? 0
   const { data: autoEvidence } = useAutoEvidence()
   const autoEvidenceCount = autoEvidence?.length ?? 0
+  const { data: pendingApprovalData } = usePendingApprovalCount()
+  const pendingApprovalCount = pendingApprovalData?.count ?? 0
 
   useEffect(() => {
     if (demoMode === true) document.title = 'Vakt Demo'
@@ -263,6 +269,7 @@ export default function Layout() {
                         const childActive = location.pathname === cp || location.pathname.startsWith(cp + '/')
                         const isOverduePath = cp === '/secvitals/overdue-reviews'
                         const isAutoEvidencePath = cp === '/secvitals/evidence/auto'
+                        const isApprovalsPath = cp === '/secvitals/approvals'
                         return (
                           <Link
                             key={cp}
@@ -284,6 +291,11 @@ export default function Layout() {
                             {isAutoEvidencePath && autoEvidenceCount > 0 && (
                               <span className="ml-auto text-[10px] font-semibold bg-brand text-white rounded-full px-1.5 py-0.5 leading-none">
                                 {autoEvidenceCount}
+                              </span>
+                            )}
+                            {isApprovalsPath && pendingApprovalCount > 0 && (
+                              <span className="ml-auto text-[10px] font-semibold bg-amber-500 text-white rounded-full px-1.5 py-0.5 leading-none">
+                                {pendingApprovalCount}
                               </span>
                             )}
                           </Link>
@@ -412,6 +424,34 @@ export default function Layout() {
                 System-Status
               </Link>
             )}
+            {isAdminOrOwner && (
+              <Link
+                to="/admin/tenants"
+                className={cn(
+                  'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
+                  isActive('/admin/tenants')
+                    ? 'bg-[#eef2ff] dark:bg-[#1E2235] text-brand dark:text-primary'
+                    : 'text-secondary hover:bg-[#f1f5f9] dark:hover:bg-[#1E2235] hover:text-primary',
+                )}
+              >
+                <Building2 className={cn('w-4 h-4 shrink-0', isActive('/admin/tenants') ? 'text-brand' : '')} />
+                Mandanten
+              </Link>
+            )}
+            {isAdminOrOwner && (
+              <Link
+                to="/admin/security"
+                className={cn(
+                  'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
+                  isActive('/admin/security')
+                    ? 'bg-[#eef2ff] dark:bg-[#1E2235] text-brand dark:text-primary'
+                    : 'text-secondary hover:bg-[#f1f5f9] dark:hover:bg-[#1E2235] hover:text-primary',
+                )}
+              >
+                <ShieldAlert className={cn('w-4 h-4 shrink-0', isActive('/admin/security') ? 'text-brand' : '')} />
+                Sicherheitsereignisse
+              </Link>
+            )}
             <Link
               to="/account"
               className={cn(
@@ -506,6 +546,7 @@ export default function Layout() {
       <GlobalSearch />
       {demoMode && <FeedbackWidget />}
       <WhatsNewModal />
+      <Toaster />
     </div>
   )
 }

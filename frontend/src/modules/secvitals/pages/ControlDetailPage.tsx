@@ -23,12 +23,17 @@ import { useFrameworkControls, useFramework } from '../hooks/useFrameworks'
 import { useControlTasks, useCreateControlTask, useToggleControlTask, useDeleteControlTask } from '../hooks/useControlTasks'
 import { MeasuresList } from '../components/MeasuresList'
 import { TasksPanel } from '../components/TasksPanel'
-import { CommentThread } from '../components/CommentThread'
+import { Comments } from '../../../shared/components/Comments'
 import { EvidenceFileUpload } from '../components/EvidenceFileUpload'
 import { ControlReviewPanel } from '../components/ControlReviewPanel'
+import { EvidenceExpiryBadge } from '../components/EvidenceExpiryBadge'
 import type { Evidence, Control } from '../types'
 import { maturityLabel, maturityColor } from '../utils/tisax'
 import { ControlMappingsBadge } from '../components/ControlMappingsBadge'
+import { toast } from '../../../shared/hooks/useToast'
+import { useAuthStore } from '../../../shared/stores/auth'
+import { useApprovalSetting, useRequestControlApproval } from '../hooks/useApprovals'
+import { Textarea } from '../../../components/ui/textarea'
 
 // ── Status config ────────────────────────────────────────────────────────────
 
@@ -138,6 +143,9 @@ export default function ControlDetailPage() {
   const controlId = id ?? ''
   const frameworkId = searchParams.get('frameworkId') ?? ''
 
+  const { user } = useAuthStore()
+  const isAdmin = user?.roles?.includes('Admin') ?? false
+
   const { data: control, isLoading: controlLoading } = useControl(controlId)
   const { data: framework } = useFramework(frameworkId)
   const { data: allControls } = useFrameworkControls(frameworkId)
@@ -151,6 +159,14 @@ export default function ControlDetailPage() {
   const createTask = useCreateControlTask(controlId)
   const toggleTask = useToggleControlTask(controlId)
   const deleteTask = useDeleteControlTask(controlId)
+  const requestApproval = useRequestControlApproval(controlId)
+  const { data: approvalSetting } = useApprovalSetting()
+  const approvalRequired = approvalSetting?.approval_required ?? false
+
+  // 4-Augen approval request dialog
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState('')
+  const [approvalComment, setApprovalComment] = useState('')
 
   const subControls = allControls?.filter(
     (c) => c.control_id.startsWith((control?.control_id ?? '') + '.') && c.id !== controlId,
@@ -171,6 +187,7 @@ export default function ControlDetailPage() {
   const [type, setType] = useState<Evidence['type']>('manual')
   const [notes, setNotes] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [expiresAt, setExpiresAt] = useState('')
 
   // Review dialog
   const [reviewOpen, setReviewOpen] = useState(false)
@@ -184,13 +201,42 @@ export default function ControlDetailPage() {
 
   function handleStatusChange(value: string) {
     if (!control) return
+
+    // Non-admins must submit an approval request when org has approval_required=true.
+    if (approvalRequired && !isAdmin) {
+      setPendingStatus(value)
+      setApprovalDialogOpen(true)
+      return
+    }
+
     if (value === 'not_applicable') { setNaOpen(true); return }
-    updateControl.mutate({
-      controlId: control.id,
-      not_applicable: false,
-      reason: '',
-      manual_status: value === 'missing' ? '' : value as '' | 'in_progress' | 'implemented',
-    })
+    updateControl.mutate(
+      {
+        controlId: control.id,
+        not_applicable: false,
+        reason: '',
+        manual_status: value === 'missing' ? '' : value as '' | 'in_progress' | 'implemented',
+      },
+      {
+        onSuccess: () => toast('Gespeichert', 'success'),
+        onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      },
+    )
+  }
+
+  function handleSubmitApprovalRequest() {
+    requestApproval.mutate(
+      { requested_status: pendingStatus, comment: approvalComment },
+      {
+        onSuccess: () => {
+          toast('Änderung zur Genehmigung eingereicht', 'success')
+          setApprovalDialogOpen(false)
+          setApprovalComment('')
+          setPendingStatus('')
+        },
+        onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      },
+    )
   }
 
   function handleMaturityChange(score: number) {
@@ -212,20 +258,29 @@ export default function ControlDetailPage() {
     setType('manual')
     setNotes('')
     setFile(null)
+    setExpiresAt('')
   }
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault()
+    const expiresAtISO = expiresAt ? new Date(expiresAt).toISOString() : null
     if (type === 'document' && file) {
       const fd = new FormData()
       fd.append('file', file)
       fd.append('title', title)
       if (notes) fd.append('notes', notes)
-      uploadEvidence.mutate(fd, { onSuccess: resetAddForm })
+      if (expiresAt) fd.append('expires_at', expiresAtISO ?? '')
+      uploadEvidence.mutate(fd, {
+        onSuccess: () => { resetAddForm(); toast('Nachweis hochgeladen', 'success') },
+        onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      })
     } else {
       addEvidence.mutate(
-        { title, type, notes: notes || undefined },
-        { onSuccess: resetAddForm },
+        { title, type, notes: notes || undefined, expires_at: expiresAtISO },
+        {
+          onSuccess: () => { resetAddForm(); toast('Nachweis hinzugefügt', 'success') },
+          onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+        },
       )
     }
   }
@@ -241,7 +296,13 @@ export default function ControlDetailPage() {
     e.preventDefault()
     review.mutate(
       { status: reviewStatus, notes: reviewNotes || undefined },
-      { onSuccess: () => setReviewOpen(false) },
+      {
+        onSuccess: () => {
+          setReviewOpen(false)
+          toast('Prüfung abgeschlossen', 'success')
+        },
+        onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      },
     )
   }
 
@@ -509,6 +570,7 @@ export default function ControlDetailPage() {
                     <TableHead>Titel</TableHead>
                     <TableHead>Typ</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Ablaufdatum</TableHead>
                     <TableHead>Hinzugefügt</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -522,6 +584,9 @@ export default function ControlDetailPage() {
                         <Badge variant={evidenceStatusVariant[ev.status]}>
                           {evidenceStatusLabel[ev.status]}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <EvidenceExpiryBadge expiresAt={ev.expires_at} />
                       </TableCell>
                       <TableCell className="text-sm text-secondary">
                         {new Date(ev.created_at).toLocaleDateString('de-DE')}
@@ -559,7 +624,7 @@ export default function ControlDetailPage() {
         <TasksPanel entityType="control" entityId={controlId} />
 
         {/* Comments */}
-        <CommentThread entityType="control" entityId={controlId} />
+        <Comments entityType="control" entityId={controlId} />
       </div>
 
       {/* NA Dialog */}
@@ -571,6 +636,56 @@ export default function ControlDetailPage() {
           onClose={() => setNaOpen(false)}
         />
       )}
+
+      {/* 4-Augen: Approval Request Dialog */}
+      <Dialog open={approvalDialogOpen} onOpenChange={(v) => { if (!v) { setApprovalDialogOpen(false); setApprovalComment(''); setPendingStatus('') } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Statusänderung zur Genehmigung einreichen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-secondary">
+              Da das 4-Augen-Prinzip aktiv ist, wird diese Statusänderung zur Genehmigung durch einen Administrator eingereicht.
+            </p>
+            <div className="text-sm space-y-1">
+              <p>
+                <span className="font-medium text-primary">Beantragter Status:</span>{' '}
+                <span className="text-brand font-medium">
+                  {pendingStatus === 'missing' ? 'Offen'
+                    : pendingStatus === 'in_progress' ? 'In Bearbeitung'
+                    : pendingStatus === 'implemented' ? 'Umgesetzt'
+                    : pendingStatus === 'not_applicable' ? 'Nicht anwendbar'
+                    : pendingStatus}
+                </span>
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Begründung (optional)</Label>
+              <Textarea
+                value={approvalComment}
+                onChange={(e) => setApprovalComment(e.target.value)}
+                placeholder="Warum soll der Status geändert werden?"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setApprovalDialogOpen(false); setApprovalComment(''); setPendingStatus('') }}
+              disabled={requestApproval.isPending}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleSubmitApprovalRequest}
+              disabled={requestApproval.isPending}
+            >
+              {requestApproval.isPending ? 'Wird eingereicht…' : 'Zur Genehmigung einreichen'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Evidence Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -646,6 +761,20 @@ export default function ControlDetailPage() {
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Zusätzlicher Kontext…"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="ev-expires-at">Ablaufdatum (optional)</Label>
+                <Input
+                  id="ev-expires-at"
+                  type="date"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+                <p className="text-xs text-secondary">
+                  Falls gesetzt, wird eine Erinnerung 30 Tage vor Ablauf gesendet.
+                </p>
               </div>
             </div>
             <DialogFooter>

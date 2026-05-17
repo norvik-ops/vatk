@@ -183,3 +183,31 @@ func (r *Repository) ListDeliveryLog(ctx context.Context, orgID string, limit in
 	}
 	return entries, rows.Err()
 }
+
+// ListChannelDeliveries returns the last 50 delivery log entries for a specific channel, scoped to the org.
+func (r *Repository) ListChannelDeliveries(ctx context.Context, orgID, channelID string, limit int) ([]DeliveryLogEntry, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	rows, err := r.db.Query(ctx, `
+		SELECT id, channel_id, event, status, response_code, sent_at
+		FROM alert_delivery_log
+		WHERE org_id = $1::uuid AND channel_id = $2::uuid
+		ORDER BY sent_at DESC
+		LIMIT $3
+	`, orgID, channelID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list channel deliveries: %w", err)
+	}
+	defer rows.Close()
+
+	var entries []DeliveryLogEntry
+	for rows.Next() {
+		var e DeliveryLogEntry
+		if err := rows.Scan(&e.ID, &e.ChannelID, &e.Event, &e.Status, &e.ResponseCode, &e.SentAt); err != nil {
+			return nil, fmt.Errorf("scan delivery log entry: %w", err)
+		}
+		entries = append(entries, e)
+	}
+	return entries, rows.Err()
+}

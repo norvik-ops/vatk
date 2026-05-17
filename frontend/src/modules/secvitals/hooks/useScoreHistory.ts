@@ -1,0 +1,17 @@
+import { useQuery } from '@tanstack/react-query'
+import { apiFetch } from '../../../api/client'
+
+export interface ScoreHistoryEntry {
+  date: string
+  score: number
+  controls_total: number
+  controls_implemented: number
+}
+
+export function useScoreHistory(days: 30 | 90) {
+  return useQuery<ScoreHistoryEntry[]>({
+    queryKey: ['secvitals', 'score-history', days],
+    queryFn: () => apiFetch<ScoreHistoryEntry[]>(`/secvitals/score-history?days=${days}`),
+    staleTime: 5 * 60_000,
+  })
+}

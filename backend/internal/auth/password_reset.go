@@ -95,6 +95,11 @@ func (s *Service) ResetPassword(ctx context.Context, rawToken, newPassword strin
 		return ErrTokenInvalid
 	}
 
+	// Enforce password complexity on reset.
+	if err := validatePasswordStrength(newPassword); err != nil {
+		return err
+	}
+
 	// Hash the new password.
 	hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
 	if err != nil {

@@ -17,6 +17,8 @@ import { ProGate } from '../../../shared/components/ProGate'
 import { usePolicies, useCreatePolicy, useGeneratePolicyDraft } from '../hooks/usePolicies'
 import { apiFetch } from '../../../api/client'
 import type { Policy, CreatePolicyInput, Framework } from '../types'
+import { toast } from '../../../shared/hooks/useToast'
+import { Skeleton } from '../../../components/ui/skeleton'
 
 const POLICY_TYPES = [
   'Informationssicherheitsrichtlinie (ISO 27001 A.5.1)',
@@ -130,7 +132,9 @@ export default function PoliciesPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'policies'] })
       setTemplateOpen(false)
+      toast('Richtlinie aus Vorlage erstellt', 'success')
     },
+    onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
   })
 
   function openDialog() {
@@ -139,7 +143,13 @@ export default function PoliciesPage() {
   }
 
   function handleSubmit() {
-    createPolicy.mutate(form, { onSuccess: () => setDialogOpen(false) })
+    createPolicy.mutate(form, {
+      onSuccess: () => {
+        setDialogOpen(false)
+        toast('Erfolgreich erstellt', 'success')
+      },
+      onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+    })
   }
 
   function openAiDialog() {
@@ -172,7 +182,9 @@ export default function PoliciesPage() {
       onSuccess: () => {
         setAiDraftOpen(false)
         setAiDraft('')
+        toast('Richtlinie aus KI-Entwurf erstellt', 'success')
       },
+      onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
     })
   }
 
@@ -201,8 +213,10 @@ export default function PoliciesPage() {
 
       <div className="flex-1 p-6">
         {isLoading && (
-          <div className="flex items-center justify-center h-48">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-lg" />
+            ))}
           </div>
         )}
         {isError && (

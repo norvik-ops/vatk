@@ -1,20 +1,30 @@
 import { useState, useRef } from 'react'
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters'
 import { useNavigate } from 'react-router-dom'
-import { Download, AlertTriangle, Upload } from 'lucide-react'
+import { Download, AlertTriangle, Upload, Trash2, RefreshCw, FileDown } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
+import { BulkActionBar } from '../../../shared/components/BulkActionBar'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../../components/ui/select'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
-import { useFindings, exportFindingsCsv } from '../hooks/useFindings'
-import { useBulkUpdateFindings } from '../hooks/useFindings'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '../../../components/ui/dialog'
+import { useFindings, exportFindingsCsv, useBulkUpdateFindings, useDeleteFinding } from '../hooks/useFindings'
 import type { Finding } from '../types'
 import { cn } from '../../../lib/utils'
 import { ImportFindingsDialog } from '../components/ImportFindingsDialog'
 import { useKeyboardNav } from '../../../shared/hooks/useKeyboardNav'
+import { toast } from '../../../shared/hooks/useToast'
+import { Skeleton } from '../../../components/ui/skeleton'
+import { exportToCSV } from '../../../lib/csv'
 
 const severityClass: Record<Finding['severity'], string> = {
   info:     'bg-[#374151] text-[#94a3b8] border-transparent',
@@ -35,6 +45,8 @@ export default function FindingsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<Finding['status']>('resolved')
   const [importOpen, setImportOpen] = useState(false)
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const [page, setPage] = useState(1)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -45,12 +57,13 @@ export default function FindingsPage() {
     search: searchQuery || undefined,
   }, page)
   const bulkUpdate = useBulkUpdateFindings()
+  const deleteFinding = useDeleteFinding()
 
   const findings = data?.data ?? []
 
   useKeyboardNav(focusedIndex, setFocusedIndex, {
     itemCount: findings.length,
-    enabled: !importOpen,
+    enabled: !importOpen && !statusDialogOpen && !deleteDialogOpen,
     onSearch: () => searchRef.current?.focus(),
     onSelect: (i) => {
       if (findings[i]) navigate(`/secpulse/findings/${findings[i].id}`)
@@ -76,8 +89,43 @@ export default function FindingsPage() {
 
   async function handleBulkUpdate() {
     if (selected.size === 0) return
-    await bulkUpdate.mutateAsync({ ids: Array.from(selected), status: bulkStatus })
-    setSelected(new Set())
+    try {
+      await bulkUpdate.mutateAsync({ ids: Array.from(selected), status: bulkStatus })
+      setSelected(new Set())
+      setStatusDialogOpen(false)
+      toast('Gespeichert', 'success')
+    } catch {
+      toast('Etwas ist schiefgelaufen', 'error')
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selected.size === 0) return
+    const ids = Array.from(selected)
+    try {
+      await Promise.allSettled(ids.map((id) => deleteFinding.mutateAsync(id)))
+      setSelected(new Set())
+      setDeleteDialogOpen(false)
+      toast(`${ids.length} Befund(e) gelöscht`, 'success')
+    } catch {
+      toast('Löschen teilweise fehlgeschlagen', 'error')
+    }
+  }
+
+  function handleExportSelected() {
+    const selectedFindings = findings.filter((f) => selected.has(f.id))
+    const rows = selectedFindings.map((f) => ({
+      id: f.id,
+      title: f.title,
+      severity: f.severity,
+      status: f.status,
+      asset: f.asset_name ?? '',
+      cve_id: f.cve_id ?? '',
+      cvss_score: f.cvss_score ?? '',
+      created_at: f.created_at,
+      updated_at: f.updated_at,
+    }))
+    exportToCSV('findings-export', rows)
   }
 
   return (
@@ -86,6 +134,64 @@ export default function FindingsPage() {
         open={importOpen}
         onOpenChange={setImportOpen}
       />
+
+      {/* Bulk status change dialog */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Status ändern</DialogTitle>
+          </DialogHeader>
+          <div className="py-3 space-y-3">
+            <p className="text-sm text-secondary">
+              Neuen Status für {selected.size} ausgewählte{selected.size === 1 ? 'n Befund' : ' Befunde'} setzen:
+            </p>
+            <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v as Finding['status'])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">Offen</SelectItem>
+                <SelectItem value="in_progress">In Bearbeitung</SelectItem>
+                <SelectItem value="accepted_risk">Akzeptiertes Risiko</SelectItem>
+                <SelectItem value="false_positive">Falsch positiv</SelectItem>
+                <SelectItem value="resolved">Behoben</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Abbrechen</Button>
+            <Button onClick={() => { void handleBulkUpdate() }} disabled={bulkUpdate.isPending}>
+              {bulkUpdate.isPending ? 'Wird gespeichert…' : 'Anwenden'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk delete confirm dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Befunde löschen</DialogTitle>
+          </DialogHeader>
+          <div className="py-3">
+            <p className="text-sm text-secondary">
+              Möchtest du {selected.size} ausgewählte{selected.size === 1 ? 'n Befund' : ' Befunde'} endgültig löschen?
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Abbrechen</Button>
+            <Button
+              variant="destructive"
+              onClick={() => { void handleBulkDelete() }}
+              disabled={deleteFinding.isPending}
+            >
+              {deleteFinding.isPending ? 'Wird gelöscht…' : `${selected.size} löschen`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <PageHeader
         title="Sicherheitsbefunde"
         description={data ? `${data.pagination.total} Gesamt-Befunde` : undefined}
@@ -147,31 +253,13 @@ export default function FindingsPage() {
             </SelectContent>
           </Select>
 
-          {selected.size > 0 && (
-            <div className="flex items-center gap-2 ml-auto">
-              <span className="text-sm text-secondary">{selected.size} ausgewählt</span>
-              <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v as Finding['status'])}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Offen</SelectItem>
-                  <SelectItem value="in_progress">In Bearbeitung</SelectItem>
-                  <SelectItem value="accepted_risk">Akzeptiertes Risiko</SelectItem>
-                  <SelectItem value="false_positive">Falsch positiv</SelectItem>
-                  <SelectItem value="resolved">Behoben</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button size="sm" onClick={() => { void handleBulkUpdate() }} disabled={bulkUpdate.isPending}>
-                Anwenden
-              </Button>
-            </div>
-          )}
         </div>
 
         {isLoading && (
-          <div className="flex justify-center py-16">
-            <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
+            ))}
           </div>
         )}
         {error && <p className="text-sm text-red-600">Error: {error.message}</p>}
@@ -193,6 +281,9 @@ export default function FindingsPage() {
                     <input
                       type="checkbox"
                       checked={selected.size === findings.length && findings.length > 0}
+                      ref={(el) => {
+                        if (el) el.indeterminate = selected.size > 0 && selected.size < findings.length
+                      }}
                       onChange={toggleAll}
                       className="rounded"
                     />
@@ -212,7 +303,8 @@ export default function FindingsPage() {
                     tabIndex={0}
                     className={cn(
                       'cursor-pointer hover:bg-surface2',
-                      index === focusedIndex && 'ring-1 ring-brand bg-[#eef2ff] dark:bg-[#1E2235]'
+                      index === focusedIndex && 'ring-1 ring-brand bg-[#eef2ff] dark:bg-[#1E2235]',
+                      selected.has(f.id) && 'bg-brand/5',
                     )}
                     onClick={() => setFocusedIndex(index)}
                   >
@@ -257,6 +349,30 @@ export default function FindingsPage() {
           onPageChange={setPage}
         />
       </div>
+
+      <BulkActionBar
+        selectedCount={selected.size}
+        onClearSelection={() => setSelected(new Set())}
+        actions={[
+          {
+            label: 'Status ändern',
+            icon: RefreshCw,
+            onClick: () => setStatusDialogOpen(true),
+          },
+          {
+            label: 'Exportieren',
+            icon: FileDown,
+            onClick: handleExportSelected,
+          },
+          {
+            label: 'Löschen',
+            icon: Trash2,
+            variant: 'destructive',
+            onClick: () => setDeleteDialogOpen(true),
+            disabled: deleteFinding.isPending,
+          },
+        ]}
+      />
     </div>
   )
 }

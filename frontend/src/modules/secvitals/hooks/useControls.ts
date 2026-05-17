@@ -15,6 +15,7 @@ interface AddEvidencePayload {
   title: string
   type: 'manual' | 'automated' | 'document'
   notes?: string
+  expires_at?: string | null
 }
 
 export function useAddEvidence(controlId: string) {

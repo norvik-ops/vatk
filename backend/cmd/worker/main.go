@@ -137,6 +137,9 @@ func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 	// SecVitals: CCM — run all due automated control checks
 	mux.HandleFunc(secvitals.TaskCCMRunDue, handleCCMRunDue(pool))
 
+	// SecVitals: daily compliance score snapshot for trend charts
+	mux.HandleFunc(secvitals.TaskScoreSnapshot, handleScoreSnapshot(pool))
+
 	// Notifications: daily compliance deadline email alerts
 	mux.HandleFunc(notifications.TaskNotifyDeadlines, handleNotifyDeadlines(cfg, pool))
 
@@ -921,27 +924,24 @@ func handleRecordEvidence(pool *pgxpool.Pool) asynq.HandlerFunc {
 	}
 }
 
-// handleEvidenceExpiryAlert sends in-app notifications for evidence expiring within 30 days.
+// handleEvidenceExpiryAlert sends per-evidence in-app notifications for evidence
+// expiring within 30 days that has not yet been notified (expiry_notified_at IS NULL).
 // Runs daily at 09:00 UTC. Uses errgroup with limit 5 to process orgs in parallel.
 func handleEvidenceExpiryAlert(pool *pgxpool.Pool) asynq.HandlerFunc {
 	return func(ctx context.Context, _ *asynq.Task) error {
-		rows, err := pool.Query(ctx, `SELECT id::text, name FROM organizations WHERE is_deleted = false`)
+		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations WHERE is_deleted = false`)
 		if err != nil {
 			return fmt.Errorf("evidence_expiry_alert: list orgs: %w", err)
 		}
 		defer rows.Close()
 
-		type orgRow struct {
-			id   string
-			name string
-		}
-		var orgs []orgRow
+		var orgIDs []string
 		for rows.Next() {
-			var o orgRow
-			if err := rows.Scan(&o.id, &o.name); err != nil {
+			var id string
+			if err := rows.Scan(&id); err != nil {
 				continue
 			}
-			orgs = append(orgs, o)
+			orgIDs = append(orgIDs, id)
 		}
 		if err := rows.Err(); err != nil {
 			return err
@@ -952,18 +952,31 @@ func handleEvidenceExpiryAlert(pool *pgxpool.Pool) asynq.HandlerFunc {
 
 		g, gCtx := errgroup.WithContext(ctx)
 		sem := make(chan struct{}, 5)
-		for _, o := range orgs {
-			o := o
+		for _, orgID := range orgIDs {
+			orgID := orgID
 			sem <- struct{}{}
 			g.Go(func() error {
 				defer func() { <-sem }()
-				items, err := repo.GetExpiringEvidenceAllFrameworks(gCtx, o.id, threshold)
+				items, err := repo.GetUnnotifiedExpiringEvidence(gCtx, orgID, threshold)
 				if err != nil || len(items) == 0 {
 					return nil
 				}
-				msg := fmt.Sprintf("%d Nachweise laufen in den nächsten 30 Tagen ab und müssen erneuert werden.", len(items))
-				notify.Send(gCtx, pool, o.id, "Nachweise laufen ab", msg, "warning", "secvitals")
-				log.Info().Str("org_id", o.id).Int("count", len(items)).Msg("evidence_expiry_alert: sent")
+				// Send one in-app notification per evidence item for actionable granularity.
+				notifiedIDs := make([]string, 0, len(items))
+				for _, item := range items {
+					dateStr := item.ExpiresAt.Format("02.01.2006")
+					msg := fmt.Sprintf(
+						"Evidence für Control '%s' läuft am %s ab und muss erneuert werden.",
+						item.ControlTitle, dateStr,
+					)
+					notify.Send(gCtx, pool, orgID, "Nachweis läuft ab", msg, "warning", "secvitals")
+					notifiedIDs = append(notifiedIDs, item.ID)
+				}
+				// Mark all notified items so we do not re-notify on subsequent runs.
+				if markErr := repo.MarkEvidenceExpiryNotified(gCtx, notifiedIDs); markErr != nil {
+					log.Error().Err(markErr).Str("org_id", orgID).Msg("evidence_expiry_alert: mark notified")
+				}
+				log.Info().Str("org_id", orgID).Int("count", len(notifiedIDs)).Msg("evidence_expiry_alert: sent")
 				return nil
 			})
 		}
@@ -1071,6 +1084,20 @@ func handleCCMRunDue(pool *pgxpool.Pool) asynq.HandlerFunc {
 			log.Error().Err(err).Msg("ccm_run_due: failed")
 			return err
 		}
+		return nil
+	}
+}
+
+// handleScoreSnapshot records daily compliance score snapshots for all organisations.
+// The snapshots power the trend chart on the dashboard.
+func handleScoreSnapshot(pool *pgxpool.Pool) asynq.HandlerFunc {
+	return func(ctx context.Context, _ *asynq.Task) error {
+		svc := secvitals.NewService(pool)
+		if err := svc.RecordScoreSnapshotForAllOrgs(ctx); err != nil {
+			log.Error().Err(err).Msg("score_snapshot: failed")
+			return err
+		}
+		log.Info().Msg("score_snapshot: completed")
 		return nil
 	}
 }
@@ -1197,6 +1224,13 @@ func buildScheduler(cfg *config.Config) *asynq.Scheduler {
 		secvitals.NewCCMRunDueTask(),
 	); err != nil {
 		log.Error().Err(err).Msg("failed to register CCM run-due cron")
+	}
+
+	// Daily at 23:00 UTC: capture compliance score snapshot for trend charts.
+	if _, err := scheduler.Register("0 23 * * *",
+		secvitals.NewScoreSnapshotTask(),
+	); err != nil {
+		log.Error().Err(err).Msg("failed to register score snapshot cron")
 	}
 
 	// Daily at 08:00 UTC: send compliance deadline email alerts.

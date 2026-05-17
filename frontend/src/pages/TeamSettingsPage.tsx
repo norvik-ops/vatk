@@ -21,6 +21,7 @@ import {
   type TeamInvitation,
 } from '../hooks/useTeam'
 import { UserPermissionsEditor } from '../components/UserPermissionsEditor'
+import { toast } from '../shared/hooks/useToast'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -73,7 +74,13 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
 
   function handleSend() {
     if (!email.trim()) return
-    create.mutate({ email: email.trim(), role }, { onSuccess: handleClose })
+    create.mutate({ email: email.trim(), role }, {
+      onSuccess: () => {
+        handleClose()
+        toast('Einladung gesendet', 'success')
+      },
+      onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+    })
   }
 
   function handleClose() {
@@ -165,7 +172,10 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
   const adminCount = members.filter((m) => m.role === 'admin').length
 
   function handleRoleChange(member: TeamMember, newRole: Role) {
-    updateRole.mutate({ id: member.id, role: newRole })
+    updateRole.mutate({ id: member.id, role: newRole }, {
+      onSuccess: () => toast('Rolle gespeichert', 'success'),
+      onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+    })
   }
 
   function handleRemove(member: TeamMember) {
@@ -173,7 +183,12 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
   }
 
   function confirmRemove() {
-    if (removeTarget) removeUser.mutate(removeTarget.id)
+    if (removeTarget) {
+      removeUser.mutate(removeTarget.id, {
+        onSuccess: () => toast('Gelöscht', 'success'),
+        onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      })
+    }
     setRemoveTarget(null)
   }
 
@@ -300,7 +315,12 @@ function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
   }
 
   function confirmRevoke() {
-    if (revokeTarget) revoke.mutate(revokeTarget.id)
+    if (revokeTarget) {
+      revoke.mutate(revokeTarget.id, {
+        onSuccess: () => toast('Einladung widerrufen', 'success'),
+        onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      })
+    }
     setRevokeTarget(null)
   }
 

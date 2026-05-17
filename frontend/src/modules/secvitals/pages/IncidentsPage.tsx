@@ -16,6 +16,8 @@ import { useIncidents, useCreateIncident } from '../hooks/useIncidents'
 import { useBreaches } from '../../secprivacy/hooks/useBreaches'
 import { useCAPAsForSource } from '../hooks/useCAPAs'
 import type { Incident, CreateIncidentInput } from '../types'
+import { toast } from '../../../shared/hooks/useToast'
+import { Skeleton } from '../../../components/ui/skeleton'
 
 const SEVERITY_CLASS: Record<Incident['severity'], string> = {
   low: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -145,7 +147,13 @@ export default function IncidentsPage() {
       discovered_at: new Date(form.discovered_at).toISOString(),
       affected_systems: rawSystems.split(',').map((s) => s.trim()).filter(Boolean),
     }
-    createIncident.mutate(payload, { onSuccess: () => setDialogOpen(false) })
+    createIncident.mutate(payload, {
+      onSuccess: () => {
+        setDialogOpen(false)
+        toast('Vorfall erfolgreich gemeldet', 'success')
+      },
+      onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+    })
   }
 
   const open = incidents?.filter((i) => i.status === 'open' || i.status === 'investigating') ?? []
@@ -166,8 +174,10 @@ export default function IncidentsPage() {
 
       <div className="flex-1 p-6 space-y-6">
         {isLoading && (
-          <div className="flex items-center justify-center h-48">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-lg" />
+            ))}
           </div>
         )}
         {isError && (

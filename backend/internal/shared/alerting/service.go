@@ -350,6 +350,11 @@ func (s *Service) ListDeliveryLog(ctx context.Context, orgID string) ([]Delivery
 	return s.repo.ListDeliveryLog(ctx, orgID, 100)
 }
 
+// ListChannelDeliveries returns the last 50 delivery log entries for a specific channel.
+func (s *Service) ListChannelDeliveries(ctx context.Context, orgID, channelID string) ([]DeliveryLogEntry, error) {
+	return s.repo.ListChannelDeliveries(ctx, orgID, channelID, 50)
+}
+
 // formatEventText creates a human-readable summary for Slack/Teams messages.
 func formatEventText(event string, payload map[string]any) string {
 	messages := map[string]string{

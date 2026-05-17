@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Trash2, Plus, FlaskConical, ChevronDown, ChevronRight, Bell, GitBranch } from 'lucide-react'
+import { Trash2, Plus, FlaskConical, ChevronDown, ChevronRight, Bell, GitBranch, History } from 'lucide-react'
 import { PageHeader } from '../shared/components/PageHeader'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -17,6 +17,7 @@ import {
   useToggleAlertChannel,
   useTestAlertChannel,
   useAlertDeliveryLog,
+  useChannelDeliveries,
   type AlertChannel,
   type CreateChannelInput,
 } from '../modules/settings/hooks/useAlerting'
@@ -157,6 +158,72 @@ function AddChannelDialog({ open, onClose }: { open: boolean; onClose: () => voi
   )
 }
 
+// ─── Per-Channel Delivery History ────────────────────────────────────────────
+
+function ChannelDeliveryHistory({ channelId }: { channelId: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const { data: entries = [], isLoading } = useChannelDeliveries(channelId, expanded)
+
+  return (
+    <div className="border-t border-border">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-surface2/50 transition-colors"
+      >
+        {expanded
+          ? <ChevronDown className="w-3.5 h-3.5 text-secondary shrink-0" />
+          : <ChevronRight className="w-3.5 h-3.5 text-secondary shrink-0" />
+        }
+        <History className="w-3.5 h-3.5 text-secondary shrink-0" />
+        <span className="text-xs text-secondary">Lieferverlauf</span>
+        {!expanded && entries.length > 0 && (
+          <span className="text-[10px] text-secondary ml-1">({entries.length})</span>
+        )}
+      </button>
+      {expanded && (
+        <div className="px-4 pb-3">
+          {isLoading && (
+            <div className="flex items-center gap-2 py-2">
+              <div className="w-3 h-3 border border-brand border-t-transparent rounded-full animate-spin" />
+              <span className="text-[11px] text-secondary">Lädt…</span>
+            </div>
+          )}
+          {!isLoading && entries.length === 0 && (
+            <p className="text-[11px] text-secondary py-2">Noch keine Zustellungen für diesen Kanal.</p>
+          )}
+          {!isLoading && entries.length > 0 && (
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="text-secondary border-b border-border">
+                  <th className="text-left font-medium py-1 pr-3">Datum</th>
+                  <th className="text-left font-medium py-1 pr-3">Event-Typ</th>
+                  <th className="text-left font-medium py-1 pr-3">Status</th>
+                  <th className="text-left font-medium py-1">HTTP</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.slice(0, 50).map((e) => (
+                  <tr key={e.id} className="border-b border-border/50 last:border-0">
+                    <td className="py-1 pr-3 text-secondary whitespace-nowrap">{formatDate(e.sent_at)}</td>
+                    <td className="py-1 pr-3 font-mono text-secondary">{e.event}</td>
+                    <td className="py-1 pr-3">
+                      {e.status === 'sent'
+                        ? <span className="text-green-400 font-semibold">Gesendet</span>
+                        : <span className="text-red-400 font-semibold">Fehler</span>
+                      }
+                    </td>
+                    <td className="py-1 text-secondary">{e.response_code ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Channels Section ─────────────────────────────────────────────────────────
 
 function ChannelsSection() {
@@ -214,69 +281,76 @@ function ChannelsSection() {
           </TableHeader>
           <TableBody>
             {channels.map((ch) => (
-              <TableRow key={ch.id}>
-                <TableCell className="font-medium text-sm">{ch.name}</TableCell>
-                <TableCell>
-                  <span
-                    className={cn(
-                      'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold border',
-                      TYPE_BADGE_CLASS[ch.type],
-                    )}
-                  >
-                    {TYPE_LABELS[ch.type]}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-xs text-secondary">{ch.events.join(', ')}</span>
-                </TableCell>
-                <TableCell>
-                  <button
-                    onClick={() => toggleChannel.mutate({ id: ch.id, enabled: !ch.enabled })}
-                    disabled={toggleChannel.isPending}
-                    className={cn(
-                      'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none',
-                      ch.enabled ? 'bg-indigo-600' : 'bg-zinc-600',
-                      toggleChannel.isPending && 'opacity-50 cursor-not-allowed',
-                    )}
-                    title={ch.enabled ? 'Deaktivieren' : 'Aktivieren'}
-                  >
+              <>
+                <TableRow key={ch.id}>
+                  <TableCell className="font-medium text-sm">{ch.name}</TableCell>
+                  <TableCell>
                     <span
                       className={cn(
-                        'inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform',
-                        ch.enabled ? 'translate-x-[18px]' : 'translate-x-[3px]',
+                        'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold border',
+                        TYPE_BADGE_CLASS[ch.type],
                       )}
-                    />
-                  </button>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1.5 justify-end">
-                    {testResult?.id === ch.id && (
-                      <span className={cn('text-[10px] font-medium', testResult.ok ? 'text-green-400' : 'text-red-400')}>
-                        {testResult.ok ? 'OK' : 'Fehler'}
-                      </span>
-                    )}
-                    <button
-                      onClick={() => handleTest(ch.id)}
-                      disabled={testingId === ch.id}
-                      title="Testbenachrichtigung senden"
-                      className="p-1.5 rounded text-secondary hover:text-brand hover:bg-brand/10 transition-colors disabled:opacity-50"
                     >
-                      {testingId === ch.id
-                        ? <div className="w-3.5 h-3.5 border border-brand border-t-transparent rounded-full animate-spin" />
-                        : <FlaskConical className="w-3.5 h-3.5" />
-                      }
-                    </button>
+                      {TYPE_LABELS[ch.type]}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs text-secondary">{ch.events.join(', ')}</span>
+                  </TableCell>
+                  <TableCell>
                     <button
-                      onClick={() => deleteChannel.mutate(ch.id)}
-                      disabled={deleteChannel.isPending}
-                      title="Kanal löschen"
-                      className="p-1.5 rounded text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                      onClick={() => toggleChannel.mutate({ id: ch.id, enabled: !ch.enabled })}
+                      disabled={toggleChannel.isPending}
+                      className={cn(
+                        'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none',
+                        ch.enabled ? 'bg-indigo-600' : 'bg-zinc-600',
+                        toggleChannel.isPending && 'opacity-50 cursor-not-allowed',
+                      )}
+                      title={ch.enabled ? 'Deaktivieren' : 'Aktivieren'}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <span
+                        className={cn(
+                          'inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform',
+                          ch.enabled ? 'translate-x-[18px]' : 'translate-x-[3px]',
+                        )}
+                      />
                     </button>
-                  </div>
-                </TableCell>
-              </TableRow>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 justify-end">
+                      {testResult?.id === ch.id && (
+                        <span className={cn('text-[10px] font-medium', testResult.ok ? 'text-green-400' : 'text-red-400')}>
+                          {testResult.ok ? 'OK' : 'Fehler'}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => handleTest(ch.id)}
+                        disabled={testingId === ch.id}
+                        title="Testbenachrichtigung senden"
+                        className="p-1.5 rounded text-secondary hover:text-brand hover:bg-brand/10 transition-colors disabled:opacity-50"
+                      >
+                        {testingId === ch.id
+                          ? <div className="w-3.5 h-3.5 border border-brand border-t-transparent rounded-full animate-spin" />
+                          : <FlaskConical className="w-3.5 h-3.5" />
+                        }
+                      </button>
+                      <button
+                        onClick={() => deleteChannel.mutate(ch.id)}
+                        disabled={deleteChannel.isPending}
+                        title="Kanal löschen"
+                        className="p-1.5 rounded text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+                <TableRow key={`${ch.id}-deliveries`} className="hover:bg-transparent">
+                  <TableCell colSpan={5} className="p-0">
+                    <ChannelDeliveryHistory channelId={ch.id} />
+                  </TableCell>
+                </TableRow>
+              </>
             ))}
           </TableBody>
         </Table>

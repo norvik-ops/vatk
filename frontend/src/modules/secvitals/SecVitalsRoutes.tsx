@@ -34,6 +34,8 @@ import PolicyAcceptancePage from './pages/PolicyAcceptancePage'
 import CAPAsPage from './pages/CAPAsPage'
 import OverdueReviewsPage from './pages/OverdueReviewsPage'
 import EvidenceAutoPage from './pages/EvidenceAutoPage'
+import ApprovalsPage from './pages/ApprovalsPage'
+import CertificationTimelinePage from './pages/CertificationTimelinePage'
 
 export default function SecVitalsRoutes() {
   return (
@@ -77,6 +79,8 @@ export default function SecVitalsRoutes() {
       <Route path="dsgvo/tom" element={<DSGVOTOMPage />} />
       <Route path="ccm" element={<CCMPage />} />
       <Route path="capas" element={<CAPAsPage />} />
+      <Route path="approvals" element={<ApprovalsPage />} />
+      <Route path="certification-timeline" element={<CertificationTimelinePage />} />
       <Route path="*" element={<Navigate to="/secvitals" replace />} />
     </Routes>
   )

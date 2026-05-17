@@ -1,14 +1,16 @@
 package admin
 
 import (
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/sechealth-app/sechealth/internal/auth"
 	"github.com/sechealth-app/sechealth/internal/license"
 )
 
 // Register mounts admin routes under g.  All routes require the "Admin" role.
-func Register(g *echo.Group, h *Handler, health *HealthHandler) {
+func Register(g *echo.Group, h *Handler, health *HealthHandler, db *pgxpool.Pool, rdb *redis.Client) {
 	admin := g.Group("/admin", auth.RequireRole("Admin"))
 	admin.GET("/health", health.HandleHealth)
 	admin.GET("/audit-logs", h.ListAuditLogs)
@@ -34,6 +36,11 @@ func Register(g *echo.Group, h *Handler, health *HealthHandler) {
 	admin.GET("/users/:user_id/permissions", h.Permissions.GetPermissions)
 	admin.PUT("/users/:user_id/permissions", h.Permissions.UpdatePermissions, license.Require(license.FeatureGranularPermissions))
 
+	// Security events dashboard + account unlock
+	sec := NewSecurityHandler(db, rdb)
+	admin.GET("/security-events", sec.GetSecurityEvents)
+	admin.DELETE("/accounts/:email/unlock", sec.UnlockAccount)
+
 	// MSP management (caller must be Admin of the parent MSP org)
 	msp := admin.Group("/organizations")
 	msp.POST("", h.CreateManagedOrg)
@@ -41,6 +48,7 @@ func Register(g *echo.Group, h *Handler, health *HealthHandler) {
 	msp.DELETE("/:id", h.DeleteManagedOrg)
 	msp.GET("/:id/branding", h.GetOrgBranding)
 	msp.PUT("/:id/branding", h.UpdateOrgBranding)
+	msp.POST("/:id/impersonate", h.ImpersonateManagedOrg)
 }
 
 // RegisterStaging mounts staging-only routes. Call only when VAKT_STAGING=true.

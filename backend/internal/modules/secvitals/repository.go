@@ -355,7 +355,7 @@ func (r *Repository) GetExpiringEvidence(ctx context.Context, orgID, frameworkID
 	rows, err := r.db.Query(ctx, `
 		SELECT e.id::text, e.control_id::text, e.org_id::text, e.title,
 		       COALESCE(e.description, ''), e.source, COALESCE(e.file_path, ''),
-		       COALESCE(e.file_size, 0), e.status, e.version, e.expires_at, created_at, updated_at
+		       COALESCE(e.file_size, 0), e.status, e.version, e.expires_at, e.expiry_notified_at, created_at, updated_at
 		FROM ck_evidence e
 		JOIN ck_controls c ON c.id = e.control_id
 		WHERE e.org_id = $1::uuid AND c.framework_id = $2::uuid
@@ -373,7 +373,7 @@ func (r *Repository) GetExpiringEvidence(ctx context.Context, orgID, frameworkID
 		var ev Evidence
 		if err := rows.Scan(&ev.ID, &ev.ControlID, &ev.OrgID, &ev.Title,
 			&ev.Description, &ev.Source, &ev.FilePath, &ev.FileSize,
-			&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.CreatedAt, &ev.UpdatedAt); err != nil {
+			&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.ExpiryNotifiedAt, &ev.CreatedAt, &ev.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan expiring evidence: %w", err)
 		}
 		items = append(items, ev)
@@ -386,7 +386,7 @@ func (r *Repository) GetExpiringEvidenceAllFrameworks(ctx context.Context, orgID
 	rows, err := r.db.Query(ctx, `
 		SELECT e.id::text, e.control_id::text, e.org_id::text, e.title,
 		       COALESCE(e.description, ''), e.source, COALESCE(e.file_path, ''),
-		       COALESCE(e.file_size, 0), e.status, e.version, e.expires_at, e.created_at, e.updated_at
+		       COALESCE(e.file_size, 0), e.status, e.version, e.expires_at, e.expiry_notified_at, e.created_at, e.updated_at
 		FROM ck_evidence e
 		JOIN ck_controls c ON c.id = e.control_id
 		WHERE e.org_id = $1::uuid
@@ -405,12 +405,69 @@ func (r *Repository) GetExpiringEvidenceAllFrameworks(ctx context.Context, orgID
 		var ev Evidence
 		if err := rows.Scan(&ev.ID, &ev.ControlID, &ev.OrgID, &ev.Title,
 			&ev.Description, &ev.Source, &ev.FilePath, &ev.FileSize,
-			&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.CreatedAt, &ev.UpdatedAt); err != nil {
+			&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.ExpiryNotifiedAt, &ev.CreatedAt, &ev.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan expiring evidence: %w", err)
 		}
 		items = append(items, ev)
 	}
 	return items, rows.Err()
+}
+
+// EvidenceExpiryNotifyRow is a minimal projection used by the expiry notification worker.
+type EvidenceExpiryNotifyRow struct {
+	ID           string
+	OrgID        string
+	Title        string
+	ControlTitle string
+	ExpiresAt    time.Time
+}
+
+// GetUnnotifiedExpiringEvidence returns evidence items that expire within the given
+// threshold and have not yet had a notification sent (expiry_notified_at IS NULL).
+// It joins ck_controls to include the control title in the notification message.
+func (r *Repository) GetUnnotifiedExpiringEvidence(ctx context.Context, orgID string, threshold time.Time) ([]EvidenceExpiryNotifyRow, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT e.id::text, e.org_id::text, e.title, c.title, e.expires_at
+		FROM ck_evidence e
+		JOIN ck_controls c ON c.id = e.control_id
+		WHERE e.org_id = $1::uuid
+		  AND e.expires_at IS NOT NULL
+		  AND e.expires_at <= $2
+		  AND e.expiry_notified_at IS NULL
+		ORDER BY e.expires_at ASC`,
+		orgID, threshold,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get unnotified expiring evidence: %w", err)
+	}
+	defer rows.Close()
+
+	var items []EvidenceExpiryNotifyRow
+	for rows.Next() {
+		var row EvidenceExpiryNotifyRow
+		if err := rows.Scan(&row.ID, &row.OrgID, &row.Title, &row.ControlTitle, &row.ExpiresAt); err != nil {
+			return nil, fmt.Errorf("scan unnotified expiring evidence: %w", err)
+		}
+		items = append(items, row)
+	}
+	return items, rows.Err()
+}
+
+// MarkEvidenceExpiryNotified sets expiry_notified_at = NOW() for the given evidence IDs.
+func (r *Repository) MarkEvidenceExpiryNotified(ctx context.Context, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	_, err := r.db.Exec(ctx, `
+		UPDATE ck_evidence
+		SET expiry_notified_at = NOW(), updated_at = NOW()
+		WHERE id = ANY($1::uuid[])`,
+		ids,
+	)
+	if err != nil {
+		return fmt.Errorf("mark evidence expiry notified: %w", err)
+	}
+	return nil
 }
 
 // --- Evidence ---
@@ -423,13 +480,13 @@ func (r *Repository) AddEvidence(ctx context.Context, orgID, controlID, userID s
 		VALUES ($1::uuid, $2::uuid, $3, $4, $5, NULLIF($6,''), NULLIF($7, 0), $8, $9::uuid)
 		RETURNING id::text, control_id::text, org_id::text, title, COALESCE(description,''),
 		          source, COALESCE(file_path,''), COALESCE(file_size,0),
-		          status, version, expires_at, created_at, updated_at`,
+		          status, version, expires_at, expiry_notified_at, created_at, updated_at`,
 		controlID, orgID, input.Title, input.Description, input.Source,
 		input.FilePath, input.FileSize, input.ExpiresAt, userID,
 	).Scan(
 		&ev.ID, &ev.ControlID, &ev.OrgID, &ev.Title, &ev.Description,
 		&ev.Source, &ev.FilePath, &ev.FileSize,
-		&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.CreatedAt, &ev.UpdatedAt,
+		&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.ExpiryNotifiedAt, &ev.CreatedAt, &ev.UpdatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("add evidence: %w", err)
@@ -442,7 +499,7 @@ func (r *Repository) ListEvidence(ctx context.Context, orgID, controlID string) 
 	rows, err := r.db.Query(ctx, `
 		SELECT id::text, control_id::text, org_id::text, title, COALESCE(description,''),
 		       source, COALESCE(file_path,''), COALESCE(file_size,0),
-		       status, version, expires_at, created_at, updated_at
+		       status, version, expires_at, expiry_notified_at, created_at, updated_at
 		FROM ck_evidence
 		WHERE control_id = $1::uuid AND org_id = $2::uuid
 		ORDER BY created_at DESC`,
@@ -459,7 +516,7 @@ func (r *Repository) ListEvidence(ctx context.Context, orgID, controlID string) 
 		if err := rows.Scan(
 			&ev.ID, &ev.ControlID, &ev.OrgID, &ev.Title, &ev.Description,
 			&ev.Source, &ev.FilePath, &ev.FileSize,
-			&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.CreatedAt, &ev.UpdatedAt,
+			&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.ExpiryNotifiedAt, &ev.CreatedAt, &ev.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan evidence: %w", err)
 		}
@@ -477,7 +534,7 @@ func (r *Repository) ListEvidenceByControls(ctx context.Context, orgID string, c
 	rows, err := r.db.Query(ctx, `
 		SELECT id::text, control_id::text, org_id::text, title, COALESCE(description,''),
 		       source, COALESCE(file_path,''), COALESCE(file_size,0),
-		       status, version, expires_at, created_at, updated_at
+		       status, version, expires_at, expiry_notified_at, created_at, updated_at
 		FROM ck_evidence
 		WHERE control_id = ANY($1::uuid[]) AND org_id = $2::uuid
 		ORDER BY control_id, created_at DESC`,
@@ -494,7 +551,7 @@ func (r *Repository) ListEvidenceByControls(ctx context.Context, orgID string, c
 		if err := rows.Scan(
 			&ev.ID, &ev.ControlID, &ev.OrgID, &ev.Title, &ev.Description,
 			&ev.Source, &ev.FilePath, &ev.FileSize,
-			&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.CreatedAt, &ev.UpdatedAt,
+			&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.ExpiryNotifiedAt, &ev.CreatedAt, &ev.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan evidence batch: %w", err)
 		}
@@ -531,12 +588,12 @@ func (r *Repository) AddCollectorEvidence(ctx context.Context, orgID, controlID,
 		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::uuid)
 		RETURNING id::text, control_id::text, org_id::text, title, COALESCE(description,''),
 		          source, COALESCE(file_path,''), COALESCE(file_size,0),
-		          status, version, expires_at, created_at, updated_at`,
+		          status, version, expires_at, expiry_notified_at, created_at, updated_at`,
 		controlID, orgID, title, source, data, userID,
 	).Scan(
 		&ev.ID, &ev.ControlID, &ev.OrgID, &ev.Title, &ev.Description,
 		&ev.Source, &ev.FilePath, &ev.FileSize,
-		&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.CreatedAt, &ev.UpdatedAt,
+		&ev.Status, &ev.Version, &ev.ExpiresAt, &ev.ExpiryNotifiedAt, &ev.CreatedAt, &ev.UpdatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("add collector evidence: %w", err)
@@ -4199,4 +4256,61 @@ func (r *Repository) ListCAPAsPaged(ctx context.Context, orgID string, statusFil
 		capas = append(capas, c)
 	}
 	return capas, total, rows.Err()
+}
+
+// --- Score History ---
+
+// InsertScoreSnapshot inserts a compliance score snapshot for an organisation.
+// frameworkID is optional (pass empty string for the org-wide snapshot).
+func (r *Repository) InsertScoreSnapshot(ctx context.Context, orgID string, frameworkID *string, score float64, total, implemented int) error {
+	if frameworkID != nil && *frameworkID == "" {
+		frameworkID = nil
+	}
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO ck_score_history (org_id, framework_id, score, controls_total, controls_implemented)
+		VALUES ($1::uuid, $2::uuid, $3, $4, $5)`,
+		orgID, frameworkID, score, total, implemented,
+	)
+	return err
+}
+
+// ScoreHistoryEntry is a single data point for the score trend chart.
+type ScoreHistoryEntry struct {
+	Date              string  `json:"date"`
+	Score             float64 `json:"score"`
+	ControlsTotal     int     `json:"controls_total"`
+	ControlsImplemented int   `json:"controls_implemented"`
+}
+
+// GetScoreHistory returns aggregated daily score history for an organisation.
+// framework_id is nil to query the org-wide score. Days is the look-back window.
+func (r *Repository) GetScoreHistory(ctx context.Context, orgID string, days int) ([]ScoreHistoryEntry, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT
+			TO_CHAR(recorded_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date,
+			MAX(score) AS score,
+			MAX(controls_total) AS controls_total,
+			MAX(controls_implemented) AS controls_implemented
+		FROM ck_score_history
+		WHERE org_id = $1::uuid
+		  AND framework_id IS NULL
+		  AND recorded_at >= NOW() - ($2 || ' days')::INTERVAL
+		GROUP BY date
+		ORDER BY date ASC`,
+		orgID, days,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get score history: %w", err)
+	}
+	defer rows.Close()
+
+	var entries []ScoreHistoryEntry
+	for rows.Next() {
+		var e ScoreHistoryEntry
+		if err := rows.Scan(&e.Date, &e.Score, &e.ControlsTotal, &e.ControlsImplemented); err != nil {
+			return nil, fmt.Errorf("scan score history: %w", err)
+		}
+		entries = append(entries, e)
+	}
+	return entries, rows.Err()
 }

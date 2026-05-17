@@ -5,7 +5,16 @@ import {
   AlertTriangle, CheckCircle, ShieldAlert, Activity, Flame, ChevronRight, Settings,
   ClipboardList, Clock, TriangleAlert, ListTodo,
   Shield, FileText, User, Database,
+  TrendingUp, TrendingDown, Minus, CalendarDays,
 } from 'lucide-react'
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
 import { useFindings } from '../modules/secpulse/hooks/useFindings'
 import { useFrameworks } from '../modules/secvitals/hooks/useFrameworks'
 import { useProjects } from '../modules/secvault/hooks/useProjects'
@@ -17,6 +26,9 @@ import { useOnboardingStatus } from '../hooks/useOnboarding'
 import { OnboardingBanner, OnboardingWizard } from '../components/OnboardingWizard'
 import { Skeleton } from '../components/ui/skeleton'
 import type { FrameworkScore } from '../hooks/useDashboard'
+import { useScoreHistory } from '../modules/secvitals/hooks/useScoreHistory'
+import type { ScoreHistoryEntry } from '../modules/secvitals/hooks/useScoreHistory'
+import { useNextMilestone } from '../modules/secvitals/hooks/useMilestones'
 
 function fmt(n: number | null | undefined): string {
   return n == null ? '—' : n.toString()
@@ -303,6 +315,132 @@ function ComplianceProgressCard({
 }
 
 // ---------------------------------------------------------------------------
+// Compliance trend chart
+// ---------------------------------------------------------------------------
+
+/** Format "YYYY-MM-DD" → "DD.MM." for the X-axis label. */
+function fmtAxisDate(iso: string): string {
+  const parts = iso.split('-')
+  if (parts.length !== 3) return iso
+  return `${parts[2]}.${parts[1]}.`
+}
+
+interface ChartTooltipProps {
+  active?: boolean
+  payload?: Array<{ value: number; payload: ScoreHistoryEntry }>
+  label?: string
+}
+
+function ScoreChartTooltip({ active, payload }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null
+  const d = payload[0].payload
+  return (
+    <div className="rounded-md border border-border bg-surface px-3 py-2 shadow-lg text-[12px]">
+      <p className="font-semibold text-primary mb-1">{fmtAxisDate(d.date)}</p>
+      <p className="text-secondary">Score: <span className="font-bold text-primary">{d.score.toFixed(1)}%</span></p>
+      <p className="text-secondary">Controls: <span className="font-bold text-primary">{d.controls_implemented} / {d.controls_total}</span></p>
+    </div>
+  )
+}
+
+function ScoreHistoryCard() {
+  const [days, setDays] = useState<30 | 90>(30)
+  const { data: entries, isLoading } = useScoreHistory(days)
+
+  // Determine trend: compare latest score to oldest score in the window.
+  let trendDelta: number | null = null
+  if (entries && entries.length >= 2) {
+    trendDelta = entries[entries.length - 1].score - entries[0].score
+  }
+
+  const chartData = entries?.map((e) => ({
+    ...e,
+    label: fmtAxisDate(e.date),
+  })) ?? []
+
+  return (
+    <section className="rounded-lg border border-border bg-surface p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-[13px] font-semibold text-primary">Compliance-Verlauf</h2>
+        <div className="flex items-center gap-2">
+          {trendDelta !== null && (
+            <span className={`flex items-center gap-0.5 text-[11px] font-semibold ${trendDelta > 0.5 ? 'text-[#22c55e]' : trendDelta < -0.5 ? 'text-[#ef4444]' : 'text-secondary'}`}>
+              {trendDelta > 0.5 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : trendDelta < -0.5 ? (
+                <TrendingDown className="w-3 h-3" />
+              ) : (
+                <Minus className="w-3 h-3" />
+              )}
+              {trendDelta > 0 ? '+' : ''}{trendDelta.toFixed(1)}%
+            </span>
+          )}
+          <div className="flex rounded-md border border-border overflow-hidden text-[11px]">
+            <button
+              className={`px-2 py-1 transition-colors ${days === 30 ? 'bg-brand text-white' : 'bg-surface text-secondary hover:bg-border/50'}`}
+              onClick={() => setDays(30)}
+            >
+              30 Tage
+            </button>
+            <button
+              className={`px-2 py-1 transition-colors ${days === 90 ? 'bg-brand text-white' : 'bg-surface text-secondary hover:bg-border/50'}`}
+              onClick={() => setDays(90)}
+            >
+              90 Tage
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-[160px] w-full" />
+        </div>
+      ) : chartData.length === 0 ? (
+        <div className="flex items-center justify-center h-[160px]">
+          <p className="text-[12px] text-secondary">Verlaufsdaten werden ab morgen gesammelt</p>
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={160}>
+          <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+            <defs>
+              <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: 'var(--color-secondary, #94a3b8)' }}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              domain={[0, 100]}
+              tick={{ fontSize: 10, fill: 'var(--color-secondary, #94a3b8)' }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => `${v}%`}
+            />
+            <Tooltip content={<ScoreChartTooltip />} />
+            <Area
+              type="monotone"
+              dataKey="score"
+              stroke="#22c55e"
+              strokeWidth={2}
+              fill="url(#scoreGrad)"
+              dot={false}
+              activeDot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Main dashboard
 // ---------------------------------------------------------------------------
 
@@ -312,13 +450,21 @@ export default function Dashboard() {
 
   const { data: scoreData, isLoading: scoreLoading } = useDashboardScore()
   const { data: agg, isLoading: aggLoading } = useDashboardAggregate()
+  const { data: scoreHistory } = useScoreHistory(30)
   const { data: critFindings, isLoading: findingsLoading } = useFindings({ severity: 'critical' })
   const { data: frameworks, isLoading: fwLoading } = useFrameworks()
   const { data: projects, isLoading: projLoading } = useProjects()
   const { data: campaigns, isLoading: campLoading } = useCampaigns()
   const { data: breaches, isLoading: breachLoading } = useBreaches()
+  const { data: nextMilestone } = useNextMilestone()
 
   const kpiLoading = aggLoading
+
+  // Compute 30-day trend delta from score history.
+  const scoreTrend: number | null = (() => {
+    if (!scoreHistory || scoreHistory.length < 2) return null
+    return scoreHistory[scoreHistory.length - 1].score - scoreHistory[0].score
+  })()
 
   const critCount = critFindings?.pagination?.total ?? null
   const fwCount = frameworks?.length ?? null
@@ -438,7 +584,21 @@ export default function Dashboard() {
             )}
             <p className="text-[16px] text-secondary mb-2">/ 100</p>
           </div>
-          <p className="text-[12px] text-secondary mt-1">Gesamtbewertung</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-[12px] text-secondary">Gesamtbewertung</p>
+            {scoreTrend !== null && (
+              <span className={`flex items-center gap-0.5 text-[11px] font-semibold ${scoreTrend > 0.5 ? 'text-[#22c55e]' : scoreTrend < -0.5 ? 'text-[#ef4444]' : 'text-secondary'}`}>
+                {scoreTrend > 0.5 ? (
+                  <TrendingUp className="w-3 h-3" />
+                ) : scoreTrend < -0.5 ? (
+                  <TrendingDown className="w-3 h-3" />
+                ) : (
+                  <Minus className="w-3 h-3" />
+                )}
+                {scoreTrend > 0 ? '+' : ''}{scoreTrend.toFixed(1)}%
+              </span>
+            )}
+          </div>
 
           <div className="h-px bg-border my-4" />
 
@@ -532,8 +692,38 @@ export default function Dashboard() {
           </div>
         </section>
 
+        {/* ── Next audit milestone widget ── */}
+        {nextMilestone && (
+          <Link
+            to="/secvitals/certification-timeline"
+            className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 hover:border-brand/60 transition-colors"
+          >
+            <CalendarDays className={`w-5 h-5 shrink-0 ${
+              (nextMilestone.days_remaining ?? 999) < 30 ? 'text-red-400' :
+              (nextMilestone.days_remaining ?? 999) < 90 ? 'text-amber-400' :
+              'text-green-400'
+            }`} />
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-primary truncate">
+                Nächste Prüfung: {nextMilestone.title}
+              </p>
+              <p className="text-[11px] text-secondary">
+                {nextMilestone.days_remaining === 0
+                  ? 'Heute'
+                  : nextMilestone.days_remaining != null && nextMilestone.days_remaining > 0
+                  ? `in ${nextMilestone.days_remaining} Tagen`
+                  : `${Math.abs(nextMilestone.days_remaining ?? 0)} Tage überfällig`}
+              </p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-brand shrink-0" />
+          </Link>
+        )}
+
         {/* ── Compliance progress ── */}
         <ComplianceProgressCard scores={agg?.framework_scores ?? []} isLoading={aggLoading} />
+
+        {/* ── Compliance trend chart ── */}
+        <ScoreHistoryCard />
 
         {/* ── Framework progress + Top risks ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '.
 import { useFinding, usePatchFinding } from '../hooks/useFindings'
 import type { Finding } from '../types'
 import { cn } from '../../../lib/utils'
+import { Comments } from '../../../shared/components/Comments'
 
 const severityClass: Record<Finding['severity'], string> = {
   info:     'bg-[#374151] text-[#94a3b8] border-transparent',
@@ -162,6 +163,11 @@ export default function FindingDetailPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Comments */}
+      <div className="px-6 pb-6">
+        <Comments entityType="finding" entityId={finding.id} />
       </div>
     </div>
   )

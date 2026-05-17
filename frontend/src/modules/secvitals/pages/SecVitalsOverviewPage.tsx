@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   ShieldCheck, ShieldAlert, Siren, BookOpen, ClipboardList,
-  ChevronRight, TrendingUp, Shield, FileText,
+  ChevronRight, TrendingUp, Shield, FileText, DownloadCloud,
 } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Button } from '../../../components/ui/button'
@@ -13,7 +14,7 @@ import { useAuditRecords } from '../hooks/useAudits'
 import { useDORADashboard } from '../hooks/useDORADashboard'
 import { useAIStatus } from '../hooks/useAIAdvisor'
 import { useAuditReport } from '../hooks/useAuditReport'
-import { FeatureLockedError } from '../../../api/client'
+import { FeatureLockedError, getAuthToken } from '../../../api/client'
 import { ProGate } from '../../../shared/components/ProGate'
 import { cn } from '../../../lib/utils'
 import { ExpiringEvidenceWidget } from '../components/ExpiringEvidenceWidget'
@@ -102,6 +103,33 @@ export default function SecVitalsOverviewPage() {
   const { data: audits } = useAuditRecords()
   const { data: doraResult } = useDORADashboard()
 
+  const [isGeneratingExec, setIsGeneratingExec] = useState(false)
+  const [execError, setExecError] = useState<unknown>(null)
+
+  async function downloadExecutiveSummary() {
+    setIsGeneratingExec(true)
+    setExecError(null)
+    try {
+      const token = getAuthToken() ?? ''
+      const res = await fetch('/api/v1/secvitals/reports/executive-summary', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.status === 402) throw new FeatureLockedError('audit-pdf')
+      if (!res.ok) throw new Error('Executive Summary konnte nicht erstellt werden.')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `executive-summary-${new Date().toISOString().slice(0, 10)}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setExecError(err)
+    } finally {
+      setIsGeneratingExec(false)
+    }
+  }
+
   const openRisks = risks?.filter((r) => r.status === 'open') ?? []
   const highRisks = openRisks.filter((r) => r.risk_score >= 12)
   const openIncidents = incidents?.filter((i) => i.status === 'open' || i.status === 'investigating') ?? []
@@ -122,27 +150,54 @@ export default function SecVitalsOverviewPage() {
         description="Compliance, Risiken & Governance auf einen Blick."
         actions={
           <div className="flex flex-col items-end gap-1">
-            <Button
-              size="sm"
-              onClick={generateAuditReport}
-              disabled={isGeneratingReport}
-              className="h-8 text-xs gap-1.5"
-            >
-              {isGeneratingReport ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Wird erstellt…
-                </>
-              ) : (
-                <>
-                  <FileText className="w-3.5 h-3.5" />
-                  Audit-Bericht generieren
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={downloadExecutiveSummary}
+                disabled={isGeneratingExec}
+                className="h-8 text-xs gap-1.5"
+              >
+                {isGeneratingExec ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Wird erstellt…
+                  </>
+                ) : (
+                  <>
+                    <DownloadCloud className="w-3.5 h-3.5" />
+                    Executive Summary
+                  </>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                onClick={generateAuditReport}
+                disabled={isGeneratingReport}
+                className="h-8 text-xs gap-1.5"
+              >
+                {isGeneratingReport ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Wird erstellt…
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-3.5 h-3.5" />
+                    Audit-Bericht generieren
+                  </>
+                )}
+              </Button>
+            </div>
             <ProGate error={reportError instanceof FeatureLockedError ? reportError : null}>{''}</ProGate>
             {reportError instanceof Error && !(reportError instanceof FeatureLockedError) && (
               <p className="text-[10px] text-red-500">{reportError.message}</p>
+            )}
+            {execError instanceof FeatureLockedError && (
+              <ProGate error={execError}>{''}</ProGate>
+            )}
+            {execError instanceof Error && !(execError instanceof FeatureLockedError) && (
+              <p className="text-[10px] text-red-500">{execError.message}</p>
             )}
           </div>
         }

@@ -168,7 +168,8 @@ func (h *Handler) UpdateControl(c echo.Context) error {
 }
 
 // UploadEvidence handles POST /api/v1/secvitals/controls/:id/evidence/upload.
-// Accepts multipart/form-data with fields: file (required), title (required), notes (optional).
+// Accepts multipart/form-data with fields: file (required), title (required),
+// notes (optional), expires_at (optional, RFC3339 or YYYY-MM-DD).
 func (h *Handler) UploadEvidence(c echo.Context) error {
 	controlID := c.Param("id")
 
@@ -177,6 +178,20 @@ func (h *Handler) UploadEvidence(c echo.Context) error {
 		return errResp(c, http.StatusBadRequest, "title is required", "CK_BAD_REQUEST")
 	}
 	notes := c.FormValue("notes")
+
+	// Parse optional expires_at from form field (RFC3339 or YYYY-MM-DD).
+	var expiresAt *time.Time
+	if expiresAtStr := c.FormValue("expires_at"); expiresAtStr != "" {
+		var t time.Time
+		var parseErr error
+		if t, parseErr = time.Parse(time.RFC3339, expiresAtStr); parseErr != nil {
+			if t, parseErr = time.Parse("2006-01-02", expiresAtStr); parseErr != nil {
+				return errResp(c, http.StatusBadRequest, "invalid expires_at format, use RFC3339 or YYYY-MM-DD", "CK_BAD_REQUEST")
+			}
+		}
+		t = t.UTC()
+		expiresAt = &t
+	}
 
 	fh, err := c.FormFile("file")
 	if err != nil {
@@ -227,6 +242,7 @@ func (h *Handler) UploadEvidence(c echo.Context) error {
 		Source:      "manual",
 		FilePath:    destPath,
 		FileSize:    fh.Size,
+		ExpiresAt:   expiresAt,
 	}
 	ev, err := h.service.AddEvidence(c.Request().Context(), orgID(c), controlID, userID(c), input)
 	if err != nil {
@@ -1794,6 +1810,17 @@ func (h *Handler) GetDORAPDF(c echo.Context) error {
 	return c.Blob(http.StatusOK, "application/pdf", pdfBytes)
 }
 
+// GetExecutiveSummaryPDF handles GET /api/v1/secvitals/reports/executive-summary.
+func (h *Handler) GetExecutiveSummaryPDF(c echo.Context) error {
+	pdfBytes, filename, err := h.service.ExportExecutiveSummaryPDF(c.Request().Context(), orgID(c))
+	if err != nil {
+		log.Error().Err(err).Msg("generate executive summary pdf")
+		return errResp(c, http.StatusInternalServerError, "failed to generate executive summary PDF", "CK_EXECUTIVE_SUMMARY_FAILED")
+	}
+	c.Response().Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename=%q`, filename))
+	return c.Blob(http.StatusOK, "application/pdf", pdfBytes)
+}
+
 // --- Framework Mappings (Story 28.2) ---
 
 // GetTISAXISOMapping handles GET /api/v1/secvitals/frameworks/tisax/iso-mapping.
@@ -2988,4 +3015,24 @@ func (h *Handler) ListOverdueControls(c echo.Context) error {
 		controls = []Control{}
 	}
 	return c.JSON(http.StatusOK, controls)
+}
+
+// GetScoreHistory handles GET /api/v1/secvitals/score-history?days=30
+// Returns daily compliance score snapshots for the organisation.
+func (h *Handler) GetScoreHistory(c echo.Context) error {
+	days := 30
+	if d := c.QueryParam("days"); d != "" {
+		if n, err := strconv.Atoi(d); err == nil && n > 0 {
+			days = n
+		}
+	}
+	entries, err := h.service.GetScoreHistory(c.Request().Context(), orgID(c), days)
+	if err != nil {
+		log.Error().Err(err).Msg("get score history")
+		return errResp(c, http.StatusInternalServerError, "failed to get score history", "CK_SCORE_HISTORY_FAILED")
+	}
+	if entries == nil {
+		entries = []ScoreHistoryEntry{}
+	}
+	return c.JSON(http.StatusOK, entries)
 }

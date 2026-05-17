@@ -122,3 +122,20 @@ func (h *Handler) ListDeliveryLog(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, entries)
 }
+
+// ListChannelDeliveries handles GET /alerting/channels/:id/deliveries.
+func (h *Handler) ListChannelDeliveries(c echo.Context) error {
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return alertErrResp(c, http.StatusUnauthorized, "unauthorized", "ALERTING_UNAUTHORIZED")
+	}
+	entries, err := h.svc.ListChannelDeliveries(c.Request().Context(), orgID, c.Param("id"))
+	if err != nil {
+		log.Error().Err(err).Msg("list channel deliveries")
+		return alertErrResp(c, http.StatusInternalServerError, "failed to list channel deliveries", "ALERTING_LOG_FAILED")
+	}
+	if entries == nil {
+		entries = []DeliveryLogEntry{}
+	}
+	return c.JSON(http.StatusOK, entries)
+}

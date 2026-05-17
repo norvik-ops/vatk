@@ -91,6 +91,8 @@ export interface Evidence {
   type: 'manual' | 'automated' | 'document'
   notes?: string
   status: 'pending_review' | 'approved' | 'rejected' | 'expired'
+  expires_at?: string | null
+  expiry_notified_at?: string | null
   created_at: string
 }
 
@@ -797,4 +799,47 @@ export interface CollabComment {
 export interface CreateCommentInput {
   body: string
   author_email?: string
+}
+
+// --- Audit Milestones / Certification Timeline (Migration 092) ---
+
+export type MilestoneType =
+  | 'internal_audit'
+  | 'external_audit'
+  | 'certification_target'
+  | 'review_deadline'
+  | 'training_deadline'
+  | 'custom'
+
+export type MilestoneStatus = 'upcoming' | 'completed' | 'missed' | 'cancelled'
+
+export interface AuditMilestone {
+  id: string
+  org_id: string
+  framework_id?: string | null
+  title: string
+  description?: string
+  milestone_date: string // YYYY-MM-DD
+  milestone_type: MilestoneType
+  status: MilestoneStatus
+  created_by?: string | null
+  created_at: string
+  updated_at: string
+  days_remaining?: number | null
+}
+
+export interface CreateMilestoneInput {
+  framework_id?: string
+  title: string
+  description?: string
+  milestone_date: string
+  milestone_type: MilestoneType
+}
+
+export interface UpdateMilestoneInput {
+  title?: string
+  description?: string
+  milestone_date?: string
+  milestone_type?: MilestoneType
+  status?: MilestoneStatus
 }

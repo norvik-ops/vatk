@@ -1624,3 +1624,217 @@ func GenerateSoAPDF(rows []SoARow, frameworkName, orgName string, generatedAt ti
 	}
 	return out.Bytes(), nil
 }
+
+// GenerateExecutiveSummaryPDF renders a one-page Compliance Executive Summary PDF.
+// Sections: 1 — Gesamtstatus, 2 — Framework-Übersicht, 3 — Top 5 Risiken, 4 — Letzte 30 Tage.
+func GenerateExecutiveSummaryPDF(d *ExecutiveSummaryData) ([]byte, error) {
+	pdf := fpdf.New("P", "mm", "A4", "")
+	pdf.SetMargins(15, 15, 15)
+	pdf.SetAutoPageBreak(true, 15)
+
+	// ── Footer ────────────────────────────────────────────────────────────────
+	pdf.SetFooterFunc(func() {
+		pdf.SetY(-12)
+		pdf.SetFont("Helvetica", "I", 7)
+		pdf.SetTextColor(150, 150, 160)
+		pdf.CellFormat(0, 5,
+			fmt.Sprintf("Vakt Comply — Executive Summary — %s — Seite %d/{nb}", d.OrgName, pdf.PageNo()),
+			"", 0, "C", false, 0, "")
+	})
+	pdf.AliasNbPages("{nb}")
+
+	// ── Cover header ──────────────────────────────────────────────────────────
+	pdf.AddPage()
+	pdf.SetFillColor(37, 99, 235)
+	pdf.Rect(0, 0, 210, 28, "F")
+	pdf.SetTextColor(255, 255, 255)
+	pdf.SetFont("Helvetica", "B", 14)
+	pdf.SetXY(15, 8)
+	pdf.CellFormat(180, 8, "Vakt — Compliance Executive Summary", "", 1, "L", false, 0, "")
+	pdf.SetFont("Helvetica", "", 9)
+	pdf.SetXY(15, 17)
+	pdf.CellFormat(180, 6,
+		fmt.Sprintf("%s  |  %s", d.OrgName, d.GeneratedAt.Format("02.01.2006")),
+		"", 1, "L", false, 0, "")
+
+	// ── Section 1: Gesamtstatus ───────────────────────────────────────────────
+	pdf.SetTextColor(30, 30, 40)
+	pdf.SetXY(15, 35)
+	pdf.SetFont("Helvetica", "B", 13)
+	pdf.CellFormat(180, 8, "1. Gesamtstatus", "", 1, "L", false, 0, "")
+
+	scoreColor := [3]int{220, 38, 38}
+	if d.OverallScore >= 80 {
+		scoreColor = [3]int{34, 197, 94}
+	} else if d.OverallScore >= 50 {
+		scoreColor = [3]int{234, 179, 8}
+	}
+	cy := pdf.GetY() + 2
+	pdf.SetFillColor(scoreColor[0], scoreColor[1], scoreColor[2])
+	pdf.RoundedRect(15, cy, 50, 26, 3, "1234", "F")
+	pdf.SetTextColor(255, 255, 255)
+	pdf.SetFont("Helvetica", "B", 22)
+	pdf.SetXY(15, cy+4)
+	pdf.CellFormat(50, 14, fmt.Sprintf("%.0f%%", d.OverallScore), "", 1, "C", false, 0, "")
+
+	pdf.SetXY(72, cy+4)
+	pdf.SetTextColor(30, 30, 40)
+	pdf.SetFont("Helvetica", "B", 12)
+	pdf.CellFormat(130, 8, "Gesamtbereitschaft (gewichteter Durchschnitt)", "0", 1, "L", false, 0, "")
+	pdf.SetXY(72, cy+14)
+	pdf.SetFont("Helvetica", "", 9)
+	pdf.SetTextColor(100, 100, 120)
+	switch {
+	case d.OverallScore >= 80:
+		pdf.CellFormat(130, 7, "Gut — Compliance-Anforderungen weitgehend erfüllt.", "0", 1, "L", false, 0, "")
+	case d.OverallScore >= 50:
+		pdf.CellFormat(130, 7, "Mittel — Handlungsbedarf vorhanden.", "0", 1, "L", false, 0, "")
+	default:
+		pdf.CellFormat(130, 7, "Kritisch — erheblicher Handlungsbedarf.", "0", 1, "L", false, 0, "")
+	}
+
+	// ── Section 2: Framework-Übersicht ────────────────────────────────────────
+	pdf.SetY(cy + 36)
+	pdf.SetTextColor(30, 30, 40)
+	pdf.SetFont("Helvetica", "B", 13)
+	pdf.CellFormat(180, 8, "2. Framework-Übersicht", "", 1, "L", false, 0, "")
+
+	if len(d.Frameworks) == 0 {
+		pdf.SetFont("Helvetica", "I", 9)
+		pdf.SetTextColor(100, 100, 120)
+		pdf.CellFormat(180, 7, "Keine Frameworks aktiviert.", "0", 1, "L", false, 0, "")
+	} else {
+		// Table header
+		pdf.SetFillColor(37, 99, 235)
+		pdf.SetTextColor(255, 255, 255)
+		pdf.SetFont("Helvetica", "B", 8)
+		pdf.CellFormat(80, 6, "Framework", "0", 0, "L", true, 0, "")
+		pdf.CellFormat(35, 6, "Score", "0", 0, "C", true, 0, "")
+		pdf.CellFormat(65, 6, "Controls umgesetzt / gesamt", "0", 1, "C", true, 0, "")
+
+		for i, fw := range d.Frameworks {
+			if pdf.GetY() > 265 {
+				pdf.AddPage()
+			}
+			if i%2 == 0 {
+				pdf.SetFillColor(245, 247, 255)
+			} else {
+				pdf.SetFillColor(255, 255, 255)
+			}
+			name := fw.Name
+			if len(name) > 46 {
+				name = name[:43] + "..."
+			}
+			col := [3]int{220, 38, 38}
+			if fw.Score >= 80 {
+				col = [3]int{34, 197, 94}
+			} else if fw.Score >= 50 {
+				col = [3]int{234, 179, 8}
+			}
+			pdf.SetTextColor(30, 30, 40)
+			pdf.SetFont("Helvetica", "", 8)
+			pdf.CellFormat(80, 6, name, "0", 0, "L", true, 0, "")
+			pdf.SetTextColor(col[0], col[1], col[2])
+			pdf.SetFont("Helvetica", "B", 8)
+			pdf.CellFormat(35, 6, fmt.Sprintf("%.0f%%", fw.Score), "0", 0, "C", true, 0, "")
+			pdf.SetTextColor(30, 30, 40)
+			pdf.SetFont("Helvetica", "", 8)
+			pdf.CellFormat(65, 6, fmt.Sprintf("%d / %d", fw.Implemented, fw.Total), "0", 1, "C", true, 0, "")
+		}
+	}
+
+	// ── Section 3: Top 5 offene Risiken ──────────────────────────────────────
+	pdf.SetY(pdf.GetY() + 6)
+	pdf.SetTextColor(30, 30, 40)
+	pdf.SetFont("Helvetica", "B", 13)
+	pdf.CellFormat(180, 8, "3. Top 5 offene Risiken", "", 1, "L", false, 0, "")
+
+	if len(d.TopRisks) == 0 {
+		pdf.SetFont("Helvetica", "I", 9)
+		pdf.SetTextColor(34, 197, 94)
+		pdf.CellFormat(180, 7, "Keine offenen Risiken — ausgezeichnet!", "0", 1, "L", false, 0, "")
+	} else {
+		pdf.SetFillColor(37, 99, 235)
+		pdf.SetTextColor(255, 255, 255)
+		pdf.SetFont("Helvetica", "B", 8)
+		pdf.CellFormat(120, 6, "Risikobezeichnung", "0", 0, "L", true, 0, "")
+		pdf.CellFormat(30, 6, "Risikoscore", "0", 0, "C", true, 0, "")
+		pdf.CellFormat(30, 6, "Bewertung", "0", 1, "C", true, 0, "")
+
+		sevColors := map[string][3]int{
+			"critical": {220, 38, 38},
+			"high":     {249, 115, 22},
+			"medium":   {234, 179, 8},
+			"low":      {34, 197, 94},
+		}
+		sevLabels := map[string]string{
+			"critical": "Kritisch",
+			"high":     "Hoch",
+			"medium":   "Mittel",
+			"low":      "Niedrig",
+		}
+
+		for i, r := range d.TopRisks {
+			if pdf.GetY() > 265 {
+				pdf.AddPage()
+			}
+			if i%2 == 0 {
+				pdf.SetFillColor(255, 245, 245)
+			} else {
+				pdf.SetFillColor(255, 255, 255)
+			}
+			title := r.Title
+			if len(title) > 72 {
+				title = title[:69] + "..."
+			}
+			col := sevColors[r.Severity]
+			if col == ([3]int{}) {
+				col = [3]int{100, 100, 120}
+			}
+			label := sevLabels[r.Severity]
+			if label == "" {
+				label = r.Severity
+			}
+			pdf.SetTextColor(30, 30, 40)
+			pdf.SetFont("Helvetica", "", 8)
+			pdf.CellFormat(120, 6, title, "0", 0, "L", true, 0, "")
+			pdf.SetFont("Helvetica", "B", 8)
+			pdf.CellFormat(30, 6, fmt.Sprintf("%d", r.Score), "0", 0, "C", true, 0, "")
+			pdf.SetTextColor(col[0], col[1], col[2])
+			pdf.CellFormat(30, 6, label, "0", 1, "C", true, 0, "")
+		}
+	}
+
+	// ── Section 4: Letzte 30 Tage ─────────────────────────────────────────────
+	pdf.SetY(pdf.GetY() + 6)
+	pdf.SetTextColor(30, 30, 40)
+	pdf.SetFont("Helvetica", "B", 13)
+	pdf.CellFormat(180, 8, "4. Aktivitäten der letzten 30 Tage", "", 1, "L", false, 0, "")
+
+	act := d.Last30DaysActivity
+	renderActivityRow := func(label, value string, positive bool) {
+		if pdf.GetY() > 265 {
+			pdf.AddPage()
+		}
+		pdf.SetFont("Helvetica", "B", 9)
+		pdf.SetTextColor(100, 100, 120)
+		pdf.CellFormat(130, 7, label, "0", 0, "L", false, 0, "")
+		if positive {
+			pdf.SetTextColor(34, 197, 94)
+		} else {
+			pdf.SetTextColor(30, 30, 40)
+		}
+		pdf.SetFont("Helvetica", "B", 9)
+		pdf.CellFormat(50, 7, value, "0", 1, "R", false, 0, "")
+	}
+	pdf.SetY(pdf.GetY() + 2)
+	renderActivityRow("Controls als 'Umgesetzt' markiert:", fmt.Sprintf("%d", act.ClosedControls), act.ClosedControls > 0)
+	renderActivityRow("Neue Vorfälle erfasst:", fmt.Sprintf("%d", act.NewIncidents), false)
+	renderActivityRow("Findings als 'Behoben' markiert:", fmt.Sprintf("%d", act.ResolvedFindings), act.ResolvedFindings > 0)
+
+	var buf bytes.Buffer
+	if err := pdf.Output(&buf); err != nil {
+		return nil, fmt.Errorf("executive summary pdf output: %w", err)
+	}
+	return buf.Bytes(), nil
+}

@@ -15,6 +15,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { useAssets, useCreateAsset, useImportAssets } from '../hooks/useAssets'
 import type { Asset } from '../types'
 import type { CreateAssetInput, ImportAssetsResult } from '../hooks/useAssets'
+import { toast } from '../../../shared/hooks/useToast'
+import { Skeleton } from '../../../components/ui/skeleton'
 
 const criticalityVariant: Record<Asset['criticality'], React.ComponentProps<typeof Badge>['variant']> = {
   low: 'secondary',
@@ -78,8 +80,18 @@ export default function AssetsPage() {
     const fd = new FormData()
     fd.append('file', file)
     importAssets.mutate(fd, {
-      onSuccess: (result) => setImportResult(result),
-      onError: (err) => setImportResult({ inserted: 0, errored: 0, errors: [err.message] }),
+      onSuccess: (result) => {
+        setImportResult(result)
+        if (result.errors.length === 0) {
+          toast(`${result.inserted} Assets importiert`, 'success')
+        } else {
+          toast(`${result.inserted} importiert, ${result.errored} Fehler`, 'info')
+        }
+      },
+      onError: (err) => {
+        setImportResult({ inserted: 0, errored: 0, errors: [err.message] })
+        toast(`Fehler: ${err.message}`, 'error')
+      },
     })
     e.target.value = ''
   }
@@ -94,8 +106,11 @@ export default function AssetsPage() {
     try {
       await createAsset.mutateAsync({ ...form, tags })
       setOpen(false)
+      toast('Erfolgreich erstellt', 'success')
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create asset')
+      const msg = err instanceof Error ? err.message : 'Failed to create asset'
+      setFormError(msg)
+      toast(`Fehler: ${msg}`, 'error')
     }
   }
 
@@ -125,8 +140,10 @@ export default function AssetsPage() {
 
       <div className="flex-1 p-6">
         {isLoading && (
-          <div className="flex justify-center py-16">
-            <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
+            ))}
           </div>
         )}
 

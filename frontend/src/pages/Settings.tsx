@@ -18,6 +18,7 @@ import { useAuthStore } from '../shared/stores/auth'
 import { cn } from '../lib/utils'
 import { VAKT_LS_PORTAL_URL } from '../lib/constants'
 import { useOrgSector, useUpdateOrgSector } from '../modules/secvitals/hooks/useOrgSector'
+import { useApprovalSetting, useUpdateApprovalSetting } from '../modules/secvitals/hooks/useApprovals'
 import { SECTOR_LABELS } from '../modules/secvitals/types'
 import { useExportData } from '../hooks/useDataExport'
 import { useAuditReport } from '../modules/secvitals/hooks/useAuditReport'
@@ -360,15 +361,28 @@ function OrgSection() {
   const updateSecurity = useUpdateOrgSecurity()
   const [mfaChecked, setMfaChecked] = useState(false)
 
+  const { data: approvalSetting, isLoading: approvalLoading } = useApprovalSetting()
+  const updateApprovalSetting = useUpdateApprovalSetting()
+  const [approvalChecked, setApprovalChecked] = useState(false)
+
   useEffect(() => {
     if (security) setMfaChecked(security.require_mfa)
   }, [security])
+
+  useEffect(() => {
+    if (approvalSetting) setApprovalChecked(approvalSetting.approval_required)
+  }, [approvalSetting])
 
   const isAdmin = user?.roles?.includes('Admin') ?? false
 
   function handleMfaToggle(value: boolean) {
     setMfaChecked(value)
     updateSecurity.mutate({ require_mfa: value })
+  }
+
+  function handleApprovalToggle(value: boolean) {
+    setApprovalChecked(value)
+    updateApprovalSetting.mutate(value)
   }
 
   return (
@@ -384,35 +398,70 @@ function OrgSection() {
         </div>
 
         {isAdmin && (
-          <div className="pt-2 border-t border-border">
-            {secLoading ? (
-              <div className="flex items-center justify-center h-8">
-                <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : (
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-primary">2-Faktor-Authentifizierung vorschreiben</p>
-                  <p className="text-[11px] text-secondary leading-relaxed">
-                    Alle Mitglieder müssen 2FA aktiviert haben um sich einzuloggen.
-                  </p>
+          <div className="pt-2 border-t border-border space-y-4">
+            {/* MFA toggle */}
+            <div>
+              {secLoading ? (
+                <div className="flex items-center justify-center h-8">
+                  <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
                 </div>
-                <Switch
-                  checked={mfaChecked}
-                  onCheckedChange={handleMfaToggle}
-                  disabled={updateSecurity.isPending}
-                  aria-label="2FA für alle Mitglieder vorschreiben"
-                />
-              </div>
-            )}
-            {updateSecurity.isError && (
-              <p className="text-[11px] text-red-500 mt-1">Fehler beim Speichern. Bitte erneut versuchen.</p>
-            )}
-            {updateSecurity.isSuccess && (
-              <p className="text-[11px] text-green-600 dark:text-green-400 mt-1">
-                {mfaChecked ? '2FA-Pflicht aktiviert.' : '2FA-Pflicht deaktiviert.'}
-              </p>
-            )}
+              ) : (
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-primary">2-Faktor-Authentifizierung vorschreiben</p>
+                    <p className="text-[11px] text-secondary leading-relaxed">
+                      Alle Mitglieder müssen 2FA aktiviert haben um sich einzuloggen.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={mfaChecked}
+                    onCheckedChange={handleMfaToggle}
+                    disabled={updateSecurity.isPending}
+                    aria-label="2FA für alle Mitglieder vorschreiben"
+                  />
+                </div>
+              )}
+              {updateSecurity.isError && (
+                <p className="text-[11px] text-red-500 mt-1">Fehler beim Speichern. Bitte erneut versuchen.</p>
+              )}
+              {updateSecurity.isSuccess && (
+                <p className="text-[11px] text-green-600 dark:text-green-400 mt-1">
+                  {mfaChecked ? '2FA-Pflicht aktiviert.' : '2FA-Pflicht deaktiviert.'}
+                </p>
+              )}
+            </div>
+
+            {/* 4-Augen approval toggle */}
+            <div className="border-t border-border pt-4">
+              {approvalLoading ? (
+                <div className="flex items-center justify-center h-8">
+                  <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-primary">4-Augen-Prinzip für Control-Änderungen</p>
+                    <p className="text-[11px] text-secondary leading-relaxed">
+                      Nicht-Admins müssen Statusänderungen zur Genehmigung einreichen. Admins können Status weiterhin direkt ändern.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={approvalChecked}
+                    onCheckedChange={handleApprovalToggle}
+                    disabled={updateApprovalSetting.isPending}
+                    aria-label="4-Augen-Prinzip für Control-Änderungen"
+                  />
+                </div>
+              )}
+              {updateApprovalSetting.isError && (
+                <p className="text-[11px] text-red-500 mt-1">Fehler beim Speichern. Bitte erneut versuchen.</p>
+              )}
+              {updateApprovalSetting.isSuccess && (
+                <p className="text-[11px] text-green-600 dark:text-green-400 mt-1">
+                  {approvalChecked ? '4-Augen-Prinzip aktiviert.' : '4-Augen-Prinzip deaktiviert.'}
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>

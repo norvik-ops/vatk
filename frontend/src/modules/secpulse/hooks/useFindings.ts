@@ -76,6 +76,17 @@ export function useBulkUpdateFindings() {
   })
 }
 
+export function useDeleteFinding() {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, string>({
+    mutationFn: (id) =>
+      apiFetch<void>(`/secpulse/findings/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['secpulse', 'findings'] })
+    },
+  })
+}
+
 export async function exportFindingsCsv() {
   // Use fetch with Authorization header + blob download to avoid 401 on <a href> navigation
   const blob = await apiFetch<Blob>('/secpulse/findings/export.csv', {

@@ -17,11 +17,12 @@ import (
 type TotpHandler struct {
 	db        *pgxpool.Pool
 	masterKey []byte
+	svc       *Service // used by recovery-code login to issue token pairs
 }
 
 // NewTotpHandler constructs a TotpHandler.
-func NewTotpHandler(db *pgxpool.Pool, masterKey []byte) *TotpHandler {
-	return &TotpHandler{db: db, masterKey: masterKey}
+func NewTotpHandler(db *pgxpool.Pool, masterKey []byte, svc *Service) *TotpHandler {
+	return &TotpHandler{db: db, masterKey: masterKey, svc: svc}
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -227,8 +228,27 @@ func (h *TotpHandler) Confirm(c echo.Context) error {
 		})
 	}
 
+	// Generate recovery codes and persist them in auth_recovery_codes.
+	plainRecovery, hashedRecovery, err := generateRecoveryCodes()
+	if err != nil {
+		log.Error().Err(err).Msg("totp confirm: recovery code generation failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to generate recovery codes",
+			"code":  "TOTP_BACKUP_FAILED",
+		})
+	}
+	if err := h.StoreRecoveryCodes(ctx, userID, hashedRecovery); err != nil {
+		log.Error().Err(err).Msg("totp confirm: store recovery codes failed")
+		// Non-fatal: 2FA is already activated; log and continue without codes.
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"backup_codes":   plainCodes,
+			"recovery_codes": []string{},
+		})
+	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"backup_codes": plainCodes,
+		"backup_codes":   plainCodes,
+		"recovery_codes": plainRecovery,
 	})
 }
 
@@ -403,4 +423,120 @@ func removeIndex(s []string, i int) []string {
 	out = append(out, s[:i]...)
 	out = append(out, s[i+1:]...)
 	return out
+}
+
+// ─── Recovery Code Login ──────────────────────────────────────────────────────
+
+// RecoveryLogin handles POST /auth/2fa/recovery.
+// Accepts {"code": "XXXX-XXXX-XXXX"}, verifies a recovery code, marks it used,
+// and issues a new token pair — the same shape as a regular login response.
+// Requires an authenticated user (e.g. a partial-auth token or existing session).
+func (h *TotpHandler) RecoveryLogin(c echo.Context) error {
+	userID, ok := requireUserID(c)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+
+	var body struct {
+		Code string `json:"code"`
+	}
+	if err := c.Bind(&body); err != nil || body.Code == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "code is required",
+			"code":  "AUTH_BAD_REQUEST",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	if err := h.VerifyRecoveryCode(ctx, userID, body.Code); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, map[string]string{
+			"error": "invalid or already-used recovery code",
+			"code":  "AUTH_INVALID_RECOVERY_CODE",
+		})
+	}
+
+	if h.svc == nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "token issuance not configured",
+			"code":  "AUTH_INTERNAL_ERROR",
+		})
+	}
+
+	// Fetch the user's primary org membership to issue a proper token pair.
+	var orgID, roleName string
+	err := h.db.QueryRow(ctx, `
+		SELECT om.org_id::text, r.name
+		FROM org_members om
+		JOIN roles r ON r.id = om.role_id
+		WHERE om.user_id = $1::uuid
+		ORDER BY om.joined_at ASC
+		LIMIT 1`,
+		userID,
+	).Scan(&orgID, &roleName)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", userID).Msg("recovery login: org lookup failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to fetch user membership",
+			"code":  "AUTH_INTERNAL_ERROR",
+		})
+	}
+
+	resp, err := h.svc.issueTokenPair(ctx, userID, orgID, []string{roleName})
+	if err != nil {
+		log.Error().Err(err).Str("user_id", userID).Msg("recovery login: token issuance failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to issue tokens",
+			"code":  "AUTH_INTERNAL_ERROR",
+		})
+	}
+
+	return c.JSON(http.StatusOK, resp)
+}
+
+// ─── Regenerate Recovery Codes ────────────────────────────────────────────────
+
+// RegenerateRecoveryCodes handles POST /auth/2fa/recovery-codes/regenerate.
+// Requires an authenticated user with 2FA already enabled.
+// Invalidates all existing recovery codes and issues 8 fresh ones.
+func (h *TotpHandler) RegenerateRecoveryCodes(c echo.Context) error {
+	userID, ok := requireUserID(c)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+
+	ctx := c.Request().Context()
+
+	// Verify that 2FA is enabled for this user.
+	var enabled bool
+	err := h.db.QueryRow(ctx,
+		`SELECT enabled FROM totp_secrets WHERE user_id = $1::uuid`, userID,
+	).Scan(&enabled)
+	if err != nil || !enabled {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "2FA is not enabled",
+			"code":  "TOTP_NOT_ENABLED",
+		})
+	}
+
+	plainCodes, hashedCodes, err := generateRecoveryCodes()
+	if err != nil {
+		log.Error().Err(err).Msg("regenerate recovery codes: generation failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to generate recovery codes",
+			"code":  "TOTP_BACKUP_FAILED",
+		})
+	}
+
+	if err := h.StoreRecoveryCodes(ctx, userID, hashedCodes); err != nil {
+		log.Error().Err(err).Msg("regenerate recovery codes: store failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to store recovery codes",
+			"code":  "TOTP_BACKUP_FAILED",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"recovery_codes": plainCodes,
+	})
 }

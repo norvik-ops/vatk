@@ -9,9 +9,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 
 	"aidanwoods.dev/go-paseto"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,6 +21,40 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// ErrWeakPassword is returned when a supplied password does not satisfy the
+// platform complexity requirements.
+var ErrWeakPassword = errors.New("password must be at least 10 characters and contain uppercase, digit, and special character")
+
+// validatePasswordStrength checks that password meets the Vakt minimum
+// complexity policy:
+//   - At least 10 characters
+//   - At least one uppercase letter (A–Z)
+//   - At least one decimal digit (0–9)
+//   - At least one special character (!@#$%^&*()-_=+[]{}|;:'",.<>?/`~\)
+//
+// Returns ErrWeakPassword when any requirement is not satisfied.
+func validatePasswordStrength(password string) error {
+	if len(password) < 10 {
+		return ErrWeakPassword
+	}
+	var hasUpper, hasDigit, hasSpecial bool
+	const special = "!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~\\"
+	for _, r := range password {
+		switch {
+		case unicode.IsUpper(r):
+			hasUpper = true
+		case unicode.IsDigit(r):
+			hasDigit = true
+		case strings.ContainsRune(special, r):
+			hasSpecial = true
+		}
+	}
+	if !hasUpper || !hasDigit || !hasSpecial {
+		return ErrWeakPassword
+	}
+	return nil
+}
 
 // Service handles authentication business logic: registration, login, and token refresh.
 type Service struct {
@@ -30,7 +66,7 @@ type Service struct {
 // RegisterInput holds validated data for the registration endpoint.
 type RegisterInput struct {
 	Email    string `json:"email"         validate:"required,email"`
-	Password string `json:"password"      validate:"required,min=8,max=72"`
+	Password string `json:"password"      validate:"required,min=10,max=72"`
 	Name     string `json:"display_name"`
 }
 
@@ -59,6 +95,11 @@ func NewService(db *pgxpool.Pool, redisClient *redis.Client, key paseto.V4Symmet
 
 // Register creates a new user account and personal organisation, then issues tokens.
 func (s *Service) Register(ctx context.Context, input RegisterInput) (*AuthResponse, error) {
+	// Enforce password complexity before doing any DB work.
+	if err := validatePasswordStrength(input.Password); err != nil {
+		return nil, err
+	}
+
 	// Use cost 12 per OWASP 2025 bcrypt recommendation (DefaultCost is 10).
 	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), 12)
 	if err != nil {

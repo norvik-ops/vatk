@@ -17,6 +17,10 @@ import (
 	"github.com/sechealth-app/sechealth/internal/config"
 )
 
+// weakPasswordCode is the error code returned to clients when a password does
+// not satisfy the platform complexity requirements.
+const weakPasswordCode = "AUTH_WEAK_PASSWORD"
+
 // samlHTTPClient is used for fetching SAML metadata from Casdoor.
 // A 15-second timeout prevents hanging requests to unresponsive IdP endpoints.
 var samlHTTPClient = &http.Client{Timeout: 15 * time.Second}
@@ -78,6 +82,12 @@ func (h *Handler) Register(c echo.Context) error {
 
 	resp, err := h.service.Register(c.Request().Context(), input)
 	if err != nil {
+		if errors.Is(err, ErrWeakPassword) {
+			return c.JSON(http.StatusUnprocessableEntity, map[string]string{
+				"error": err.Error(),
+				"code":  weakPasswordCode,
+			})
+		}
 		log.Error().Err(err).Msg("register failed")
 		return c.JSON(http.StatusConflict, map[string]string{
 			"error": "registration failed",
@@ -91,7 +101,7 @@ func (h *Handler) Register(c echo.Context) error {
 func (h *Handler) Login(c echo.Context) error {
 	var body struct {
 		Email    string `json:"email"    validate:"required,email"`
-		Password string `json:"password" validate:"required,min=8,max=72"`
+		Password string `json:"password" validate:"required,min=10,max=72"`
 	}
 	if err := c.Bind(&body); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -339,7 +349,7 @@ func (h *Handler) RequestPasswordReset(c echo.Context) error {
 func (h *Handler) ResetPassword(c echo.Context) error {
 	var body struct {
 		Token    string `json:"token"    validate:"required"`
-		Password string `json:"password" validate:"required,min=8,max=72"`
+		Password string `json:"password" validate:"required,min=10,max=72"`
 	}
 	if err := c.Bind(&body); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -359,6 +369,12 @@ func (h *Handler) ResetPassword(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, map[string]string{
 				"error": "Link ungültig oder abgelaufen",
 				"code":  "AUTH_RESET_TOKEN_INVALID",
+			})
+		}
+		if errors.Is(err, ErrWeakPassword) {
+			return c.JSON(http.StatusUnprocessableEntity, map[string]string{
+				"error": err.Error(),
+				"code":  weakPasswordCode,
 			})
 		}
 		log.Error().Err(err).Msg("password reset confirm failed")

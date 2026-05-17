@@ -27,6 +27,7 @@ import (
 	"github.com/sechealth-app/sechealth/internal/config"
 	"github.com/sechealth-app/sechealth/internal/license"
 	"github.com/sechealth-app/sechealth/internal/shared/demo"
+	sharedmw "github.com/sechealth-app/sechealth/internal/shared/middleware"
 	"github.com/sechealth-app/sechealth/internal/shared/updatecheck"
 	"github.com/sechealth-app/sechealth/internal/modules/hr"
 	"github.com/sechealth-app/sechealth/internal/modules/secvitals"
@@ -59,6 +60,7 @@ import (
 	lswebhook "github.com/sechealth-app/sechealth/internal/webhooks/lemonsqueezy"
 	"github.com/sechealth-app/sechealth/internal/shared/usermgmt"
 	"github.com/sechealth-app/sechealth/internal/shared/apikeys"
+	"github.com/sechealth-app/sechealth/internal/shared/comments"
 )
 
 // version is injected at build time via -ldflags "-X main.version=..."
@@ -213,6 +215,10 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	// rdb is passed for optional Redis caching (60 s TTL) to avoid 2 DB queries per request.
 	protected.Use(license.DBMiddleware(pool, lic, rdb))
 
+	// Global per-org rate limiting: 300 req/min, keyed by org_id from Paseto claims.
+	// Must be applied after auth middleware has populated org_id in the context.
+	protected.Use(sharedmw.OrgRateLimit())
+
 	// License info — returns current tier and available features; activate endpoint persists key in DB
 	license.RegisterRoutes(api, lic, auth.AuthMiddleware(pasetoKey, pool, rdb), pool, rdb)
 	log.Info().Msg("license routes registered")
@@ -228,7 +234,8 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	adminSvc := admin.NewService(pool, cfg.ModulesEnabled, asynqClient)
 	adminSvc.WithNotifyService(notify.NewService(pool, cfg))
 	adminHealth := admin.NewHealthHandler(pool, rdb, cfg)
-	admin.Register(protected, admin.NewHandler(adminSvc), adminHealth)
+	adminHandler := admin.NewHandler(adminSvc).WithPasetoKey(pasetoKey)
+	admin.Register(protected, adminHandler, adminHealth, pool, rdb)
 	log.Info().Msg("admin routes registered")
 
 	if cfg.Staging {
@@ -374,6 +381,10 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	apikeys.Register(protected, pool)
 	log.Info().Msg("api key routes registered")
 
+	// Shared comments — threaded discussion on findings and controls
+	comments.Register(protected, pool)
+	log.Info().Msg("comments routes registered")
+
 	// Audit log — compliance event history
 	auditlog.RegisterRoutes(protected.Group("/audit-log"), pool)
 	log.Info().Msg("audit log routes registered")
@@ -422,7 +433,7 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	// 2FA/TOTP — local account second factor
 	if cfg.SecretKey != "" {
 		if totpKey, err := hex.DecodeString(cfg.SecretKey); err == nil {
-			auth.RegisterTOTP(api.Group("/auth"), pool, totpKey, auth.AuthMiddleware(pasetoKey, pool))
+			auth.RegisterTOTP(api.Group("/auth"), pool, totpKey, auth.AuthMiddleware(pasetoKey, pool), authSvc)
 			log.Info().Msg("2FA/TOTP routes registered")
 		}
 	}

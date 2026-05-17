@@ -4603,3 +4603,230 @@ func (s *Service) ListPoliciesPaged(ctx context.Context, orgID string, offset, l
 func (s *Service) ListCAPAsPaged(ctx context.Context, orgID, statusFilter string, offset, limit int) ([]CAPA, int, error) {
 	return s.repo.ListCAPAsPaged(ctx, orgID, statusFilter, offset, limit)
 }
+
+// --- Score History ---
+
+// RecordScoreSnapshotForAllOrgs iterates all non-deleted organisations and captures
+// the current compliance score (org-wide + per-framework) into ck_score_history.
+// Called daily by the Asynq scheduler.
+func (s *Service) RecordScoreSnapshotForAllOrgs(ctx context.Context) error {
+	rows, err := s.repo.db.Query(ctx, `SELECT id::text FROM organizations WHERE is_deleted = false`)
+	if err != nil {
+		return fmt.Errorf("score_snapshot: list orgs: %w", err)
+	}
+	defer rows.Close()
+
+	var orgIDs []string
+	for rows.Next() {
+		var id string
+		if scanErr := rows.Scan(&id); scanErr != nil {
+			continue
+		}
+		orgIDs = append(orgIDs, id)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for _, orgID := range orgIDs {
+		if err := s.recordOrgScoreSnapshot(ctx, orgID); err != nil {
+			log.Error().Err(err).Str("org_id", orgID).Msg("score_snapshot: failed for org")
+			// Continue with next org — don't abort the whole run.
+		}
+	}
+	return nil
+}
+
+// recordOrgScoreSnapshot captures one org-wide + per-framework score row.
+func (s *Service) recordOrgScoreSnapshot(ctx context.Context, orgID string) error {
+	frameworks, err := s.repo.ListFrameworks(ctx, orgID)
+	if err != nil {
+		return fmt.Errorf("list frameworks: %w", err)
+	}
+
+	var totalAll, implementedAll int
+
+	for _, fw := range frameworks {
+		controls, err := s.repo.ListControls(ctx, orgID, fw.ID)
+		if err != nil {
+			log.Warn().Err(err).Str("framework_id", fw.ID).Msg("score_snapshot: list controls failed")
+			continue
+		}
+		evidenceCounts, err := s.repo.CountEvidenceByControl(ctx, orgID, fw.ID)
+		if err != nil {
+			log.Warn().Err(err).Str("framework_id", fw.ID).Msg("score_snapshot: count evidence failed")
+			continue
+		}
+
+		report := computeReadinessReport(&fw, controls, evidenceCounts)
+		totalAll += report.TotalControls
+		implementedAll += report.Covered
+
+		// Per-framework snapshot.
+		fwID := fw.ID
+		if insertErr := s.repo.InsertScoreSnapshot(ctx, orgID, &fwID, report.ReadinessScore, report.TotalControls, report.Covered); insertErr != nil {
+			log.Warn().Err(insertErr).Str("framework_id", fw.ID).Msg("score_snapshot: insert per-framework failed")
+		}
+	}
+
+	// Org-wide snapshot (framework_id = NULL).
+	var orgScore float64
+	if totalAll > 0 {
+		orgScore = float64(implementedAll) / float64(totalAll) * 100
+	}
+	if insertErr := s.repo.InsertScoreSnapshot(ctx, orgID, nil, orgScore, totalAll, implementedAll); insertErr != nil {
+		return fmt.Errorf("insert org-wide snapshot: %w", insertErr)
+	}
+	return nil
+}
+
+// GetScoreHistory returns daily score history for an organisation (org-wide snapshots).
+func (s *Service) GetScoreHistory(ctx context.Context, orgID string, days int) ([]ScoreHistoryEntry, error) {
+	if days <= 0 || days > 365 {
+		days = 30
+	}
+	return s.repo.GetScoreHistory(ctx, orgID, days)
+}
+
+// ExecutiveSummaryData holds all data gathered for the Executive Summary PDF.
+type ExecutiveSummaryData struct {
+	OrgName      string
+	GeneratedAt  time.Time
+	// Section 1 — Overall compliance score
+	OverallScore float64 // 0–100, weighted average across all frameworks
+	// Section 2 — Framework overview
+	Frameworks []ExecutiveFrameworkRow
+	// Section 3 — Top 5 open risks (by score)
+	TopRisks []ExecutiveRiskRow
+	// Section 4 — Last 30 days activity
+	Last30DaysActivity ExecutiveActivity
+}
+
+// ExecutiveFrameworkRow is one row in the framework table.
+type ExecutiveFrameworkRow struct {
+	Name        string
+	Score       float64
+	Implemented int
+	Total       int
+}
+
+// ExecutiveRiskRow is one of the top-5 open risks.
+type ExecutiveRiskRow struct {
+	Title    string
+	Score    int
+	Severity string // "critical" | "high" | "medium" | "low"
+}
+
+// ExecutiveActivity holds counts of key activities in the last 30 days.
+type ExecutiveActivity struct {
+	ClosedControls   int
+	NewIncidents     int
+	ResolvedFindings int
+}
+
+// GetExecutiveSummaryData collects data required for the Executive Summary PDF.
+func (s *Service) GetExecutiveSummaryData(ctx context.Context, orgID string) (*ExecutiveSummaryData, error) {
+	d := &ExecutiveSummaryData{GeneratedAt: time.Now().UTC()}
+
+	// Org name (soft-fail)
+	_ = s.db.QueryRow(ctx, `SELECT name FROM organizations WHERE id=$1::uuid`, orgID).Scan(&d.OrgName)
+	if d.OrgName == "" {
+		d.OrgName = orgID
+	}
+
+	// Framework scores
+	rows, err := s.db.Query(ctx, `
+		SELECT f.name,
+		       COUNT(c.id)::int                                                    AS total,
+		       COUNT(c.id) FILTER (WHERE c.manual_status = 'implemented')::int     AS implemented
+		FROM ck_frameworks f
+		LEFT JOIN ck_controls c ON c.framework_id = f.id AND c.org_id = f.org_id
+		WHERE f.org_id = $1::uuid
+		GROUP BY f.name
+		ORDER BY f.name
+	`, orgID)
+	if err != nil {
+		log.Warn().Err(err).Msg("executive summary: frameworks query")
+	} else {
+		defer rows.Close()
+		var totalWeight, weightedSum float64
+		for rows.Next() {
+			var r ExecutiveFrameworkRow
+			if err := rows.Scan(&r.Name, &r.Total, &r.Implemented); err != nil {
+				continue
+			}
+			if r.Total > 0 {
+				r.Score = float64(r.Implemented) / float64(r.Total) * 100
+			}
+			d.Frameworks = append(d.Frameworks, r)
+			weightedSum += r.Score * float64(r.Total)
+			totalWeight += float64(r.Total)
+		}
+		_ = rows.Err()
+		if totalWeight > 0 {
+			d.OverallScore = weightedSum / totalWeight
+		}
+	}
+
+	// Top 5 risks by score (likelihood * impact)
+	riskRows, err := s.db.Query(ctx, `
+		SELECT title,
+		       (likelihood * impact)::int AS score,
+		       CASE
+		           WHEN (likelihood * impact) >= 15 THEN 'critical'
+		           WHEN (likelihood * impact) >= 9  THEN 'high'
+		           WHEN (likelihood * impact) >= 4  THEN 'medium'
+		           ELSE 'low'
+		       END AS severity
+		FROM ck_risks
+		WHERE org_id = $1::uuid AND status = 'open'
+		ORDER BY score DESC, updated_at DESC
+		LIMIT 5
+	`, orgID)
+	if err != nil {
+		log.Warn().Err(err).Msg("executive summary: risks query")
+	} else {
+		defer riskRows.Close()
+		for riskRows.Next() {
+			var r ExecutiveRiskRow
+			if err := riskRows.Scan(&r.Title, &r.Score, &r.Severity); err != nil {
+				continue
+			}
+			d.TopRisks = append(d.TopRisks, r)
+		}
+		_ = riskRows.Err()
+	}
+
+	// Last 30 days activity
+	since := time.Now().UTC().Add(-30 * 24 * time.Hour)
+	_ = s.db.QueryRow(ctx, `
+		SELECT COUNT(*)::int FROM ck_controls
+		WHERE org_id=$1::uuid AND manual_status='implemented' AND updated_at >= $2
+	`, orgID, since).Scan(&d.Last30DaysActivity.ClosedControls)
+
+	_ = s.db.QueryRow(ctx, `
+		SELECT COUNT(*)::int FROM ck_incidents
+		WHERE org_id=$1::uuid AND created_at >= $2
+	`, orgID, since).Scan(&d.Last30DaysActivity.NewIncidents)
+
+	_ = s.db.QueryRow(ctx, `
+		SELECT COUNT(*)::int FROM vb_findings
+		WHERE org_id=$1::uuid AND status='resolved' AND updated_at >= $2
+	`, orgID, since).Scan(&d.Last30DaysActivity.ResolvedFindings)
+
+	return d, nil
+}
+
+// ExportExecutiveSummaryPDF generates the Executive Summary PDF bytes.
+func (s *Service) ExportExecutiveSummaryPDF(ctx context.Context, orgID string) ([]byte, string, error) {
+	data, err := s.GetExecutiveSummaryData(ctx, orgID)
+	if err != nil {
+		return nil, "", fmt.Errorf("gather executive summary data: %w", err)
+	}
+	pdfBytes, err := GenerateExecutiveSummaryPDF(data)
+	if err != nil {
+		return nil, "", fmt.Errorf("generate executive summary pdf: %w", err)
+	}
+	filename := fmt.Sprintf("executive-summary-%s.pdf", data.GeneratedAt.Format("2006-01-02"))
+	return pdfBytes, filename, nil
+}

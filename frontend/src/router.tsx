@@ -31,6 +31,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ApiKeysPage from './pages/ApiKeysPage'
 import AdminHealthPage from './pages/AdminHealthPage'
+import AdminTenantsPage from './pages/AdminTenantsPage'
+import AdminSecurityPage from './pages/AdminSecurityPage'
 
 // Lazy module pages — filled in by module agents
 import { lazy, Suspense } from 'react'
@@ -181,6 +183,8 @@ export const router = createBrowserRouter([
           { path: '/settings/audit-log', element: <AuditLogPage /> },
           { path: '/settings/api-keys', element: <ApiKeysPage /> },
           { path: '/admin/health', element: <AdminHealthPage /> },
+          { path: '/admin/tenants', element: <AdminTenantsPage /> },
+          { path: '/admin/security', element: <AdminSecurityPage /> },
           {
             path: '/secpulse/*',
             element: <ModuleShell moduleKey="secpulse"><SecPulse /></ModuleShell>,

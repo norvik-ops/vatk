@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   MinusCircle,
   FileDown,
+  RefreshCw,
 } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
@@ -33,7 +34,9 @@ import {
 } from '../../../components/ui/table'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { BulkActionBar } from '../../../shared/components/BulkActionBar'
 import { cn } from '../../../lib/utils'
+import { exportToCSV } from '../../../lib/csv'
 import type { AuditorLink, Control } from '../types'
 import {
   useFramework,
@@ -44,6 +47,8 @@ import {
 } from '../hooks/useFrameworks'
 import { useAuditorLinks, useRevokeAuditorLink, useCreateAuditorLink } from '../hooks/useAuditorLinks'
 import { useUpdateControl } from '../hooks/useControls'
+import { toast } from '../../../shared/hooks/useToast'
+import { Skeleton } from '../../../components/ui/skeleton'
 
 // ── DORA → ISO 27001 mapping info block ──────────────────────────────────────
 
@@ -387,28 +392,46 @@ const ControlRow = React.memo(function ControlRow({
   depth,
   updateControl,
   onMarkNA,
+  selected,
+  onToggleSelect,
 }: {
   ctrl: Control
   frameworkId: string
   depth: number
   updateControl: ReturnType<typeof useUpdateControl>
   onMarkNA: (ctrl: Control) => void
+  selected: boolean
+  onToggleSelect: (id: string) => void
 }) {
   const navigate = useNavigate()
   const status = effectiveStatus(ctrl)
 
   function handleChange(v: string) {
     if (v === 'not_applicable') { onMarkNA(ctrl); return }
-    updateControl.mutate({
-      controlId: ctrl.id,
-      not_applicable: false,
-      reason: '',
-      manual_status: v === 'missing' ? '' : v as '' | 'in_progress' | 'implemented',
-    })
+    updateControl.mutate(
+      {
+        controlId: ctrl.id,
+        not_applicable: false,
+        reason: '',
+        manual_status: v === 'missing' ? '' : v as '' | 'in_progress' | 'implemented',
+      },
+      {
+        onSuccess: () => toast('Gespeichert', 'success'),
+        onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      },
+    )
   }
 
   return (
-    <TableRow className={cn(ctrl.not_applicable && 'opacity-50')}>
+    <TableRow className={cn(ctrl.not_applicable && 'opacity-50', selected && 'bg-brand/5')}>
+      <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={() => onToggleSelect(ctrl.id)}
+          className="rounded"
+        />
+      </TableCell>
       <TableCell
         className="font-mono text-xs cursor-pointer"
         onClick={() => navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`)}
@@ -456,16 +479,25 @@ function DomainSection({
   frameworkId,
   updateControl,
   onMarkNA,
+  selected,
+  onToggleSelect,
+  onToggleDomain,
 }: {
   domain: string
   domainControls: Control[]
   frameworkId: string
   updateControl: ReturnType<typeof useUpdateControl>
   onMarkNA: (ctrl: Control) => void
+  selected: Set<string>
+  onToggleSelect: (id: string) => void
+  onToggleDomain: (ids: string[], checked: boolean) => void
 }) {
   const [open, setOpen] = useState(true)
 
   const rootControls = domainControls.filter((c) => !hasParent(c, domainControls))
+  const allIds = domainControls.map((c) => c.id)
+  const allSelected = allIds.length > 0 && allIds.every((id) => selected.has(id))
+  const someSelected = allIds.some((id) => selected.has(id))
   const doneCount = domainControls.filter(
     (c) => c.status === 'covered' || c.status === 'implemented',
   ).length
@@ -491,6 +523,18 @@ function DomainSection({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someSelected && !allSelected
+                  }}
+                  onChange={(e) => onToggleDomain(allIds, e.target.checked)}
+                  className="rounded"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </TableHead>
               <TableHead className="w-32">ID</TableHead>
               <TableHead>Maßnahme</TableHead>
               <TableHead className="w-48">Status</TableHead>
@@ -508,6 +552,8 @@ function DomainSection({
                     depth={0}
                     updateControl={updateControl}
                     onMarkNA={onMarkNA}
+                    selected={selected.has(ctrl.id)}
+                    onToggleSelect={onToggleSelect}
                   />
                   {children.map((child) => (
                     <ControlRow
@@ -517,6 +563,8 @@ function DomainSection({
                       depth={1}
                       updateControl={updateControl}
                       onMarkNA={onMarkNA}
+                      selected={selected.has(child.id)}
+                      onToggleSelect={onToggleSelect}
                     />
                   ))}
                 </React.Fragment>
@@ -529,6 +577,8 @@ function DomainSection({
   )
 }
 
+type ControlStatusChoice = 'missing' | 'in_progress' | 'implemented' | 'not_applicable'
+
 function ControlsTab({
   frameworkId,
   controls,
@@ -540,11 +590,90 @@ function ControlsTab({
 }) {
   const updateControl = useUpdateControl(frameworkId)
   const [naDialog, setNaDialog] = useState<Control | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<ControlStatusChoice>('implemented')
+  const [isApplying, setIsApplying] = useState(false)
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleDomain(ids: string[], checked: boolean) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      for (const id of ids) {
+        if (checked) next.add(id)
+        else next.delete(id)
+      }
+      return next
+    })
+  }
+
+  async function handleBulkStatusApply() {
+    if (!controls) return
+    setIsApplying(true)
+    const selectedControls = controls.filter((c) => selected.has(c.id))
+    const manualStatus =
+      pendingStatus === 'missing' ? '' :
+      pendingStatus === 'not_applicable' ? '' :
+      pendingStatus as '' | 'in_progress' | 'implemented'
+
+    try {
+      await Promise.allSettled(
+        selectedControls.map((c) =>
+          new Promise<void>((resolve, reject) => {
+            updateControl.mutate(
+              {
+                controlId: c.id,
+                not_applicable: pendingStatus === 'not_applicable',
+                reason: '',
+                manual_status: manualStatus,
+              },
+              { onSuccess: () => resolve(), onError: (e) => reject(e) },
+            )
+          }),
+        ),
+      )
+      setSelected(new Set())
+      setStatusDialogOpen(false)
+      toast('Status aktualisiert', 'success')
+    } catch {
+      toast('Status teilweise fehlgeschlagen', 'error')
+    } finally {
+      setIsApplying(false)
+    }
+  }
+
+  function handleExportSelected() {
+    if (!controls) return
+    const rows = controls
+      .filter((c) => selected.has(c.id))
+      .map((c) => ({
+        id: c.id,
+        control_id: c.control_id,
+        title: c.title,
+        domain: c.domain,
+        status: c.status,
+        evidence_count: c.evidence_count ?? 0,
+        iso27001_mapping: c.iso27001_mapping ?? '',
+        not_applicable: c.not_applicable ? 'ja' : 'nein',
+        not_applicable_reason: c.not_applicable_reason ?? '',
+      }))
+    exportToCSV('controls-export', rows)
+  }
 
   if (controlsLoading) {
     return (
-      <div className="flex items-center justify-center h-32">
-        <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+      <div className="space-y-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full rounded-lg" />
+        ))}
       </div>
     )
   }
@@ -573,57 +702,110 @@ function ControlsTab({
   const open = controls.filter((c) => c.status === 'missing').length
 
   return (
-    <div className="space-y-5">
-      {/* Progress summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Umgesetzt', value: covered, color: 'text-green-600' },
-          { label: 'In Bearbeitung', value: partial, color: 'text-yellow-600' },
-          { label: 'Offen', value: open, color: 'text-red-500' },
-          { label: 'Nicht anwendbar', value: notApplicable, color: 'text-secondary' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="flex flex-col items-center py-3 px-4 bg-surface border border-border rounded-lg">
-            <span className={cn('text-2xl font-bold', color)}>{value}</span>
-            <span className="text-xs text-secondary mt-0.5">{label}</span>
+    <>
+      {/* Bulk status dialog */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Status setzen</DialogTitle>
+          </DialogHeader>
+          <div className="py-3 space-y-3">
+            <p className="text-sm text-secondary">
+              Neuen Status für {selected.size} ausgewählte{selected.size === 1 ? 's Control' : ' Controls'} setzen:
+            </p>
+            <Select value={pendingStatus} onValueChange={(v) => setPendingStatus(v as ControlStatusChoice)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="missing">Offen</SelectItem>
+                <SelectItem value="in_progress">In Bearbeitung</SelectItem>
+                <SelectItem value="implemented">Umgesetzt</SelectItem>
+                <SelectItem value="not_applicable">Nicht anwendbar</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        ))}
-      </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Abbrechen</Button>
+            <Button onClick={() => { void handleBulkStatusApply() }} disabled={isApplying}>
+              {isApplying ? 'Wird gespeichert…' : 'Anwenden'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Progress bar */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-xs text-secondary">
-          <span>{covered} von {total} Controls umgesetzt</span>
-          <span>{Math.round((covered / total) * 100)}%</span>
+      <div className="space-y-5">
+        {/* Progress summary */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Umgesetzt', value: covered, color: 'text-green-600' },
+            { label: 'In Bearbeitung', value: partial, color: 'text-yellow-600' },
+            { label: 'Offen', value: open, color: 'text-red-500' },
+            { label: 'Nicht anwendbar', value: notApplicable, color: 'text-secondary' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="flex flex-col items-center py-3 px-4 bg-surface border border-border rounded-lg">
+              <span className={cn('text-2xl font-bold', color)}>{value}</span>
+              <span className="text-xs text-secondary mt-0.5">{label}</span>
+            </div>
+          ))}
         </div>
-        <div className="h-2 bg-surface2 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-green-500 rounded-full transition-all"
-            style={{ width: `${(covered / total) * 100}%` }}
+
+        {/* Progress bar */}
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-secondary">
+            <span>{covered} von {total} Controls umgesetzt</span>
+            <span>{Math.round((covered / total) * 100)}%</span>
+          </div>
+          <div className="h-2 bg-surface2 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-green-500 rounded-full transition-all"
+              style={{ width: `${(covered / total) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Controls grouped by domain — collapsible */}
+        {Array.from(byDomain.entries()).map(([domain, domainControls]) => (
+          <DomainSection
+            key={domain}
+            domain={domain}
+            domainControls={domainControls}
+            frameworkId={frameworkId}
+            updateControl={updateControl}
+            onMarkNA={setNaDialog}
+            selected={selected}
+            onToggleSelect={toggleSelect}
+            onToggleDomain={toggleDomain}
           />
-        </div>
+        ))}
+
+        {naDialog && (
+          <NotApplicableDialog
+            control={naDialog}
+            frameworkId={frameworkId}
+            open
+            onClose={() => setNaDialog(null)}
+          />
+        )}
       </div>
 
-      {/* Controls grouped by domain — collapsible */}
-      {Array.from(byDomain.entries()).map(([domain, domainControls]) => (
-        <DomainSection
-          key={domain}
-          domain={domain}
-          domainControls={domainControls}
-          frameworkId={frameworkId}
-          updateControl={updateControl}
-          onMarkNA={setNaDialog}
-        />
-      ))}
-
-      {naDialog && (
-        <NotApplicableDialog
-          control={naDialog}
-          frameworkId={frameworkId}
-          open
-          onClose={() => setNaDialog(null)}
-        />
-      )}
-    </div>
+      <BulkActionBar
+        selectedCount={selected.size}
+        onClearSelection={() => setSelected(new Set())}
+        actions={[
+          {
+            label: 'Status setzen',
+            icon: RefreshCw,
+            onClick: () => setStatusDialogOpen(true),
+          },
+          {
+            label: 'Exportieren',
+            icon: FileDown,
+            onClick: handleExportSelected,
+          },
+        ]}
+      />
+    </>
   )
 }
 

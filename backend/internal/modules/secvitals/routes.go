@@ -240,6 +240,10 @@ func registerRoutes(g *echo.Group, h *Handler) {
 	g.GET("/dora/dashboard", h.GetDORADashboard, license.Require(license.FeatureDORA))
 	g.GET("/dora/report-pdf", h.GetDORAPDF, license.Require(license.FeatureDORA))
 
+	// Executive Summary PDF — cross-framework compliance overview
+	// CRITICAL: /reports/executive-summary is a static path; registered before any dynamic /reports/:id routes.
+	g.GET("/reports/executive-summary", h.GetExecutiveSummaryPDF, license.Require(license.FeatureAuditPDF))
+
 	// CCM (Continuous Control Monitoring)
 	g.GET("/ccm/checks", h.ListCCMChecks)
 	g.POST("/ccm/checks", h.CreateCCMCheck)
@@ -276,6 +280,17 @@ func registerRoutes(g *echo.Group, h *Handler) {
 	g.DELETE("/collab-tasks/:tid", h.DeleteCollabTask)
 	g.DELETE("/comments/:cid", h.DeleteCollabComment)
 
+	// Audit Milestones / Certification Timeline (Migration 092)
+	// CRITICAL: /milestones/next must be registered BEFORE /milestones/:id to avoid route conflict.
+	g.GET("/milestones/next", h.GetNextMilestone)
+	g.GET("/milestones", h.ListMilestones)
+	g.POST("/milestones", h.CreateMilestone)
+	g.PUT("/milestones/:id", h.UpdateMilestone)
+	g.DELETE("/milestones/:id", h.DeleteMilestone)
+
+	// Score history — daily compliance trend data (Migration 093)
+	g.GET("/score-history", h.GetScoreHistory)
+
 	// CAPA (Corrective and Preventive Actions)
 	g.GET("/capas", h.ListCAPAs)
 	g.POST("/capas", h.CreateCAPA)
@@ -288,6 +303,19 @@ func registerRoutes(g *echo.Group, h *Handler) {
 	g.POST("/audits/:id/capas", h.CreateCAPAFromAudit)
 	g.GET("/incidents/:id/capas", h.ListCAPAsForIncident)
 	g.POST("/incidents/:id/capas", h.CreateCAPAFromIncident)
+
+	// 4-Augen-Prinzip — Control status change approvals (Migration 092)
+	// CRITICAL: static paths must be registered BEFORE param routes.
+	// /approvals/count must come before /approvals/:id/approve and /approvals/:id/reject.
+	g.POST("/controls/:id/approval-request", h.RequestControlApproval)
+	g.GET("/approvals", h.ListPendingApprovals)
+	g.GET("/approvals/count", h.CountPendingApprovals)
+	g.POST("/approvals/:id/approve", h.ApproveApproval)
+	g.POST("/approvals/:id/reject", h.RejectApproval)
+
+	// Org approval setting (admin-only toggle)
+	g.GET("/org/approval-setting", h.GetApprovalSetting)
+	g.PUT("/org/approval-setting", h.UpdateApprovalSetting)
 }
 
 // RegisterAuditor registers read-only routes for external auditors.
