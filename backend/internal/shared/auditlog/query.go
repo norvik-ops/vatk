@@ -3,6 +3,8 @@ package auditlog
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,27 +25,84 @@ type LogEntry struct {
 	CreatedAt    time.Time         `json:"created_at"`
 }
 
-// List returns the last limit entries for the given organisation, ordered by
-// created_at descending.  limit is capped at 500 to prevent runaway queries.
-func List(ctx context.Context, db *pgxpool.Pool, orgID string, limit int) ([]LogEntry, error) {
-	if limit <= 0 {
-		limit = 50
+// ListFilters holds the optional filter parameters for List.
+type ListFilters struct {
+	From      *time.Time // created_at >= From
+	To        *time.Time // created_at <= To
+	UserEmail string     // ILIKE match on user_email
+	Action    string     // exact match on action
+	Limit     int        // default 100, max 500
+	Offset    int        // for server-side pagination
+}
+
+// ListResult wraps the entries and total count for the current filter set.
+type ListResult struct {
+	Entries []LogEntry `json:"entries"`
+	Total   int        `json:"total"`
+}
+
+// List returns audit log entries for the given organisation, honouring the
+// supplied filters.  limit is capped at 500 to prevent runaway queries.
+func List(ctx context.Context, db *pgxpool.Pool, orgID string, filters ListFilters) (ListResult, error) {
+	if filters.Limit <= 0 {
+		filters.Limit = 100
 	}
-	if limit > 500 {
-		limit = 500
+	if filters.Limit > 500 {
+		filters.Limit = 500
 	}
 
-	rows, err := db.Query(ctx, `
+	// Build WHERE clause dynamically.
+	args := []any{orgID} // $1 = org_id
+	argIdx := 2
+
+	var conditions []string
+	conditions = append(conditions, "org_id = $1::uuid")
+
+	if filters.From != nil {
+		conditions = append(conditions, fmt.Sprintf("created_at >= $%d", argIdx))
+		args = append(args, *filters.From)
+		argIdx++
+	}
+	if filters.To != nil {
+		conditions = append(conditions, fmt.Sprintf("created_at <= $%d", argIdx))
+		args = append(args, *filters.To)
+		argIdx++
+	}
+	if filters.UserEmail != "" {
+		conditions = append(conditions, fmt.Sprintf("user_email ILIKE $%d", argIdx))
+		args = append(args, "%"+filters.UserEmail+"%")
+		argIdx++
+	}
+	if filters.Action != "" {
+		conditions = append(conditions, fmt.Sprintf("action = $%d", argIdx))
+		args = append(args, filters.Action)
+		argIdx++
+	}
+
+	where := strings.Join(conditions, " AND ")
+
+	// Count query (same WHERE, no LIMIT/OFFSET).
+	countSQL := "SELECT COUNT(*) FROM audit_log WHERE " + where
+	var total int
+	if err := db.QueryRow(ctx, countSQL, args...).Scan(&total); err != nil {
+		return ListResult{}, err
+	}
+
+	// Data query.
+	dataArgs := append(args, filters.Limit, filters.Offset) //nolint:gocritic // intentional append to copy
+	dataSQL := fmt.Sprintf(`
 		SELECT id, org_id, user_id, user_email, action, resource_type,
 		       resource_id, resource_name, details, ip_address, created_at
 		FROM audit_log
-		WHERE org_id = $1::uuid
+		WHERE %s
 		ORDER BY created_at DESC
-		LIMIT $2`,
-		orgID, limit,
+		LIMIT $%d OFFSET $%d`,
+		where, argIdx, argIdx+1,
 	)
+
+	rows, err := db.Query(ctx, dataSQL, dataArgs...)
 	if err != nil {
-		return nil, err
+		return ListResult{}, err
 	}
 	defer rows.Close()
 
@@ -61,7 +120,7 @@ func List(ctx context.Context, db *pgxpool.Pool, orgID string, limit int) ([]Log
 			&e.ResourceType, &resourceID, &resourceName,
 			&rawDetails, &ipAddress, &e.CreatedAt,
 		); err != nil {
-			return nil, err
+			return ListResult{}, err
 		}
 
 		if userEmail != nil {
@@ -84,8 +143,12 @@ func List(ctx context.Context, db *pgxpool.Pool, orgID string, limit int) ([]Log
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return ListResult{}, err
 	}
 
-	return entries, nil
+	if entries == nil {
+		entries = []LogEntry{}
+	}
+
+	return ListResult{Entries: entries, Total: total}, nil
 }

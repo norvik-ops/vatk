@@ -1,0 +1,1 @@
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS require_mfa BOOLEAN NOT NULL DEFAULT false;

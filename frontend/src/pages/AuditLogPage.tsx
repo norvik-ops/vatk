@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { ShieldAlert, Download, RefreshCw } from 'lucide-react'
 import { PageHeader } from '../shared/components/PageHeader'
 import { Button } from '../components/ui/button'
@@ -21,9 +21,18 @@ import { useAuditLog, type AuditLogEntry } from '../hooks/useAuditLog'
 
 const ACTIONS = ['create', 'update', 'delete', 'approve', 'export'] as const
 const PAGE_SIZE = 25
-const MAX_FETCH = 500
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Convert a local date string (YYYY-MM-DD) to RFC3339 at start-of-day UTC. */
+function dateToRFC3339Start(date: string): string {
+  return `${date}T00:00:00Z`
+}
+
+/** Convert a local date string (YYYY-MM-DD) to RFC3339 at end-of-day UTC. */
+function dateToRFC3339End(date: string): string {
+  return `${date}T23:59:59Z`
+}
 
 function formatTimestamp(iso: string): string {
   return new Date(iso).toLocaleString('de-DE', {
@@ -117,40 +126,35 @@ export default function AuditLogPage() {
   const { user } = useAuthStore()
   const isAdminOrOwner = user?.roles?.includes('admin') || user?.roles?.includes('owner')
 
+  // Filter state (committed to API on button click or select change)
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [userFilter, setUserFilter] = useState('')
   const [actionFilter, setActionFilter] = useState<string>('all')
   const [page, setPage] = useState(0)
 
-  const { data, isLoading, isError, refetch, isFetching } = useAuditLog({ limit: MAX_FETCH })
+  const offset = page * PAGE_SIZE
 
-  // Client-side filtering (backend only supports limit for now)
-  const filtered = useMemo(() => {
-    if (!data) return []
-    return data.filter((e) => {
-      if (actionFilter !== 'all' && e.action !== actionFilter) return false
-      if (userFilter.trim()) {
-        const needle = userFilter.trim().toLowerCase()
-        const haystack = (e.user_email ?? e.user_id ?? '').toLowerCase()
-        if (!haystack.includes(needle)) return false
-      }
-      if (fromDate) {
-        if (new Date(e.created_at) < new Date(fromDate)) return false
-      }
-      if (toDate) {
-        // include full "to" day
-        const end = new Date(toDate)
-        end.setDate(end.getDate() + 1)
-        if (new Date(e.created_at) >= end) return false
-      }
-      return true
-    })
-  }, [data, actionFilter, userFilter, fromDate, toDate])
+  const { data, isLoading, isError, refetch, isFetching } = useAuditLog({
+    limit:     PAGE_SIZE,
+    offset,
+    from:      fromDate ? dateToRFC3339Start(fromDate) : undefined,
+    to:        toDate   ? dateToRFC3339End(toDate)     : undefined,
+    userEmail: userFilter.trim() || undefined,
+    action:    actionFilter !== 'all' ? actionFilter : undefined,
+  })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const safePageIndex = Math.min(page, totalPages - 1)
-  const pageEntries = filtered.slice(safePageIndex * PAGE_SIZE, (safePageIndex + 1) * PAGE_SIZE)
+  const entries = data?.entries ?? []
+  const total   = data?.total   ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  function resetFilters() {
+    setFromDate('')
+    setToDate('')
+    setUserFilter('')
+    setActionFilter('all')
+    setPage(0)
+  }
 
   function handleFilterChange() {
     setPage(0)
@@ -194,8 +198,8 @@ export default function AuditLogPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { if (filtered.length > 0) exportCsv(filtered) }}
-              disabled={filtered.length === 0}
+              onClick={() => { if (entries.length > 0) exportCsv(entries) }}
+              disabled={entries.length === 0}
               className="h-8 text-xs"
             >
               <Download className="w-3.5 h-3.5 mr-1.5" />
@@ -258,13 +262,7 @@ export default function AuditLogPage() {
               variant="ghost"
               size="sm"
               className="h-8 text-xs self-end"
-              onClick={() => {
-                setFromDate('')
-                setToDate('')
-                setUserFilter('')
-                setActionFilter('all')
-                setPage(0)
-              }}
+              onClick={resetFilters}
             >
               Filter zurücksetzen
             </Button>
@@ -293,14 +291,14 @@ export default function AuditLogPage() {
                 <TableBody>
                   {isLoading ? (
                     <SkeletonRows />
-                  ) : pageEntries.length === 0 ? (
+                  ) : entries.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-sm text-secondary py-12">
                         Keine Ereignisse gefunden
                       </TableCell>
                     </TableRow>
                   ) : (
-                    pageEntries.map((entry) => (
+                    entries.map((entry) => (
                       <TableRow key={entry.id} className="hover:bg-surface/50">
                         <TableCell className="text-[12px] text-secondary whitespace-nowrap font-mono">
                           {formatTimestamp(entry.created_at)}
@@ -327,35 +325,35 @@ export default function AuditLogPage() {
             </div>
 
             {/* Pagination */}
-            {!isLoading && filtered.length > PAGE_SIZE && (
+            {!isLoading && total > 0 && (
               <div className="flex items-center justify-between mt-3">
                 <p className="text-[11px] text-secondary">
-                  {filtered.length} Ereignisse gesamt · Seite {safePageIndex + 1} von {totalPages}
+                  {total} Ereignis{total !== 1 ? 'se' : ''} gesamt
+                  {totalPages > 1 && ` · Seite ${page + 1} von ${totalPages}`}
                 </p>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-2"
-                    disabled={safePageIndex === 0}
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  >
-                    Zurück
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-2"
-                    disabled={safePageIndex >= totalPages - 1}
-                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                  >
-                    Weiter
-                  </Button>
-                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs px-2"
+                      disabled={page === 0}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    >
+                      Zurück
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs px-2"
+                      disabled={page >= totalPages - 1}
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    >
+                      Weiter
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
-            {!isLoading && filtered.length > 0 && filtered.length <= PAGE_SIZE && (
-              <p className="text-[11px] text-secondary mt-3">{filtered.length} Ereignis{filtered.length !== 1 ? 'se' : ''} gesamt</p>
             )}
           </>
         )}

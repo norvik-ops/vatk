@@ -282,6 +282,14 @@ VAKT_LDAP_TLS=false
 
 ---
 
+## Integrationen (Roadmap)
+
+Folgende Integrationen sind geplant und noch nicht im aktuellen Release enthalten:
+
+- **Jira** — Direkte Erstellung von Jira-Tickets aus Findings (Vakt Scan) und offenen Controls (Vakt Comply). Bis zur nativen Integration können Ergebnisse per CSV-Export oder via Webhook (Slack, Teams, generischer Webhook) weitergeleitet werden.
+
+---
+
 ## Hinweise
 
 ### AUTO_MIGRATE nur kontrolliert einsetzen

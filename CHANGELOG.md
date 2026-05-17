@@ -7,6 +7,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Geplant
+- **Jira-Integration** — Findings und offene Controls direkt als Jira-Tickets erstellen (in Planung)
+
+---
+
+## [v0.4.4] — 2026-05-17
+
+### Security
+- Security-Header im Backend: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security` (1 Jahr)
+- Access Token TTL von 8 Stunden auf 1 Stunde reduziert
+- `VAKT_SECRET_KEY` Länge wird beim Start validiert (exakt 32 Bytes / 64 Hex-Zeichen)
+- MIME/Extension-Allowlist im Evidence-Upload-Handler
+
+### Added
+- **Passwort zurücksetzen** — "Passwort vergessen?"-Link auf der Login-Seite, E-Mail mit Reset-Link (1h gültig)
+- **Audit-Log UI** — Admin-Seite mit Datum-, Benutzer- und Aktionsfilter, server-seitige Paginierung, CSV-Export
+- **Granulare Modul-Berechtigungen** (Pro) — Lese-/Schreibrechte pro Modul pro Benutzer
+- **Org-weites MFA-Enforcement** — Admins können 2FA für alle Mitglieder vorschreiben
+- **API-Key-Verwaltung** (Pro) — Persönliche API-Keys (`vakt_...`) für programmatischen Zugriff
+- **SSO-Login-Button** — erscheint auf der Login-Seite wenn `CASDOOR_URL` konfiguriert ist
+- **Update-Status in Einstellungen** — zeigt installierte und aktuelle Version mit Link zu Release Notes
+- **"Was ist neu"-Modal** — erscheint einmalig pro Version nach dem Login
+- **Compliance-Fortschrittsbalken** — Dashboard-Widget zeigt umgesetzte vs. offene Controls
+- **Wöchentlicher Sicherheits-Digest** — opt-in E-Mail-Zusammenfassung jeden Montag
+
+### Improved
+- Audit-Log: server-seitige Filterung (statt client-seitig)
+- Update-Prüfung zeigt korrekt auf `norvik-ops/vatk` Repository
+
+
 ---
 
 ## [v0.4.1] — 2026-05-14

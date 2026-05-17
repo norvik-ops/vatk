@@ -171,10 +171,11 @@ func (r *Repository) GetCurrentOrg(ctx context.Context, orgID string) (*CurrentO
 		SELECT id::text, name, slug,
 		       trust_center_enabled,
 		       trust_center_description,
-		       trust_center_contact
+		       trust_center_contact,
+		       require_mfa
 		FROM organizations
 		WHERE id = $1::uuid`, orgID,
-	).Scan(&o.ID, &o.Name, &o.Slug, &o.TrustCenterEnabled, &description, &contact)
+	).Scan(&o.ID, &o.Name, &o.Slug, &o.TrustCenterEnabled, &description, &contact, &o.RequireMFA)
 	if err != nil {
 		return nil, fmt.Errorf("get current org %s: %w", orgID, err)
 	}
@@ -185,6 +186,33 @@ func (r *Repository) GetCurrentOrg(ctx context.Context, orgID string) (*CurrentO
 		o.TrustCenterContact = *contact
 	}
 	return &o, nil
+}
+
+// GetOrgSecurity fetches the security policy settings for an organisation.
+func (r *Repository) GetOrgSecurity(ctx context.Context, orgID string) (*OrgSecurity, error) {
+	var s OrgSecurity
+	err := r.db.QueryRow(ctx,
+		`SELECT require_mfa FROM organizations WHERE id = $1::uuid`, orgID,
+	).Scan(&s.RequireMFA)
+	if err != nil {
+		return nil, fmt.Errorf("get org security %s: %w", orgID, err)
+	}
+	return &s, nil
+}
+
+// SetOrgRequireMFA updates the require_mfa flag for an organisation.
+func (r *Repository) SetOrgRequireMFA(ctx context.Context, orgID string, requireMFA bool) error {
+	tag, err := r.db.Exec(ctx,
+		`UPDATE organizations SET require_mfa = $2, updated_at = NOW() WHERE id = $1::uuid`,
+		orgID, requireMFA,
+	)
+	if err != nil {
+		return fmt.Errorf("set org require_mfa %s: %w", orgID, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("org not found: %s", orgID)
+	}
+	return nil
 }
 
 // slugify converts a name into a lowercase hyphen-separated slug.

@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { Building2 } from 'lucide-react'
 import { apiFetch } from '../api/client'
 import { useAuthStore } from '../shared/stores/auth'
 import { useDemoMode } from '../shared/hooks/useDemoMode'
@@ -18,6 +19,13 @@ interface LoginResponse {
   }
 }
 
+interface HealthResponse {
+  status: string
+  version: string
+  demo: boolean
+  sso_enabled: boolean
+}
+
 const DEMO_USERS = [
   { label: 'Admin', email: 'admin@vakt.local', password: 'admin1234' },
   { label: 'Analyst', email: 'analyst@vakt.local', password: 'analyst1234' },
@@ -29,10 +37,19 @@ export default function Login() {
   const setAuth = useAuthStore((s) => s.setAuth)
   const isDemo = useDemoMode()
   const [email, setEmail] = useState('')
+  const [ssoEnabled, setSsoEnabled] = useState(false)
 
   useEffect(() => {
     document.title = isDemo ? 'Vakt Demo' : 'Vakt'
   }, [isDemo])
+
+  useEffect(() => {
+    fetch('/health')
+      .then((r) => r.json() as Promise<HealthResponse>)
+      .then((data) => { setSsoEnabled(data.sso_enabled === true) })
+      .catch(() => { /* SSO-Button bleibt ausgeblendet wenn Health-Check fehlschlägt */ })
+  }, [])
+
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -103,6 +120,26 @@ export default function Login() {
                 {loading ? 'Signing in…' : 'Sign in'}
               </Button>
             </form>
+
+            {ssoEnabled && (
+              <>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-card px-2 text-secondary">oder</span>
+                  </div>
+                </div>
+                <a
+                  href="/auth/sso"
+                  className="flex items-center justify-center gap-2 w-full rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-primary hover:bg-muted transition-colors"
+                >
+                  <Building2 className="w-4 h-4 shrink-0" />
+                  Mit SSO anmelden
+                </a>
+              </>
+            )}
           </CardContent>
         </Card>
 

@@ -58,6 +58,7 @@ import (
 	"github.com/sechealth-app/sechealth/internal/shared/trustcenter"
 	lswebhook "github.com/sechealth-app/sechealth/internal/webhooks/lemonsqueezy"
 	"github.com/sechealth-app/sechealth/internal/shared/usermgmt"
+	"github.com/sechealth-app/sechealth/internal/shared/apikeys"
 )
 
 func setupEcho(cfg *config.Config) *echo.Echo {
@@ -107,9 +108,10 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	// Liveness — always responds while the process is up.
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]interface{}{
-			"status":  "ok",
-			"version": cfg.Version,
-			"demo":    cfg.DemoSeed,
+			"status":      "ok",
+			"version":     cfg.Version,
+			"demo":        cfg.DemoSeed,
+			"sso_enabled": cfg.CasdoorURL != "",
 		})
 	})
 
@@ -197,6 +199,11 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 
 	// All subsequent routes require a valid Paseto token
 	protected := api.Group("", auth.AuthMiddleware(pasetoKey, pool, rdb))
+
+	// Org-wide MFA enforcement: if the org has require_mfa=true and the user has
+	// not completed TOTP setup, return 403 MFA_REQUIRED on all protected routes
+	// except the 2FA setup/confirm flow and logout.
+	protected.Use(auth.MFAEnforceMiddleware(pool))
 
 	// Per-request license resolution: load DB key / check revocation blocklist after auth sets org_id.
 	// rdb is passed for optional Redis caching (60 s TTL) to avoid 2 DB queries per request.
@@ -357,6 +364,10 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 			log.Info().Msg("github integration routes registered")
 		}
 	}
+
+	// API key management — personal keys for programmatic access (Pro feature)
+	apikeys.Register(protected, pool)
+	log.Info().Msg("api key routes registered")
 
 	// Audit log — compliance event history
 	auditlog.RegisterRoutes(protected.Group("/audit-log"), pool)

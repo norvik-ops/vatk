@@ -115,8 +115,8 @@ func AuthMiddleware(key paseto.V4SymmetricKey, db *pgxpool.Pool, rdb ...*redis.C
 				})
 			}
 
-			// API key path.
-			if strings.HasPrefix(tokenStr, "sk_") {
+			// API key path — accept both legacy "sk_" and current "vakt_" prefixes.
+			if strings.HasPrefix(tokenStr, "sk_") || strings.HasPrefix(tokenStr, "vakt_") {
 				return handleAPIKey(c, next, db, tokenStr)
 			}
 
@@ -154,6 +154,77 @@ func AuthMiddleware(key paseto.V4SymmetricKey, db *pgxpool.Pool, rdb ...*redis.C
 	}
 }
 
+// mfaExemptPaths are paths that must remain accessible even when org-wide MFA
+// is required but the user has not yet set up TOTP.  They cover the 2FA setup
+// flow, logout, and the health-check endpoint.
+var mfaExemptPaths = []string{
+	"/api/v1/auth/2fa/setup",
+	"/api/v1/auth/2fa/confirm",
+	"/api/v1/auth/logout",
+	"/api/v1/health",
+	"/health",
+}
+
+// MFAEnforceMiddleware must be applied after AuthMiddleware (user_id and org_id
+// must already be set in the context).  It queries the DB to check whether the
+// organisation has require_mfa=true and, if so, verifies that the current user
+// has a confirmed TOTP secret (totp_secrets.enabled = true).  If not, it
+// returns 403 with code "MFA_REQUIRED".
+//
+// Routes listed in mfaExemptPaths are always allowed through so that users can
+// complete the TOTP setup flow without being locked out.
+func MFAEnforceMiddleware(db *pgxpool.Pool) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// Allow exempted paths regardless of MFA policy.
+			reqPath := c.Request().URL.Path
+			for _, exempt := range mfaExemptPaths {
+				if reqPath == exempt {
+					return next(c)
+				}
+			}
+
+			orgID, _ := c.Get("org_id").(string)
+			userID, _ := c.Get("user_id").(string)
+			if orgID == "" || userID == "" {
+				return next(c)
+			}
+
+			ctx := c.Request().Context()
+
+			// Check org-level MFA requirement.
+			var requireMFA bool
+			err := db.QueryRow(ctx,
+				`SELECT require_mfa FROM organizations WHERE id = $1::uuid`, orgID,
+			).Scan(&requireMFA)
+			if err != nil {
+				// If we can't read the org row, let the request through — fail open
+				// to avoid locking users out due to transient DB issues.
+				log.Warn().Err(err).Str("org_id", orgID).Msg("mfa enforce: org lookup failed, skipping check")
+				return next(c)
+			}
+
+			if !requireMFA {
+				return next(c)
+			}
+
+			// Org requires MFA — check if user has enabled TOTP.
+			var totpEnabled bool
+			err = db.QueryRow(ctx,
+				`SELECT enabled FROM totp_secrets WHERE user_id = $1::uuid`, userID,
+			).Scan(&totpEnabled)
+			if err != nil || !totpEnabled {
+				return c.JSON(http.StatusForbidden, map[string]string{
+					"error": "MFA erforderlich",
+					"code":  "MFA_REQUIRED",
+				})
+			}
+
+			return next(c)
+		}
+	}
+}
+
 // scopePathPrefixes maps an API key scope to the URL path prefixes it is
 // authorised to access. A scope of "admin" grants full access.
 var scopePathPrefixes = map[string][]string{
@@ -167,20 +238,23 @@ var scopePathPrefixes = map[string][]string{
 // handleAPIKey looks up the raw API key in the database by its SHA-256 hash,
 // enforces scope-based path restrictions, then populates echo.Context with
 // identity data if access is permitted.
+//
+// Keys with the "vakt_" prefix and empty scopes are treated as full-access
+// personal keys (equivalent to the user's own session).
 func handleAPIKey(c echo.Context, next echo.HandlerFunc, db *pgxpool.Pool, rawKey string) error {
 	sum := sha256.Sum256([]byte(rawKey))
 	keyHash := hex.EncodeToString(sum[:])
 
 	const query = `
-		SELECT ak.org_id, ak.created_by, ak.scopes
+		SELECT ak.id, ak.org_id, ak.created_by, ak.scopes
 		FROM api_keys ak
 		WHERE ak.key_hash = $1
 		  AND ak.revoked_at IS NULL
 		  AND (ak.expires_at IS NULL OR ak.expires_at > NOW())`
 
-	var orgID, createdBy string
+	var keyID, orgID, createdBy string
 	var scopes []string
-	err := db.QueryRow(c.Request().Context(), query, keyHash).Scan(&orgID, &createdBy, &scopes)
+	err := db.QueryRow(c.Request().Context(), query, keyHash).Scan(&keyID, &orgID, &createdBy, &scopes)
 	if err != nil {
 		log.Debug().Err(err).Msg("api key lookup failed")
 		return c.JSON(http.StatusUnauthorized, map[string]string{
@@ -189,13 +263,33 @@ func handleAPIKey(c echo.Context, next echo.HandlerFunc, db *pgxpool.Pool, rawKe
 		})
 	}
 
-	// Reject keys with no scopes — no default grant.
-	if len(scopes) == 0 {
+	// Personal "vakt_" keys with empty scopes have full user-level access.
+	// Legacy "sk_" keys without scopes are rejected (no default grant).
+	isPersonalKey := strings.HasPrefix(rawKey, "vakt_")
+	if len(scopes) == 0 && !isPersonalKey {
 		log.Debug().Str("org_id", orgID).Msg("api key has empty scopes, denying access")
 		return c.JSON(http.StatusForbidden, map[string]string{
 			"error": "forbidden: api key has no scopes",
 			"code":  "AUTH_INSUFFICIENT_SCOPE",
 		})
+	}
+
+	// Update last_used_at asynchronously — do not block the request.
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		_, _ = db.Exec(ctx,
+			`UPDATE api_keys SET last_used_at = NOW() WHERE id = $1::uuid`,
+			keyID,
+		)
+	}()
+
+	// Personal keys with empty scopes have full user-level access — no path check.
+	if isPersonalKey && len(scopes) == 0 {
+		c.Set("user_id", createdBy)
+		c.Set("org_id", orgID)
+		c.Set("roles", []string{"SecurityAnalyst"})
+		return next(c)
 	}
 
 	// Check whether this key's scopes permit the requested path.

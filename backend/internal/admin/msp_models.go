@@ -52,4 +52,10 @@ type CurrentOrg struct {
 	TrustCenterEnabled     bool   `json:"trust_center_enabled"`
 	TrustCenterDescription string `json:"trust_center_description"`
 	TrustCenterContact     string `json:"trust_center_contact"`
+	RequireMFA             bool   `json:"require_mfa"`
+}
+
+// OrgSecurity holds the security policy settings for an organisation.
+type OrgSecurity struct {
+	RequireMFA bool `json:"require_mfa"`
 }

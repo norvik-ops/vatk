@@ -203,6 +203,12 @@ Für die eigene DSGVO-Dokumentation (VVT, DPIA, AVV) stellt Vakt das Privacy-Mod
 
 ---
 
+### Gibt es eine Jira-Integration?
+
+Eine native Jira-Integration ist in Planung. Bis dahin können Findings manuell exportiert oder via Webhook weitergeleitet werden.
+
+---
+
 ### Funktioniert Vakt Aware ohne Betriebsvereinbarung?
 
 Im Betriebsrat-Modus (Standard) werden keine individuellen Klickdaten gespeichert — nur Abteilungs-Aggregationen. In dieser Konfiguration ist in der Regel keine gesonderte Betriebsvereinbarung erforderlich.

@@ -429,6 +429,50 @@ func (h *Handler) UpdateTrustCenter(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
+// GetOrgSecurity handles GET /api/v1/admin/org/security.
+// Returns the organisation's security policy settings (e.g. require_mfa).
+func (h *Handler) GetOrgSecurity(c echo.Context) error {
+	orgID, _ := c.Get("org_id").(string)
+
+	sec, err := h.service.MSP.repo.GetOrgSecurity(c.Request().Context(), orgID)
+	if err != nil {
+		log.Error().Err(err).Str("org_id", orgID).Msg("get org security failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to retrieve org security settings",
+			"code":  "ADMIN_ORG_SECURITY_ERROR",
+		})
+	}
+	return c.JSON(http.StatusOK, sec)
+}
+
+// UpdateOrgSecurityInput is the request body for PUT /api/v1/admin/org/security.
+type UpdateOrgSecurityInput struct {
+	RequireMFA bool `json:"require_mfa"`
+}
+
+// UpdateOrgSecurity handles PUT /api/v1/admin/org/security.
+// Allows admins to toggle org-wide MFA enforcement.
+func (h *Handler) UpdateOrgSecurity(c echo.Context) error {
+	orgID, _ := c.Get("org_id").(string)
+
+	var in UpdateOrgSecurityInput
+	if err := c.Bind(&in); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "invalid input",
+			"code":  "ADMIN_BAD_REQUEST",
+		})
+	}
+
+	if err := h.service.MSP.repo.SetOrgRequireMFA(c.Request().Context(), orgID, in.RequireMFA); err != nil {
+		log.Error().Err(err).Str("org_id", orgID).Msg("update org security failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to update org security settings",
+			"code":  "ADMIN_ORG_SECURITY_UPDATE_ERROR",
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+}
+
 // isNotManagedByError returns true when the service error signals an MSP ownership violation.
 func isNotManagedByError(err error) bool {
 	if err == nil {

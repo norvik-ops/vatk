@@ -53,6 +53,10 @@ function useUpdateDigestEnabled() {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+interface OrgSecurity {
+  require_mfa: boolean
+}
+
 interface ModuleStatus {
   name: string
   enabled: boolean
@@ -74,6 +78,26 @@ interface CreateChannelInput {
 }
 
 // ─── API hooks ───────────────────────────────────────────────────────────────
+
+function useOrgSecurity() {
+  return useQuery<OrgSecurity>({
+    queryKey: ['admin', 'org', 'security'],
+    queryFn: () => apiFetch<OrgSecurity>('/admin/org/security'),
+    retry: false,
+  })
+}
+
+function useUpdateOrgSecurity() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, OrgSecurity>({
+    mutationFn: (input) =>
+      apiFetch<void>('/admin/org/security', {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin', 'org', 'security'] }),
+  })
+}
 
 function useModules() {
   return useQuery<{ data: ModuleStatus[] }>({
@@ -332,6 +356,21 @@ function SectionCard({ title, icon: Icon, children }: {
 
 function OrgSection() {
   const { user } = useAuthStore()
+  const { data: security, isLoading: secLoading } = useOrgSecurity()
+  const updateSecurity = useUpdateOrgSecurity()
+  const [mfaChecked, setMfaChecked] = useState(false)
+
+  useEffect(() => {
+    if (security) setMfaChecked(security.require_mfa)
+  }, [security])
+
+  const isAdmin = user?.roles?.includes('Admin') ?? false
+
+  function handleMfaToggle(value: boolean) {
+    setMfaChecked(value)
+    updateSecurity.mutate({ require_mfa: value })
+  }
+
   return (
     <SectionCard title="Organisation" icon={Building2}>
       <div className="space-y-3">
@@ -343,6 +382,39 @@ function OrgSection() {
           <Label className="text-xs">Anzeigename</Label>
           <Input value={user?.display_name ?? '—'} readOnly className="bg-surface2 h-8 text-sm" />
         </div>
+
+        {isAdmin && (
+          <div className="pt-2 border-t border-border">
+            {secLoading ? (
+              <div className="flex items-center justify-center h-8">
+                <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-primary">2-Faktor-Authentifizierung vorschreiben</p>
+                  <p className="text-[11px] text-secondary leading-relaxed">
+                    Alle Mitglieder müssen 2FA aktiviert haben um sich einzuloggen.
+                  </p>
+                </div>
+                <Switch
+                  checked={mfaChecked}
+                  onCheckedChange={handleMfaToggle}
+                  disabled={updateSecurity.isPending}
+                  aria-label="2FA für alle Mitglieder vorschreiben"
+                />
+              </div>
+            )}
+            {updateSecurity.isError && (
+              <p className="text-[11px] text-red-500 mt-1">Fehler beim Speichern. Bitte erneut versuchen.</p>
+            )}
+            {updateSecurity.isSuccess && (
+              <p className="text-[11px] text-green-600 dark:text-green-400 mt-1">
+                {mfaChecked ? '2FA-Pflicht aktiviert.' : '2FA-Pflicht deaktiviert.'}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </SectionCard>
   )
@@ -1014,12 +1086,22 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Row 3: Data & Privacy export + Audit Report */}
+          {/* Row 3: Data & Privacy export + Audit Report + API Keys */}
           <div>
             <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Datenschutz &amp; Dokumentation</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-2xl">
               <DataExportSection />
               <AuditReportSection />
+              <SectionCard title="API-Keys" icon={Key}>
+                <div className="space-y-3">
+                  <p className="text-xs text-secondary leading-relaxed">
+                    Persönliche API-Keys für programmatischen Zugang — für CI/CD-Pipelines, Skripte und Integrationen.
+                  </p>
+                  <Link to="/settings/api-keys" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+                    API-Keys verwalten <ExternalLink className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </SectionCard>
             </div>
           </div>
 

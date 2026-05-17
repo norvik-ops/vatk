@@ -20,6 +20,13 @@ export class FeatureLockedError extends Error {
   }
 }
 
+export class MFARequiredError extends Error {
+  constructor() {
+    super('MFA_REQUIRED')
+    this.name = 'MFARequiredError'
+  }
+}
+
 export async function apiFetch<T>(
   path: string,
   options?: Omit<RequestInit, 'headers'> & { headers?: Record<string, string> },
@@ -43,6 +50,14 @@ export async function apiFetch<T>(
   if (res.status === 402) {
     const body = (await res.json().catch(() => ({}))) as { feature?: string }
     throw new FeatureLockedError(body.feature ?? 'unknown')
+  }
+
+  if (res.status === 403) {
+    const body = (await res.json().catch(() => ({}))) as { code?: string }
+    if (body.code === 'MFA_REQUIRED') {
+      window.location.href = '/account'
+      throw new MFARequiredError()
+    }
   }
 
   if (!res.ok) {
