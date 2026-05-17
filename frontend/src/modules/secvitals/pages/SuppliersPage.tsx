@@ -371,8 +371,8 @@ export default function SuppliersPage() {
         {!isLoading && !isError && suppliers?.length === 0 && (
           <EmptyState
             icon={Building2}
-            title="Keine Lieferanten erfasst"
-            description="Erfassen Sie Drittanbieter und Dienstleister für NIS2- und DORA-Compliance."
+            title="Keine Lieferanten"
+            description="Füge deinen ersten Lieferanten hinzu."
             action={<Button onClick={openCreate}><Plus className="w-4 h-4 mr-1" />Lieferant hinzufügen</Button>}
           />
         )}

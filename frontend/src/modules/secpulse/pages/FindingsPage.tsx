@@ -7,6 +7,8 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
 import { BulkActionBar } from '../../../shared/components/BulkActionBar'
+import { SortableHeader } from '../../../shared/components/SortableHeader'
+import { useSortableTable } from '../../../shared/hooks/useSortableTable'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../../components/ui/select'
@@ -22,6 +24,7 @@ import { useFindings, exportFindingsCsv, useBulkUpdateFindings, useDeleteFinding
 import type { Finding } from '../types'
 import { cn } from '../../../lib/utils'
 import { ImportFindingsDialog } from '../components/ImportFindingsDialog'
+import { CSVImportDialog } from '../../../shared/components/CSVImportDialog'
 import { useKeyboardNav } from '../../../shared/hooks/useKeyboardNav'
 import { toast } from '../../../shared/hooks/useToast'
 import { Skeleton } from '../../../components/ui/skeleton'
@@ -37,6 +40,14 @@ const severityClass: Record<Finding['severity'], string> = {
   high:     'bg-[#7c2d12] text-[#f97316] border-transparent',
   critical: 'bg-[#7f1d1d] text-[#ef4444] border-transparent',
 }
+
+// Custom sort key: maps severity to a numeric weight for sorting
+const SEVERITY_ORDER: Record<Finding['severity'], number> = {
+  critical: 5, high: 4, medium: 3, low: 2, info: 1,
+}
+
+// Augment Finding with a numeric severity_order field for sorting
+type SortableFinding = Finding & { severity_order: number }
 
 // --- Jira issue cell ---
 
@@ -98,6 +109,7 @@ export default function FindingsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<Finding['status']>('resolved')
   const [importOpen, setImportOpen] = useState(false)
+  const [csvImportOpen, setCsvImportOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(-1)
@@ -115,7 +127,19 @@ export default function FindingsPage() {
   const createJiraIssue = useCreateJiraIssue()
   const { data: jiraConfig } = useJiraConfig()
 
-  const findings = data?.data ?? []
+  const rawFindings = data?.data ?? []
+  // Augment with numeric severity order for sorting
+  const findingsWithOrder: SortableFinding[] = rawFindings.map((f) => ({
+    ...f,
+    severity_order: SEVERITY_ORDER[f.severity] ?? 0,
+  }))
+  const {
+    sorted: sortedFindings,
+    sortKey,
+    sortDir,
+    toggleSort,
+  } = useSortableTable<SortableFinding>(findingsWithOrder, { key: 'created_at', dir: 'desc' })
+  const findings = sortedFindings
   const jiraConfigured = jiraConfig?.is_configured ?? false
 
   useKeyboardNav(focusedIndex, setFocusedIndex, {
@@ -216,6 +240,14 @@ export default function FindingsPage() {
         open={importOpen}
         onOpenChange={setImportOpen}
       />
+      <CSVImportDialog
+        open={csvImportOpen}
+        onClose={() => setCsvImportOpen(false)}
+        endpoint="/api/v1/secpulse/findings/import/csv"
+        entityLabel="Findings"
+        columns={['title', 'severity', 'description', 'asset', 'status']}
+        onSuccess={() => void refetch()}
+      />
 
       {/* Bulk status change dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
@@ -284,6 +316,10 @@ export default function FindingsPage() {
         description={data ? t('secpulse.findingsPage.total', { count: data.pagination.total }) : undefined}
         actions={
           <>
+            <Button variant="outline" size="sm" onClick={() => setCsvImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-1" />
+              CSV importieren
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
               <Upload className="w-4 h-4 mr-1" />
               {t('common.import')}
@@ -385,12 +421,41 @@ export default function FindingsPage() {
                       className="rounded"
                     />
                   </TableHead>
-                  <TableHead>{t('secpulse.findingsPage.colTitle')}</TableHead>
-                  <TableHead>{t('secpulse.findingsPage.colSeverity')}</TableHead>
-                  <TableHead>{t('secpulse.findingsPage.colStatus')}</TableHead>
+                  <SortableHeader
+                    label={t('secpulse.findingsPage.colTitle')}
+                    sortKey="title"
+                    currentSortKey={sortKey}
+                    currentDir={sortDir}
+                    onSort={toggleSort}
+                    className="px-4 py-3 text-left text-sm font-medium text-secondary"
+                  />
+                  <SortableHeader
+                    label={t('secpulse.findingsPage.colSeverity')}
+                    sortKey="severity_order"
+                    currentSortKey={sortKey}
+                    currentDir={sortDir}
+                    onSort={toggleSort}
+                    className="px-4 py-3 text-left text-sm font-medium text-secondary"
+                  />
+                  <SortableHeader
+                    label={t('secpulse.findingsPage.colStatus')}
+                    sortKey="status"
+                    currentSortKey={sortKey}
+                    currentDir={sortDir}
+                    onSort={toggleSort}
+                    className="px-4 py-3 text-left text-sm font-medium text-secondary"
+                  />
                   <TableHead>{t('secpulse.findingsPage.colAsset')}</TableHead>
                   <TableHead>{t('secpulse.findingsPage.colCve')}</TableHead>
                   <TableHead>{t('secpulse.findingsPage.colCvss')}</TableHead>
+                  <SortableHeader
+                    label="Erstellt"
+                    sortKey="created_at"
+                    currentSortKey={sortKey}
+                    currentDir={sortDir}
+                    onSort={toggleSort}
+                    className="px-4 py-3 text-left text-sm font-medium text-secondary"
+                  />
                   {jiraConfigured && <TableHead>{t('secpulse.findingsPage.colJira')}</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -443,6 +508,9 @@ export default function FindingsPage() {
                     </TableCell>
                     <TableCell onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
                       {f.cvss_score != null ? f.cvss_score.toFixed(1) : '—'}
+                    </TableCell>
+                    <TableCell className="text-sm text-secondary" onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
+                      {new Date(f.created_at).toLocaleDateString('de-DE')}
                     </TableCell>
                     {jiraConfigured && (
                       <TableCell onClick={(e) => e.stopPropagation()}>

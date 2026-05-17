@@ -71,7 +71,7 @@ export function GlobalSearch() {
   // Reset keyboard selection when list changes.
   useEffect(() => { setActiveIdx(-1) }, [displayList.length, debouncedQuery])
 
-  // Global keyboard shortcut: Cmd/Ctrl+K
+  // Global keyboard shortcut: Cmd/Ctrl+K (also via custom event from Layout/useKeyboardShortcuts)
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -80,8 +80,15 @@ export function GlobalSearch() {
       }
       if (e.key === 'Escape') setOpen(false)
     }
+    function onOpenSearch() {
+      setOpen(true)
+    }
     window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    window.addEventListener('vakt:open-search', onOpenSearch)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('vakt:open-search', onOpenSearch)
+    }
   }, [])
 
   // Focus input & load recent when opened.

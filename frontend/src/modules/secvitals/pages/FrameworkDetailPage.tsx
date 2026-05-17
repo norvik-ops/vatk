@@ -33,6 +33,8 @@ import {
   TableCell,
 } from '../../../components/ui/table'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
+import { trackPage } from '../../../shared/hooks/useRecentPages'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { BulkActionBar } from '../../../shared/components/BulkActionBar'
 import { cn } from '../../../lib/utils'
@@ -832,8 +834,16 @@ export default function FrameworkDetailPage() {
     ? `Controls, Lückenanalyse und Auditor-Zugang für ${framework.name} verwalten.`
     : 'Readiness-Score, Lückenanalyse und Auditor-Zugang verwalten.'
 
+  useEffect(() => {
+    if (framework) trackPage(`/secvitals/frameworks/${frameworkId}`, framework.name, '📋')
+  }, [framework?.id])
+
   return (
     <div className="flex flex-col h-full">
+      <Breadcrumbs items={[
+        { label: 'SecVitals', href: '/secvitals' },
+        { label: framework?.name ?? 'Framework' },
+      ]} />
       <PageHeader
         title={frameworkTitle}
         description={frameworkDesc}

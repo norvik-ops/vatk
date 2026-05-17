@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Siren, Plus, AlertTriangle } from 'lucide-react'
+import { Siren, Plus, AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -12,12 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
+import { useSortableTable } from '../../../shared/hooks/useSortableTable'
 import { useIncidents, useCreateIncident } from '../hooks/useIncidents'
 import { useBreaches } from '../../secprivacy/hooks/useBreaches'
 import { useCAPAsForSource } from '../hooks/useCAPAs'
 import type { Incident, CreateIncidentInput } from '../types'
 import { toast } from '../../../shared/hooks/useToast'
 import { Skeleton } from '../../../components/ui/skeleton'
+
+const SEVERITY_NUM: Record<Incident['severity'], number> = { critical: 4, high: 3, medium: 2, low: 1 }
+type SortableIncident = Incident & { severity_order: number }
 
 const SEVERITY_CLASS: Record<Incident['severity'], string> = {
   low: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -26,19 +31,11 @@ const SEVERITY_CLASS: Record<Incident['severity'], string> = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30',
 }
 
-const SEVERITY_LABELS: Record<Incident['severity'], string> = {
-  low: 'Niedrig', medium: 'Mittel', high: 'Hoch', critical: 'Kritisch',
-}
-
 const STATUS_CLASS: Record<Incident['status'], string> = {
   open: 'bg-red-500/20 text-red-400 border-red-500/30',
   investigating: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   resolved: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   closed: 'bg-secondary text-secondary-foreground',
-}
-
-const STATUS_LABELS: Record<Incident['status'], string> = {
-  open: 'Offen', investigating: 'In Untersuchung', resolved: 'Gelöst', closed: 'Geschlossen',
 }
 
 const DEADLINE_STATUS_COLOR: Record<string, string> = {
@@ -60,6 +57,19 @@ function getWorstDeadline(incident: Incident) {
 }
 
 function IncidentCard({ incident, onClick }: { incident: Incident; onClick: () => void }) {
+  const { t } = useTranslation()
+  const SEVERITY_LABELS: Record<Incident['severity'], string> = {
+    low: t('secvitals.incidentsPage.severityLow'),
+    medium: t('secvitals.incidentsPage.severityMedium'),
+    high: t('secvitals.incidentsPage.severityHigh'),
+    critical: t('secvitals.incidentsPage.severityCritical'),
+  }
+  const STATUS_LABELS: Record<Incident['status'], string> = {
+    open: t('secvitals.incidentsPage.statusOpen'),
+    investigating: t('secvitals.incidentsPage.statusInvestigating'),
+    resolved: t('secvitals.incidentsPage.statusResolved'),
+    closed: t('secvitals.incidentsPage.statusClosed'),
+  }
   const date = new Date(incident.discovered_at).toLocaleDateString('de-DE', {
     year: 'numeric', month: 'short', day: 'numeric',
   })
@@ -95,15 +105,15 @@ function IncidentCard({ incident, onClick }: { incident: Incident; onClick: () =
           </div>
         )}
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Entdeckt: {date}</p>
+          <p className="text-xs text-muted-foreground">{t('secvitals.incidentsPage.discovered')}: {date}</p>
           {worstDeadline && worstDeadline !== 'done' && (
             <span className={`flex items-center gap-1 text-xs ${DEADLINE_STATUS_COLOR[worstDeadline]}`}>
               <AlertTriangle className="w-3 h-3" />
-              Meldefrist läuft
+              {t('secvitals.incidentsPage.deadlineRunning')}
             </span>
           )}
           {worstDeadline === 'done' && (
-            <span className="text-xs text-green-400">Alle Meldungen abgeschlossen</span>
+            <span className="text-xs text-green-400">{t('secvitals.incidentsPage.allDeadlinesDone')}</span>
           )}
         </div>
       </CardContent>
@@ -125,6 +135,7 @@ function emptyForm(): CreateIncidentInput {
 }
 
 export default function IncidentsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState<CreateIncidentInput>(emptyForm())
@@ -134,6 +145,25 @@ export default function IncidentsPage() {
   const { data: incidents, isLoading, isError, pagination } = useIncidents(page)
   const { data: breaches } = useBreaches()
   const createIncident = useCreateIncident()
+
+  const INCIDENT_SORT_OPTIONS: { key: keyof SortableIncident; label: string }[] = [
+    { key: 'title', label: t('common.name') },
+    { key: 'severity_order', label: t('secvitals.incidentsPage.labelSeverity') },
+    { key: 'status', label: t('common.status') },
+    { key: 'created_at', label: t('secvitals.incidentsPage.discovered') },
+    { key: 'updated_at', label: t('common.date') },
+  ]
+
+  const incidentsWithOrder: SortableIncident[] = (incidents ?? []).map((i) => ({
+    ...i,
+    severity_order: SEVERITY_NUM[i.severity] ?? 0,
+  }))
+  const { sorted: sortedIncidents, sortKey, sortDir, toggleSort } = useSortableTable<SortableIncident>(
+    incidentsWithOrder, { key: 'created_at', dir: 'desc' },
+  )
+
+  const open = sortedIncidents.filter((i) => i.status === 'open' || i.status === 'investigating')
+  const closed = sortedIncidents.filter((i) => i.status === 'resolved' || i.status === 'closed')
 
   function openDialog() {
     setForm(emptyForm())
@@ -150,29 +180,58 @@ export default function IncidentsPage() {
     createIncident.mutate(payload, {
       onSuccess: () => {
         setDialogOpen(false)
-        toast('Vorfall erfolgreich gemeldet', 'success')
+        toast(t('secvitals.incidentsPage.successReported'), 'success')
       },
-      onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      onError: (err) => toast(`${t('common.error')}: ${err.message}`, 'error'),
     })
   }
 
-  const open = incidents?.filter((i) => i.status === 'open' || i.status === 'investigating') ?? []
-  const closed = incidents?.filter((i) => i.status === 'resolved' || i.status === 'closed') ?? []
+  // open/closed computed above from sortedIncidents
 
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Vorfallregister"
-        description="Sicherheitsvorfälle dokumentieren und verfolgen."
+        title={t('secvitals.incidentsPage.title')}
+        description={t('secvitals.incidentsPage.description')}
         actions={
           <Button onClick={openDialog} variant="destructive">
             <Plus className="w-4 h-4 mr-1" />
-            Vorfall melden
+            {t('secvitals.incidentsPage.reportIncident')}
           </Button>
         }
       />
 
       <div className="flex-1 p-6 space-y-6">
+        {/* Sort toolbar */}
+        {!isLoading && !isError && incidents && incidents.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-secondary">
+            <span className="font-medium">{t('common.filter')}:</span>
+            {INCIDENT_SORT_OPTIONS.map((opt) => {
+              const isActive = sortKey === opt.key
+              return (
+                <button
+                  key={String(opt.key)}
+                  onClick={() => toggleSort(opt.key)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border transition-colors ${
+                    isActive
+                      ? 'border-brand/50 bg-brand/10 text-brand'
+                      : 'border-border hover:border-brand/30 hover:bg-surface2'
+                  }`}
+                >
+                  {opt.label}
+                  {isActive ? (
+                    sortDir === 'asc'
+                      ? <ChevronUp className="w-3 h-3" />
+                      : <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronsUpDown className="w-3 h-3 opacity-50" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -181,21 +240,21 @@ export default function IncidentsPage() {
           </div>
         )}
         {isError && (
-          <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">Fehler beim Laden des Vorfallregisters.</div>
+          <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">{t('secvitals.incidentsPage.loadError')}</div>
         )}
         {!isLoading && !isError && incidents?.length === 0 && (
           <EmptyState
             icon={Siren}
-            title="Keine Vorfälle gemeldet"
-            description="Dokumentieren Sie Sicherheitsvorfälle für Audit-Nachweise und Lerneffekte."
-            action={<Button onClick={openDialog} variant="destructive"><Plus className="w-4 h-4 mr-1" />Vorfall melden</Button>}
+            title={t('secvitals.incidentsPage.noIncidents')}
+            description={t('secvitals.incidentsPage.noIncidentsDesc')}
+            action={<Button onClick={openDialog} variant="destructive"><Plus className="w-4 h-4 mr-1" />{t('secvitals.incidentsPage.reportIncident')}</Button>}
           />
         )}
         {!isLoading && !isError && incidents && incidents.length > 0 && (
           <>
             {open.length > 0 && (
               <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-red-400">Aktive Vorfälle ({open.length})</h2>
+                <h2 className="text-sm font-semibold text-red-400">{t('secvitals.incidentsPage.activeIncidents', { count: open.length })}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {open.map((i) => <IncidentCard key={i.id} incident={i} onClick={() => navigate(`/secvitals/incidents/${i.id}`)} />)}
                 </div>
@@ -203,7 +262,7 @@ export default function IncidentsPage() {
             )}
             {closed.length > 0 && (
               <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-muted-foreground">Abgeschlossen</h2>
+                <h2 className="text-sm font-semibold text-muted-foreground">{t('secvitals.incidentsPage.closedIncidents')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {closed.map((i) => <IncidentCard key={i.id} incident={i} onClick={() => navigate(`/secvitals/incidents/${i.id}`)} />)}
                 </div>
@@ -220,77 +279,77 @@ export default function IncidentsPage() {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Vorfall melden</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('secvitals.incidentsPage.dialogTitle')}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="inc-title">Bezeichnung *</Label>
-              <Input id="inc-title" placeholder="z.B. Phishing-Angriff auf Buchhaltung" value={form.title}
+              <Label htmlFor="inc-title">{t('secvitals.incidentsPage.labelTitle')} *</Label>
+              <Input id="inc-title" placeholder={t('secvitals.incidentsPage.placeholderTitle')} value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="inc-severity">Schweregrad *</Label>
+              <Label htmlFor="inc-severity">{t('secvitals.incidentsPage.labelSeverity')} *</Label>
               <Select value={form.severity} onValueChange={(v) => setForm((f) => ({ ...f, severity: v as Incident['severity'] }))}>
                 <SelectTrigger id="inc-severity"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Niedrig</SelectItem>
-                  <SelectItem value="medium">Mittel</SelectItem>
-                  <SelectItem value="high">Hoch</SelectItem>
-                  <SelectItem value="critical">Kritisch</SelectItem>
+                  <SelectItem value="low">{t('secvitals.incidentsPage.severityLow')}</SelectItem>
+                  <SelectItem value="medium">{t('secvitals.incidentsPage.severityMedium')}</SelectItem>
+                  <SelectItem value="high">{t('secvitals.incidentsPage.severityHigh')}</SelectItem>
+                  <SelectItem value="critical">{t('secvitals.incidentsPage.severityCritical')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="inc-discovered">Entdeckungszeitpunkt</Label>
+              <Label htmlFor="inc-discovered">{t('secvitals.incidentsPage.labelDiscovered')}</Label>
               <Input id="inc-discovered" type="datetime-local" value={form.discovered_at}
                 onChange={(e) => setForm((f) => ({ ...f, discovered_at: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Vorfalltyp</Label>
+                <Label>{t('secvitals.incidentsPage.labelIncidentType')}</Label>
                 <Select value={form.incident_type ?? 'general'} onValueChange={(v) => setForm((f) => ({ ...f, incident_type: v as Incident['incident_type'] }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="general">Allgemein</SelectItem>
-                    <SelectItem value="nis2">NIS2</SelectItem>
-                    <SelectItem value="dora">DORA</SelectItem>
+                    <SelectItem value="general">{t('secvitals.incidentsPage.typeGeneral')}</SelectItem>
+                    <SelectItem value="nis2">{t('secvitals.incidentsPage.typeNIS2')}</SelectItem>
+                    <SelectItem value="dora">{t('secvitals.incidentsPage.typeDORA')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Meldepflicht</Label>
+                <Label>{t('secvitals.incidentsPage.labelReportingObligation')}</Label>
                 <Select value={form.reporting_obligation ?? 'unknown'} onValueChange={(v) => setForm((f) => ({ ...f, reporting_obligation: v as Incident['reporting_obligation'] }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="unknown">Unbekannt</SelectItem>
-                    <SelectItem value="required">Meldepflichtig</SelectItem>
-                    <SelectItem value="not_required">Keine Meldepflicht</SelectItem>
+                    <SelectItem value="unknown">{t('secvitals.incidentsPage.obligationUnknown')}</SelectItem>
+                    <SelectItem value="required">{t('secvitals.incidentsPage.obligationRequired')}</SelectItem>
+                    <SelectItem value="not_required">{t('secvitals.incidentsPage.obligationNotRequired')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             {(form.incident_type === 'nis2' || form.incident_type === 'dora') && (
               <div className="space-y-1.5">
-                <Label htmlFor="inc-authority">Meldebehörde</Label>
-                <Input id="inc-authority" placeholder="z.B. BSI, BaFin, BNetzA" value={form.notification_authority ?? ''}
+                <Label htmlFor="inc-authority">{t('secvitals.incidentsPage.labelAuthority')}</Label>
+                <Input id="inc-authority" placeholder={t('secvitals.incidentsPage.placeholderAuthority')} value={form.notification_authority ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, notification_authority: e.target.value }))} />
               </div>
             )}
             {form.incident_type === 'dora' && (
               <>
                 <div className="space-y-1.5">
-                  <Label htmlFor="inc-customers">Betroffene Kunden (DORA)</Label>
+                  <Label htmlFor="inc-customers">{t('secvitals.incidentsPage.labelAffectedCustomers')}</Label>
                   <Input
                     id="inc-customers"
                     type="number"
                     min={0}
-                    placeholder="Anzahl betroffener Kunden"
+                    placeholder={t('secvitals.incidentsPage.placeholderCustomers')}
                     value={form.affected_customers ?? ''}
                     onChange={(e) => setForm((f) => ({ ...f, affected_customers: e.target.value ? Number(e.target.value) : undefined }))}
                     data-testid="create-affected-customers-input"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="inc-financial">Geschätzter finanzieller Schaden (DORA)</Label>
+                  <Label htmlFor="inc-financial">{t('secvitals.incidentsPage.labelFinancialImpact')}</Label>
                   <Textarea
                     id="inc-financial"
                     rows={2}
@@ -310,31 +369,31 @@ export default function IncidentsPage() {
                     data-testid="create-is-major-incident-checkbox"
                   />
                   <Label htmlFor="inc-major" className="cursor-pointer">
-                    Schwerwiegender IKT-Vorfall (Art. 18 DORA)
+                    {t('secvitals.incidentsPage.labelMajorIncident')}
                   </Label>
                 </div>
               </>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="inc-desc">Beschreibung *</Label>
-              <Textarea id="inc-desc" rows={3} placeholder="Was ist passiert?" value={form.description}
+              <Label htmlFor="inc-desc">{t('secvitals.incidentsPage.labelDescription')} *</Label>
+              <Textarea id="inc-desc" rows={3} placeholder={t('secvitals.incidentsPage.placeholderDescription')} value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="inc-systems">Betroffene Systeme (kommagetrennt)</Label>
-              <Input id="inc-systems" placeholder="z.B. E-Mail-Server, CRM, VPN" value={rawSystems}
+              <Label htmlFor="inc-systems">{t('secvitals.incidentsPage.labelSystems')}</Label>
+              <Input id="inc-systems" placeholder={t('secvitals.incidentsPage.placeholderSystems')} value={rawSystems}
                 onChange={(e) => setRawSystems(e.target.value)} />
             </div>
             {breaches && breaches.length > 0 && (
               <div className="space-y-1.5">
-                <Label htmlFor="inc-breach">Verknüpfte Datenpanne (optional)</Label>
+                <Label htmlFor="inc-breach">{t('secvitals.incidentsPage.labelLinkedBreach')}</Label>
                 <select
                   id="inc-breach"
                   className="flex w-full rounded-md border border-border bg-surface px-3 py-2 text-[13px] text-primary focus:outline-none focus:border-brand"
                   value={form.breach_id ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, breach_id: e.target.value || undefined }))}
                 >
-                  <option value="">— Keine —</option>
+                  <option value="">{t('secvitals.incidentsPage.noLinkedBreach')}</option>
                   {breaches.map((b) => (
                     <option key={b.id} value={b.id}>{b.title}</option>
                   ))}
@@ -343,10 +402,10 @@ export default function IncidentsPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleSubmit}
               disabled={!form.title || !form.description || createIncident.isPending}>
-              {createIncident.isPending ? 'Melden …' : 'Vorfall melden'}
+              {createIncident.isPending ? t('secvitals.incidentsPage.reporting') : t('secvitals.incidentsPage.reportIncident')}
             </Button>
           </DialogFooter>
         </DialogContent>

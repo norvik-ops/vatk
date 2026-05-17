@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GitBranch, Plus, ChevronDown, ChevronUp, AlertOctagon, KeyRound } from 'lucide-react'
+import { GitBranch, Plus, ChevronDown, ChevronUp, KeyRound } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { InfoBanner } from '../../../shared/components/InfoBanner'
 import { Button } from '../../../components/ui/button'
@@ -169,12 +169,12 @@ export default function GitScansPage() {
           </div>
         ) : !scans || scans.length === 0 ? (
           <EmptyState
-            icon={AlertOctagon}
-            title="Noch keine Scans vorhanden"
-            description="Starten Sie einen Scan, um geleakte Secrets in Ihren Repositories zu erkennen."
+            icon={GitBranch}
+            title="Keine Git-Scans"
+            description="Verbinde dein erstes Repository."
             action={
               <Button onClick={() => setOpen(true)}>
-                <Plus className="w-4 h-4 mr-1" />New Scan
+                <Plus className="w-4 h-4 mr-1" />Scan starten
               </Button>
             }
           />

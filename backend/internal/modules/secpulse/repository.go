@@ -144,6 +144,32 @@ func (r *Repository) GetAssetByName(ctx context.Context, orgID, name string) (*A
 	return &a, nil
 }
 
+// ResolveAssetRef resolves an asset reference (UUID or name) to an asset ID.
+// It first tries to treat ref as a UUID and look up by ID, then falls back to
+// a case-insensitive name lookup.  Returns an error when no asset is found.
+func (r *Repository) ResolveAssetRef(ctx context.Context, orgID, ref string) (string, error) {
+	if ref == "" {
+		return "", fmt.Errorf("asset reference is empty")
+	}
+
+	// Try ID lookup first (valid UUIDs are 36 chars).
+	if len(ref) == 36 {
+		if a, err := r.GetAsset(ctx, orgID, ref); err == nil {
+			return a.ID, nil
+		}
+	}
+
+	// Fall back to name lookup.
+	a, err := r.GetAssetByName(ctx, orgID, ref)
+	if err != nil {
+		return "", fmt.Errorf("resolve asset %q: %w", ref, err)
+	}
+	if a == nil {
+		return "", fmt.Errorf("asset %q not found", ref)
+	}
+	return a.ID, nil
+}
+
 // UpdateAsset applies a partial update to an asset.  Only non-nil fields are changed.
 func (r *Repository) UpdateAsset(ctx context.Context, orgID, assetID string, input UpdateAssetInput) (*Asset, error) {
 	// Build SET clause dynamically.

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { KeyRound, Plus, Trash2, Copy, Check } from 'lucide-react'
+import { Key, Plus, Trash2, Copy, Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
@@ -15,6 +16,7 @@ import { ProGate } from '../../../shared/components/ProGate'
 const AVAILABLE_SCOPES = ['secrets:read', 'secrets:write', 'scans:trigger', 'tokens:read']
 
 function CopyButton({ text }: { text: string }) {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -31,12 +33,13 @@ function CopyButton({ text }: { text: string }) {
   return (
     <Button variant="outline" size="sm" onClick={handle} className="gap-1">
       {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? t('secvault.tokensPage.copied') : t('secvault.tokensPage.copy')}
     </Button>
   )
 }
 
 export default function TokensPage() {
+  const { t } = useTranslation()
   const { data: tokens, isLoading, error: tokensError } = useTokens()
   const createToken = useCreateToken()
   const deleteToken = useDeleteToken()
@@ -78,12 +81,12 @@ export default function TokensPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="API-Tokens"
-        description="API-Tokens für programmatischen Zugriff verwalten."
+        title={t('secvault.tokensPage.title')}
+        description={t('secvault.tokensPage.description')}
         actions={
           <Button onClick={() => { setOpen(true); setCreatedToken(null) }}>
             <Plus className="w-4 h-4 mr-1" />
-            Create Token
+            {t('secvault.tokensPage.createToken')}
           </Button>
         }
       />
@@ -96,12 +99,12 @@ export default function TokensPage() {
           </div>
         ) : !tokens || tokens.length === 0 ? (
           <EmptyState
-            icon={KeyRound}
-            title="Noch keine API-Tokens vorhanden"
-            description="Erstellen Sie einen Access Token, um Secrets aus CI/CD oder anderen Systemen abzurufen."
+            icon={Key}
+            title={t('secvault.tokensPage.noTokens')}
+            description={t('secvault.tokensPage.noTokensDesc')}
             action={
               <Button onClick={() => setOpen(true)}>
-                <Plus className="w-4 h-4 mr-1" />Create Token
+                <Plus className="w-4 h-4 mr-1" />{t('secvault.tokensPage.createToken')}
               </Button>
             }
           />
@@ -110,10 +113,10 @@ export default function TokensPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Scopes</TableHead>
-                  <TableHead>Zuletzt verwendet</TableHead>
-                  <TableHead>Erstellt</TableHead>
+                  <TableHead>{t('secvault.tokensPage.colName')}</TableHead>
+                  <TableHead>{t('secvault.tokensPage.colScopes')}</TableHead>
+                  <TableHead>{t('secvault.tokensPage.colLastUsed')}</TableHead>
+                  <TableHead>{t('secvault.tokensPage.colCreated')}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -129,7 +132,7 @@ export default function TokensPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-secondary">
-                      {token.last_used_at ? new Date(token.last_used_at).toLocaleDateString() : 'Never'}
+                      {token.last_used_at ? new Date(token.last_used_at).toLocaleDateString() : t('secvault.tokensPage.never')}
                     </TableCell>
                     <TableCell className="text-sm text-secondary">
                       {new Date(token.created_at).toLocaleDateString()}
@@ -156,11 +159,11 @@ export default function TokensPage() {
       {/* Create dialog */}
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setCreatedToken(null) }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>API-Token erstellen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('secvault.tokensPage.createDialogTitle')}</DialogTitle></DialogHeader>
           {createdToken ? (
             <div className="py-4 space-y-3">
               <p className="text-sm text-secondary">
-                Copy this token now — it won't be shown again.
+                {t('secvault.tokensPage.tokenCreatedNote')}
               </p>
               <Card>
                 <CardContent className="py-3 flex items-center gap-3">
@@ -169,14 +172,14 @@ export default function TokensPage() {
                 </CardContent>
               </Card>
               <DialogFooter>
-                <Button onClick={() => { setOpen(false); setCreatedToken(null) }}>Fertig</Button>
+                <Button onClick={() => { setOpen(false); setCreatedToken(null) }}>{t('secvault.tokensPage.done')}</Button>
               </DialogFooter>
             </div>
           ) : (
             <form onSubmit={(e) => { void handleCreate(e) }}>
               <div className="py-4 space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="token-name">Token-Name</Label>
+                  <Label htmlFor="token-name">{t('secvault.tokensPage.labelName')}</Label>
                   <Input
                     id="token-name"
                     placeholder="github-actions-prod"
@@ -186,7 +189,7 @@ export default function TokensPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Scopes</Label>
+                  <Label>{t('secvault.tokensPage.labelScopes')}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {AVAILABLE_SCOPES.map((scope) => (
                       <label key={scope} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -203,9 +206,9 @@ export default function TokensPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>Abbrechen</Button>
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
                 <Button type="submit" disabled={createToken.isPending || !name.trim() || selectedScopes.size === 0}>
-                  {createToken.isPending ? 'Creating…' : 'Create Token'}
+                  {createToken.isPending ? t('secvault.tokensPage.creating') : t('secvault.tokensPage.createToken')}
                 </Button>
               </DialogFooter>
             </form>
@@ -216,12 +219,12 @@ export default function TokensPage() {
       {/* Delete confirmation */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Revoke Token</DialogTitle></DialogHeader>
-          <p className="text-sm text-secondary py-2">This will permanently revoke the token. Any systems using it will lose access.</p>
+          <DialogHeader><DialogTitle>{t('secvault.tokensPage.revokeDialogTitle')}</DialogTitle></DialogHeader>
+          <p className="text-sm text-secondary py-2">{t('secvault.tokensPage.revokeDialogDesc')}</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteToken.isPending}>
-              {deleteToken.isPending ? 'Revoking…' : 'Revoke'}
+              {deleteToken.isPending ? t('secvault.tokensPage.revoking') : t('secvault.tokensPage.revoke')}
             </Button>
           </DialogFooter>
         </DialogContent>

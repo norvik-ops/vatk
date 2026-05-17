@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mail, Plus, Workflow, ShieldCheck } from 'lucide-react'
+import { Fish, Plus, Workflow, ShieldCheck } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { InfoBanner } from '../../../shared/components/InfoBanner'
 import { Button } from '../../../components/ui/button'
@@ -99,12 +99,12 @@ export default function CampaignsPage() {
             </div>
           ) : !campaigns || campaigns.length === 0 ? (
             <EmptyState
-              icon={Mail}
-              title="Noch keine Kampagnen vorhanden"
-              description="Erstellen Sie eine Phishing-Simulation, um das Sicherheitsbewusstsein der Benutzer zu messen."
+              icon={Fish}
+              title="Keine Kampagnen"
+              description="Starte deine erste Phishing-Simulation."
               action={
                 <Button onClick={() => setOpen(true)}>
-                  <Plus className="w-4 h-4 mr-1" />New Campaign
+                  <Plus className="w-4 h-4 mr-1" />Kampagne erstellen
                 </Button>
               }
             />

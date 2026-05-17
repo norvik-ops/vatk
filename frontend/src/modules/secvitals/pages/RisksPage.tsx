@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldAlert, Plus, List, BarChart2 } from 'lucide-react'
+import { ShieldAlert, Plus, List, BarChart2, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -12,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
+import { useSortableTable } from '../../../shared/hooks/useSortableTable'
 import { useRisks, useCreateRisk } from '../hooks/useRisks'
 import RiskHeatmap from '../components/RiskHeatmap'
 import type { Risk, CreateRiskInput } from '../types'
@@ -23,21 +25,23 @@ const SCORE_COLOR = (score: number) => {
   return 'bg-green-500/20 text-green-400 border-green-500/30'
 }
 
-const STATUS_LABELS: Record<Risk['status'], string> = {
-  open: 'Offen',
-  mitigated: 'Gemindert',
-  accepted: 'Akzeptiert',
-  closed: 'Geschlossen',
-}
-
-const TREATMENT_LABELS: Record<Risk['treatment'], string> = {
-  avoid: 'Vermeiden',
-  mitigate: 'Mindern',
-  transfer: 'Übertragen',
-  accept: 'Akzeptieren',
-}
-
 function RiskCard({ risk, onClick }: { risk: Risk; onClick: () => void }) {
+  const { t } = useTranslation()
+
+  const STATUS_LABELS: Record<Risk['status'], string> = {
+    open: t('secvitals.risksPage.statusOpen'),
+    mitigated: t('secvitals.risksPage.statusMitigated'),
+    accepted: t('secvitals.risksPage.statusAccepted'),
+    closed: t('secvitals.risksPage.statusClosed'),
+  }
+
+  const TREATMENT_LABELS: Record<Risk['treatment'], string> = {
+    avoid: t('secvitals.risksPage.treatmentAvoid'),
+    mitigate: t('secvitals.risksPage.treatmentMitigate'),
+    transfer: t('secvitals.risksPage.treatmentTransfer'),
+    accept: t('secvitals.risksPage.treatmentAccept'),
+  }
+
   return (
     <Card className="cursor-pointer hover:border-brand/50 transition-colors" onClick={onClick}>
       <CardContent className="pt-5 space-y-3">
@@ -52,8 +56,8 @@ function RiskCard({ risk, onClick }: { risk: Risk; onClick: () => void }) {
           <p className="text-xs text-muted-foreground line-clamp-2">{risk.description}</p>
         )}
         <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-          <span>Wahrscheinlichkeit: <strong className="text-foreground">{risk.likelihood}/5</strong></span>
-          <span>Auswirkung: <strong className="text-foreground">{risk.impact}/5</strong></span>
+          <span>{t('secvitals.risksPage.likelihood')}: <strong className="text-foreground">{risk.likelihood}/5</strong></span>
+          <span>{t('secvitals.risksPage.impact')}: <strong className="text-foreground">{risk.impact}/5</strong></span>
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">{TREATMENT_LABELS[risk.treatment]}</span>
@@ -78,6 +82,7 @@ function emptyForm(): CreateRiskInput {
 }
 
 export default function RisksPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState<CreateRiskInput>(emptyForm())
@@ -85,6 +90,18 @@ export default function RisksPage() {
   const [page, setPage] = useState(1)
   const { data: risks, isLoading, isError, pagination } = useRisks(page)
   const createRisk = useCreateRisk()
+
+  const { sorted: sortedRisks, sortKey, sortDir, toggleSort } = useSortableTable<Risk>(
+    risks ?? [], { key: 'risk_score', dir: 'desc' },
+  )
+
+  const SORT_OPTIONS: { key: keyof Risk; label: string }[] = [
+    { key: 'title', label: t('common.name') },
+    { key: 'likelihood', label: t('secvitals.risksPage.likelihood') },
+    { key: 'impact', label: t('secvitals.risksPage.impact') },
+    { key: 'risk_score', label: 'Risiko-Score' },
+    { key: 'status', label: t('common.status') },
+  ]
 
   function openDialog() {
     setForm(emptyForm())
@@ -95,15 +112,16 @@ export default function RisksPage() {
     createRisk.mutate(form, { onSuccess: () => setDialogOpen(false) })
   }
 
-  const high = risks?.filter((r) => r.risk_score >= 15) ?? []
-  const medium = risks?.filter((r) => r.risk_score >= 9 && r.risk_score < 15) ?? []
-  const low = risks?.filter((r) => r.risk_score < 9) ?? []
+  const displayRisks = view === 'list' ? sortedRisks : (risks ?? [])
+  const high = displayRisks.filter((r) => r.risk_score >= 15)
+  const medium = displayRisks.filter((r) => r.risk_score >= 9 && r.risk_score < 15)
+  const low = displayRisks.filter((r) => r.risk_score < 9)
 
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Risikoregister"
-        description="Identifizieren, bewerten und behandeln Sie Risiken für Ihre Organisation."
+        title={t('secvitals.risksPage.title')}
+        description={t('secvitals.risksPage.description')}
         actions={
           <div className="flex items-center gap-2">
             {/* View toggle */}
@@ -115,7 +133,7 @@ export default function RisksPage() {
                 onClick={() => setView('list')}
               >
                 <List className="w-3.5 h-3.5 mr-1" />
-                Liste
+                {t('secvitals.risksPage.viewList')}
               </Button>
               <Button
                 size="sm"
@@ -124,32 +142,62 @@ export default function RisksPage() {
                 onClick={() => setView('heatmap')}
               >
                 <BarChart2 className="w-3.5 h-3.5 mr-1" />
-                Heatmap
+                {t('secvitals.risksPage.viewHeatmap')}
               </Button>
             </div>
             <Button onClick={openDialog}>
               <Plus className="w-4 h-4 mr-1" />
-              Risiko erfassen
+              {t('secvitals.risksPage.addRisk')}
             </Button>
           </div>
         }
       />
 
       <div className="flex-1 p-6 space-y-6">
+        {/* Sort toolbar — list view only */}
+        {!isLoading && !isError && view === 'list' && risks && risks.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-secondary">
+            <span className="font-medium">{t('common.filter')}:</span>
+            {SORT_OPTIONS.map((opt) => {
+              const isActive = sortKey === opt.key
+              return (
+                <button
+                  key={String(opt.key)}
+                  onClick={() => toggleSort(opt.key)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border transition-colors ${
+                    isActive
+                      ? 'border-brand/50 bg-brand/10 text-brand'
+                      : 'border-border hover:border-brand/30 hover:bg-surface2'
+                  }`}
+                >
+                  {opt.label}
+                  {isActive ? (
+                    sortDir === 'asc'
+                      ? <ChevronUp className="w-3 h-3" />
+                      : <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronsUpDown className="w-3 h-3 opacity-50" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {isLoading && (
           <div className="flex items-center justify-center h-48">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         )}
         {isError && (
-          <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">Fehler beim Laden des Risikoregisters.</div>
+          <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">{t('secvitals.risksPage.loadError')}</div>
         )}
         {!isLoading && !isError && risks?.length === 0 && (
           <EmptyState
             icon={ShieldAlert}
-            title="Kein Risiko erfasst"
-            description="Dokumentieren Sie Risiken und deren Behandlungsmaßnahmen."
-            action={<Button onClick={openDialog}><Plus className="w-4 h-4 mr-1" />Risiko erfassen</Button>}
+            title={t('secvitals.risksPage.noRisks')}
+            description={t('secvitals.risksPage.noRisksDesc')}
+            action={<Button onClick={openDialog}><Plus className="w-4 h-4 mr-1" />{t('secvitals.risksPage.addRisk')}</Button>}
           />
         )}
         {!isLoading && !isError && risks && risks.length > 0 && view === 'heatmap' && (
@@ -159,7 +207,7 @@ export default function RisksPage() {
           <>
             {high.length > 0 && (
               <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-red-400">Hohes Risiko (Score ≥ 15)</h2>
+                <h2 className="text-sm font-semibold text-red-400">{t('secvitals.risksPage.highRisk')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {high.map((r) => <RiskCard key={r.id} risk={r} onClick={() => navigate(`/secvitals/risks/${r.id}`)} />)}
                 </div>
@@ -167,7 +215,7 @@ export default function RisksPage() {
             )}
             {medium.length > 0 && (
               <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-amber-400">Mittleres Risiko (Score 9–14)</h2>
+                <h2 className="text-sm font-semibold text-amber-400">{t('secvitals.risksPage.mediumRisk')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {medium.map((r) => <RiskCard key={r.id} risk={r} onClick={() => navigate(`/secvitals/risks/${r.id}`)} />)}
                 </div>
@@ -175,7 +223,7 @@ export default function RisksPage() {
             )}
             {low.length > 0 && (
               <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-muted-foreground">Niedriges Risiko</h2>
+                <h2 className="text-sm font-semibold text-muted-foreground">{t('secvitals.risksPage.lowRisk')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {low.map((r) => <RiskCard key={r.id} risk={r} onClick={() => navigate(`/secvitals/risks/${r.id}`)} />)}
                 </div>
@@ -192,65 +240,65 @@ export default function RisksPage() {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Risiko erfassen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('secvitals.risksPage.dialogTitle')}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="risk-title">Bezeichnung *</Label>
-              <Input id="risk-title" placeholder="z.B. Datenverlust durch Ransomware" value={form.title}
+              <Label htmlFor="risk-title">{t('secvitals.risksPage.labelTitle')} *</Label>
+              <Input id="risk-title" placeholder={t('secvitals.risksPage.placeholderTitle')} value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="risk-category">Kategorie</Label>
-              <Input id="risk-category" placeholder="z.B. Cyber, Compliance, Betrieb" value={form.category ?? ''}
+              <Label htmlFor="risk-category">{t('secvitals.risksPage.labelCategory')}</Label>
+              <Input id="risk-category" placeholder={t('secvitals.risksPage.placeholderCategory')} value={form.category ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="risk-desc">Beschreibung</Label>
-              <Textarea id="risk-desc" rows={2} placeholder="Was könnte passieren und warum?" value={form.description ?? ''}
+              <Label htmlFor="risk-desc">{t('secvitals.risksPage.labelDescription')}</Label>
+              <Textarea id="risk-desc" rows={2} placeholder={t('secvitals.risksPage.placeholderDescription')} value={form.description ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="risk-likelihood">Wahrscheinlichkeit (1–5) *</Label>
+                <Label htmlFor="risk-likelihood">{t('secvitals.risksPage.labelLikelihood')} *</Label>
                 <Input id="risk-likelihood" type="number" min={1} max={5} value={form.likelihood}
                   onChange={(e) => setForm((f) => ({ ...f, likelihood: parseInt(e.target.value, 10) || 1 }))} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="risk-impact">Auswirkung (1–5) *</Label>
+                <Label htmlFor="risk-impact">{t('secvitals.risksPage.labelImpact')} *</Label>
                 <Input id="risk-impact" type="number" min={1} max={5} value={form.impact}
                   onChange={(e) => setForm((f) => ({ ...f, impact: parseInt(e.target.value, 10) || 1 }))} />
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
-              Voraussichtlicher Risiko-Score: <strong className={`${SCORE_COLOR(form.likelihood * form.impact)} px-1 py-0.5 rounded`}>{form.likelihood * form.impact}</strong>
+              {t('secvitals.risksPage.previewScore')}: <strong className={`${SCORE_COLOR(form.likelihood * form.impact)} px-1 py-0.5 rounded`}>{form.likelihood * form.impact}</strong>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="risk-treatment">Behandlungsstrategie *</Label>
+              <Label htmlFor="risk-treatment">{t('secvitals.risksPage.labelTreatment')} *</Label>
               <Select value={form.treatment} onValueChange={(v) => setForm((f) => ({ ...f, treatment: v as Risk['treatment'] }))}>
                 <SelectTrigger id="risk-treatment"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="avoid">Vermeiden</SelectItem>
-                  <SelectItem value="mitigate">Mindern</SelectItem>
-                  <SelectItem value="transfer">Übertragen (z.B. Versicherung)</SelectItem>
-                  <SelectItem value="accept">Akzeptieren</SelectItem>
+                  <SelectItem value="avoid">{t('secvitals.risksPage.treatmentAvoid')}</SelectItem>
+                  <SelectItem value="mitigate">{t('secvitals.risksPage.treatmentMitigate')}</SelectItem>
+                  <SelectItem value="transfer">{t('secvitals.risksPage.treatmentTransfer')}</SelectItem>
+                  <SelectItem value="accept">{t('secvitals.risksPage.treatmentAccept')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="risk-treatment-notes">Maßnahmen</Label>
-              <Textarea id="risk-treatment-notes" rows={2} placeholder="Konkrete Maßnahmen zur Risikobehandlung …" value={form.treatment_notes ?? ''}
+              <Label htmlFor="risk-treatment-notes">{t('secvitals.risksPage.labelTreatmentNotes')}</Label>
+              <Textarea id="risk-treatment-notes" rows={2} placeholder={t('secvitals.risksPage.placeholderTreatmentNotes')} value={form.treatment_notes ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, treatment_notes: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="risk-owner">Verantwortlicher</Label>
-              <Input id="risk-owner" placeholder="z.B. Max Mustermann" value={form.owner ?? ''}
+              <Label htmlFor="risk-owner">{t('secvitals.risksPage.labelOwner')}</Label>
+              <Input id="risk-owner" placeholder={t('secvitals.risksPage.placeholderOwner')} value={form.owner ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, owner: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleSubmit} disabled={!form.title || !form.treatment || createRisk.isPending}>
-              {createRisk.isPending ? 'Speichern …' : 'Risiko erfassen'}
+              {createRisk.isPending ? t('common.saving') : t('secvitals.risksPage.addRisk')}
             </Button>
           </DialogFooter>
         </DialogContent>

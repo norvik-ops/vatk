@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ShieldCheck, Plus, BookOpen, Trash2, Download } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -110,6 +111,7 @@ function ScoreCircle({ score }: { score: number }) {
 }
 
 function EnabledFrameworkCard({ framework, onDelete }: { framework: Framework; onDelete: (fw: Framework) => void }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const enabledDate = new Date(framework.created_at).toLocaleDateString('de-DE', {
     year: 'numeric', month: 'short', day: 'numeric',
@@ -129,11 +131,11 @@ function EnabledFrameworkCard({ framework, onDelete }: { framework: Framework; o
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between text-sm text-secondary">
-          <span>{framework.control_count != null ? `${framework.control_count} Controls · ` : ''}Aktiviert {enabledDate}</span>
+          <span>{framework.control_count != null ? `${framework.control_count} ${t('secvitals.controlDetailPage.controlsCount')} · ` : ''}{t('secvitals.controlDetailPage.activatedOn')} {enabledDate}</span>
           <button
             onClick={() => onDelete(framework)}
             className="p-1.5 rounded text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors"
-            title="Framework deaktivieren"
+            title={t('secvitals.frameworksPage.disableFramework')}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -144,6 +146,7 @@ function EnabledFrameworkCard({ framework, onDelete }: { framework: Framework; o
 }
 
 export default function FrameworksPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [deleteTarget, setDeleteTarget] = useState<Framework | null>(null)
   const { data: frameworks, isLoading, isError } = useFrameworks()
@@ -182,16 +185,16 @@ export default function FrameworksPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Compliance-Frameworks"
-        description="Aktiviere Frameworks und verfolge deinen Compliance-Fortschritt."
+        title={t('secvitals.frameworksPage.title')}
+        description={t('secvitals.frameworksPage.description')}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="w-3.5 h-3.5 mr-1" />
-              Audit-Paket exportieren
+              {t('secvitals.frameworksPage.exportAuditPackage')}
             </Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/secvitals')}>
-              Zurück zur Übersicht
+              {t('secvitals.frameworksPage.backToOverview')}
             </Button>
           </div>
         }
@@ -201,7 +204,7 @@ export default function FrameworksPage() {
         {/* Enabled Frameworks */}
         <section>
           <h2 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-3">
-            Aktivierte Frameworks
+            {t('secvitals.frameworksPage.activatedFrameworks')}
           </h2>
 
           {isLoading && (
@@ -211,14 +214,14 @@ export default function FrameworksPage() {
           )}
           {isError && (
             <p className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">
-              Frameworks konnten nicht geladen werden.
+              {t('secvitals.frameworksPage.loadError')}
             </p>
           )}
           {!isLoading && !isError && frameworks && frameworks.length === 0 && (
             <EmptyState
               icon={ShieldCheck}
-              title="Noch kein Framework aktiviert"
-              description="Wähle aus dem Katalog unten ein Framework aus, um zu starten."
+              title={t('secvitals.frameworksPage.noFrameworks')}
+              description={t('secvitals.frameworksPage.noFrameworksDesc')}
             />
           )}
           {!isLoading && !isError && frameworks && frameworks.length > 0 && (
@@ -235,7 +238,7 @@ export default function FrameworksPage() {
           <div className="flex items-center gap-2 mb-3">
             <BookOpen className="w-4 h-4 text-secondary" />
             <h2 className="text-sm font-semibold text-secondary uppercase tracking-wider">
-              Framework-Katalog
+              {t('secvitals.frameworksPage.frameworkCatalogue')}
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -252,7 +255,7 @@ export default function FrameworksPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-primary">{fw.name}</span>
                         <Badge variant="secondary" className="text-[10px]">{fw.category}</Badge>
-                        {alreadyEnabled && <Badge variant="success" className="text-[10px]">Aktiviert</Badge>}
+                        {alreadyEnabled && <Badge variant="success" className="text-[10px]">{t('secvitals.frameworksPage.activated')}</Badge>}
                       </div>
                       <p className="text-xs text-secondary mt-0.5">{fw.fullName}</p>
                     </div>
@@ -272,7 +275,7 @@ export default function FrameworksPage() {
                             if (match) navigate(`/secvitals/frameworks/${match.id}`)
                           }}
                         >
-                          Anzeigen
+                          {t('secvitals.frameworksPage.view')}
                         </Button>
                         {fw.key === 'DORA' && (
                           <Button
@@ -285,7 +288,7 @@ export default function FrameworksPage() {
                               if (match) navigate(`/secvitals/dora/${match.id}`)
                             }}
                           >
-                            DORA-Artikel
+                            {t('secvitals.frameworksPage.doraArticles')}
                           </Button>
                         )}
                       </div>
@@ -296,7 +299,7 @@ export default function FrameworksPage() {
                         disabled={enableFramework.isPending}
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
-                        Aktivieren
+                        {t('secvitals.frameworksPage.activate')}
                       </Button>
                     )}
                   </div>
@@ -306,7 +309,7 @@ export default function FrameworksPage() {
           </div>
 
           <p className="text-xs text-secondary mt-4">
-            Weitere Frameworks können auf Anfrage ergänzt werden. Eigene Frameworks werden in einer späteren Version unterstützt.
+            {t('secvitals.frameworksPage.moreFrameworks')}
           </p>
         </section>
       </div>
@@ -315,20 +318,19 @@ export default function FrameworksPage() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Framework deaktivieren</DialogTitle>
+            <DialogTitle>{t('secvitals.frameworksPage.disableFramework')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-secondary py-2">
-            Möchtest du <span className="font-semibold text-primary">{deleteTarget?.name}</span> wirklich entfernen?
-            Alle zugehörigen Controls und Nachweise werden unwiderruflich gelöscht.
+            {t('secvitals.frameworksPage.disableConfirm', { name: deleteTarget?.name ?? '' })}
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
             <Button
               variant="destructive"
               onClick={handleConfirmDelete}
               disabled={deleteFramework.isPending}
             >
-              {deleteFramework.isPending ? 'Wird entfernt…' : 'Ja, deaktivieren'}
+              {deleteFramework.isPending ? t('secvitals.frameworksPage.disabling') : t('secvitals.frameworksPage.confirmDisable')}
             </Button>
           </DialogFooter>
         </DialogContent>

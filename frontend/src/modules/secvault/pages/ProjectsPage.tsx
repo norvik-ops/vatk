@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FolderLock, Plus, Trash2 } from 'lucide-react'
+import { Lock, Plus, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Button } from '../../../components/ui/button'
@@ -18,6 +19,7 @@ import { Label } from '../../../components/ui/label'
 import { useProjects, useCreateProject, useDeleteProject } from '../hooks/useProjects'
 
 export default function ProjectsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: projects, isLoading } = useProjects()
   const createProject = useCreateProject()
@@ -52,12 +54,12 @@ export default function ProjectsPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Projekte"
-        description="Secret-Projekte und ihre Umgebungen verwalten"
+        title={t('secvault.projectsPage.title')}
+        description={t('secvault.projectsPage.description')}
         actions={
           <Button onClick={() => setShowCreate(true)}>
             <Plus className="w-4 h-4" />
-            New Project
+            {t('secvault.projectsPage.newProject')}
           </Button>
         }
       />
@@ -69,13 +71,13 @@ export default function ProjectsPage() {
           </div>
         ) : !projects || projects.length === 0 ? (
           <EmptyState
-            icon={FolderLock}
-            title="Noch keine Projekte vorhanden"
-            description="Erstellen Sie Ihr erstes Projekt, um Secrets über mehrere Umgebungen hinweg zu verwalten."
+            icon={Lock}
+            title={t('secvault.projectsPage.noProjects')}
+            description={t('secvault.projectsPage.noProjectsDesc')}
             action={
               <Button onClick={() => setShowCreate(true)}>
-                <Plus className="w-4 h-4" />
-                New Project
+                <Plus className="w-4 h-4 mr-1" />
+                {t('secvault.projectsPage.newProject')}
               </Button>
             }
           />
@@ -108,7 +110,7 @@ export default function ProjectsPage() {
                     <p className="text-sm text-secondary mb-3 line-clamp-2">{project.description}</p>
                   )}
                   <p className="text-xs text-secondary">
-                    Created{' '}
+                    {t('secvault.projectsPage.createdOn')}{' '}
                     {new Date(project.created_at).toLocaleDateString(undefined, {
                       year: 'numeric',
                       month: 'short',
@@ -126,14 +128,14 @@ export default function ProjectsPage() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Neues Projekt</DialogTitle>
+            <DialogTitle>{t('secvault.projectsPage.createDialogTitle')}</DialogTitle>
             <DialogDescription>
-              Erstellen Sie ein neues Projekt, um Secrets über mehrere Umgebungen hinweg zu gruppieren.
+              {t('secvault.projectsPage.createDialogDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="project-name">Name</Label>
+              <Label htmlFor="project-name">{t('secvault.projectsPage.labelName')}</Label>
               <Input
                 id="project-name"
                 placeholder="my-service"
@@ -143,10 +145,10 @@ export default function ProjectsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="project-desc">Beschreibung (optional)</Label>
+              <Label htmlFor="project-desc">{t('secvault.projectsPage.labelDescription')}</Label>
               <Input
                 id="project-desc"
-                placeholder="Short description…"
+                placeholder={t('secvault.projectsPage.placeholderDescription')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
@@ -154,10 +156,10 @@ export default function ProjectsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleCreate} disabled={!name.trim() || createProject.isPending}>
-              {createProject.isPending ? 'Creating…' : 'Create'}
+              {createProject.isPending ? t('secvault.projectsPage.creating') : t('secvault.projectsPage.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -167,21 +169,21 @@ export default function ProjectsPage() {
       <Dialog open={Boolean(deleteId)} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Projekt löschen</DialogTitle>
+            <DialogTitle>{t('secvault.projectsPage.deleteDialogTitle')}</DialogTitle>
             <DialogDescription>
-              Das Projekt und alle zugehörigen Secrets werden unwiderruflich gelöscht.
+              {t('secvault.projectsPage.deleteDialogDesc')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={deleteProject.isPending}
             >
-              {deleteProject.isPending ? 'Deleting…' : 'Delete'}
+              {deleteProject.isPending ? t('secvault.projectsPage.deleting') : t('secvault.projectsPage.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

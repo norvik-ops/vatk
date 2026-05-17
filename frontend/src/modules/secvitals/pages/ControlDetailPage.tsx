@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Download, FileText, ChevronRight, RefreshCw, Info,
   Circle, Clock, CheckCircle2, MinusCircle, Trash2, ListChecks,
 } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
+import { trackPage } from '../../../shared/hooks/useRecentPages'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
@@ -30,6 +32,7 @@ import { EvidenceExpiryBadge } from '../components/EvidenceExpiryBadge'
 import type { Evidence, Control } from '../types'
 import { maturityLabel, maturityColor } from '../utils/tisax'
 import { ControlMappingsBadge } from '../components/ControlMappingsBadge'
+import { useTranslation } from 'react-i18next'
 import { toast } from '../../../shared/hooks/useToast'
 import { useAuthStore } from '../../../shared/stores/auth'
 import { ErrorState } from '../../../shared/components/ErrorState'
@@ -39,13 +42,6 @@ import { Textarea } from '../../../components/ui/textarea'
 // ── Status config ────────────────────────────────────────────────────────────
 
 type StatusChoice = 'missing' | 'in_progress' | 'implemented' | 'not_applicable'
-
-const STATUS_CONFIG: Record<StatusChoice, { icon: React.ReactNode; label: string; className: string }> = {
-  missing:        { icon: <Circle className="w-3.5 h-3.5" />,       label: 'Offen',           className: 'text-red-500' },
-  in_progress:    { icon: <Clock className="w-3.5 h-3.5" />,        label: 'In Bearbeitung',  className: 'text-yellow-600' },
-  implemented:    { icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: 'Umgesetzt',       className: 'text-green-600' },
-  not_applicable: { icon: <MinusCircle className="w-3.5 h-3.5" />,  label: 'Nicht anwendbar', className: 'text-secondary' },
-}
 
 function toStatusChoice(status: Control['status']): StatusChoice {
   if (status === 'covered' || status === 'implemented') return 'implemented'
@@ -63,19 +59,6 @@ const evidenceStatusVariant: Record<Evidence['status'], React.ComponentProps<typ
   expired: 'secondary',
 }
 
-const evidenceStatusLabel: Record<Evidence['status'], string> = {
-  pending_review: 'Ausstehend',
-  approved: 'Genehmigt',
-  rejected: 'Abgelehnt',
-  expired: 'Abgelaufen',
-}
-
-const evidenceTypeLabel: Record<Evidence['type'], string> = {
-  manual: 'Manuell',
-  automated: 'Automatisiert',
-  document: 'Dokument',
-}
-
 // ── NA dialog ────────────────────────────────────────────────────────────────
 
 function NotApplicableDialog({
@@ -89,6 +72,7 @@ function NotApplicableDialog({
   open: boolean
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const [reason, setReason] = useState(control.not_applicable_reason ?? '')
   const updateControl = useUpdateControl(frameworkId)
 
@@ -103,7 +87,7 @@ function NotApplicableDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Control als „Nicht anwendbar" markieren</DialogTitle>
+          <DialogTitle>{t('secvitals.controlDetailPage.naDialogTitle')}</DialogTitle>
         </DialogHeader>
         <div className="py-3 space-y-3">
           <p className="text-sm text-secondary">
@@ -112,7 +96,7 @@ function NotApplicableDialog({
           </p>
           <div className="space-y-1.5">
             <Label htmlFor="na-reason">
-              Begründung <span className="text-secondary">(für Auditor sichtbar)</span>
+              {t('secvitals.controlDetailPage.naReason')} <span className="text-secondary">{t('secvitals.controlDetailPage.naReasonHint')}</span>
             </Label>
             <textarea
               id="na-reason"
@@ -120,14 +104,14 @@ function NotApplicableDialog({
               className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="z.B. Trifft auf unsere Organisation nicht zu."
+              placeholder={t('secvitals.controlDetailPage.naPlaceholder')}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Abbrechen</Button>
+          <Button variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
           <Button onClick={handleConfirm} disabled={updateControl.isPending}>
-            {updateControl.isPending ? 'Wird gespeichert…' : 'Bestätigen'}
+            {updateControl.isPending ? t('secvitals.controlDetailPage.naSaving') : t('secvitals.controlDetailPage.naConfirm')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -138,11 +122,32 @@ function NotApplicableDialog({
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ControlDetailPage() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const controlId = id ?? ''
   const frameworkId = searchParams.get('frameworkId') ?? ''
+
+  const STATUS_CONFIG: Record<StatusChoice, { icon: React.ReactNode; label: string; className: string }> = {
+    missing:        { icon: <Circle className="w-3.5 h-3.5" />,       label: t('secvitals.controlDetailPage.statusMissing'),        className: 'text-red-500' },
+    in_progress:    { icon: <Clock className="w-3.5 h-3.5" />,        label: t('secvitals.controlDetailPage.statusInProgress'),     className: 'text-yellow-600' },
+    implemented:    { icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: t('secvitals.controlDetailPage.statusImplemented'),    className: 'text-green-600' },
+    not_applicable: { icon: <MinusCircle className="w-3.5 h-3.5" />,  label: t('secvitals.controlDetailPage.statusNotApplicable'), className: 'text-secondary' },
+  }
+
+  const evidenceStatusLabel: Record<Evidence['status'], string> = {
+    pending_review: t('secvitals.controlDetailPage.evidenceStatusPending'),
+    approved: t('secvitals.controlDetailPage.evidenceStatusApproved'),
+    rejected: t('secvitals.controlDetailPage.evidenceStatusRejected'),
+    expired: t('secvitals.controlDetailPage.evidenceStatusExpired'),
+  }
+
+  const evidenceTypeLabel: Record<Evidence['type'], string> = {
+    manual: t('secvitals.controlDetailPage.evidenceTypeManualLabel'),
+    automated: t('secvitals.controlDetailPage.evidenceTypeAutomatedLabel'),
+    document: t('secvitals.controlDetailPage.evidenceTypeDocumentLabel'),
+  }
 
   const { user } = useAuthStore()
   const isAdmin = user?.roles?.includes('Admin') ?? false
@@ -168,6 +173,10 @@ export default function ControlDetailPage() {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false)
   const [pendingStatus, setPendingStatus] = useState('')
   const [approvalComment, setApprovalComment] = useState('')
+
+  useEffect(() => {
+    if (control) trackPage(window.location.pathname + window.location.search, control.title, '🛡️')
+  }, [control?.id])
 
   const subControls = allControls?.filter(
     (c) => c.control_id.startsWith((control?.control_id ?? '') + '.') && c.id !== controlId,
@@ -219,7 +228,7 @@ export default function ControlDetailPage() {
         manual_status: value === 'missing' ? '' : value as '' | 'in_progress' | 'implemented',
       },
       {
-        onSuccess: () => toast('Gespeichert', 'success'),
+        onSuccess: () => toast(t('secvitals.controlDetailPage.toastSaved'), 'success'),
         onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
       },
     )
@@ -230,7 +239,7 @@ export default function ControlDetailPage() {
       { requested_status: pendingStatus, comment: approvalComment },
       {
         onSuccess: () => {
-          toast('Änderung zur Genehmigung eingereicht', 'success')
+          toast(t('secvitals.controlDetailPage.toastApprovalSubmitted'), 'success')
           setApprovalDialogOpen(false)
           setApprovalComment('')
           setPendingStatus('')
@@ -272,14 +281,14 @@ export default function ControlDetailPage() {
       if (notes) fd.append('notes', notes)
       if (expiresAt) fd.append('expires_at', expiresAtISO ?? '')
       uploadEvidence.mutate(fd, {
-        onSuccess: () => { resetAddForm(); toast('Nachweis hochgeladen', 'success') },
+        onSuccess: () => { resetAddForm(); toast(t('secvitals.controlDetailPage.toastEvidenceUploaded'), 'success') },
         onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
       })
     } else {
       addEvidence.mutate(
         { title, type, notes: notes || undefined, expires_at: expiresAtISO },
         {
-          onSuccess: () => { resetAddForm(); toast('Nachweis hinzugefügt', 'success') },
+          onSuccess: () => { resetAddForm(); toast(t('secvitals.controlDetailPage.toastEvidenceAdded'), 'success') },
           onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
         },
       )
@@ -300,7 +309,7 @@ export default function ControlDetailPage() {
       {
         onSuccess: () => {
           setReviewOpen(false)
-          toast('Prüfung abgeschlossen', 'success')
+          toast(t('secvitals.controlDetailPage.toastReviewDone'), 'success')
         },
         onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
       },
@@ -315,6 +324,11 @@ export default function ControlDetailPage() {
 
   return (
     <div className="flex flex-col h-full">
+      <Breadcrumbs items={[
+        { label: 'SecVitals', href: '/secvitals' },
+        { label: framework?.name ?? 'Framework', href: frameworkId ? `/secvitals/frameworks/${frameworkId}` : '/secvitals/frameworks' },
+        { label: control?.title ?? 'Control' },
+      ]} />
       <PageHeader
         title={controlLoading ? '…' : (control?.title ?? 'Control')}
         description={control ? `${control.control_id} · ${control.domain}` : ''}
@@ -322,15 +336,15 @@ export default function ControlDetailPage() {
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={exportControl}>
               <Download className="w-4 h-4 mr-1" />
-              Export
+              {t('secvitals.controlDetailPage.export')}
             </Button>
             <Button size="sm" onClick={() => setAddOpen(true)}>
               <Plus className="w-4 h-4 mr-1" />
-              Nachweis hinzufügen
+              {t('secvitals.controlDetailPage.addEvidence')}
             </Button>
             <Button variant="outline" size="sm" onClick={() => navigate(backTo)}>
               <ArrowLeft className="w-4 h-4 mr-1" />
-              Zurück
+              {t('secvitals.controlDetailPage.back')}
             </Button>
           </div>
         }
@@ -415,14 +429,14 @@ export default function ControlDetailPage() {
 
             {control.not_applicable && control.not_applicable_reason && (
               <p className="text-xs text-secondary italic border-l-2 border-border pl-3">
-                Begründung: {control.not_applicable_reason}
+                {t('secvitals.controlDetailPage.reasonLabel')}: {control.not_applicable_reason}
               </p>
             )}
 
             {control.description ? (
               <p className="text-sm text-secondary leading-relaxed">{control.description}</p>
             ) : (
-              <p className="text-sm text-secondary italic">Keine Beschreibung vorhanden.</p>
+              <p className="text-sm text-secondary italic">{t('secvitals.controlDetailPage.noDescription')}</p>
             )}
 
             <ControlMappingsBadge controlId={control.id} />
@@ -433,15 +447,15 @@ export default function ControlDetailPage() {
         {subControls.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Unterkontrollen</CardTitle>
+              <CardTitle className="text-sm">{t('secvitals.controlDetailPage.subControls')}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Control ID</TableHead>
-                    <TableHead>Titel</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t('secvitals.controlDetailPage.colControlId')}</TableHead>
+                    <TableHead>{t('secvitals.controlDetailPage.colTitle')}</TableHead>
+                    <TableHead>{t('secvitals.controlDetailPage.colStatus')}</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -483,7 +497,7 @@ export default function ControlDetailPage() {
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <ListChecks className="w-4 h-4" />
-              Umsetzungsschritte
+              {t('secvitals.controlDetailPage.implementationSteps')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -501,7 +515,7 @@ export default function ControlDetailPage() {
                           : 'border-border hover:border-green-400',
                       )}
                       onClick={() => toggleTask.mutate({ taskId: task.id, completed: !task.completed })}
-                      title={task.completed ? 'Als offen markieren' : 'Als erledigt markieren'}
+                      title={task.completed ? t('secvitals.controlDetailPage.markOpen') : t('secvitals.controlDetailPage.markDone')}
                     >
                       {task.completed && <CheckCircle2 className="w-3 h-3" />}
                     </button>
@@ -512,7 +526,7 @@ export default function ControlDetailPage() {
                       type="button"
                       className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
                       onClick={() => deleteTask.mutate(task.id)}
-                      title="Schritt löschen"
+                      title={t('secvitals.controlDetailPage.deleteStep')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -523,7 +537,7 @@ export default function ControlDetailPage() {
             {/* Add task form */}
             <form onSubmit={handleAddTask} className="flex gap-2">
               <Input
-                placeholder="Umsetzungsschritt hinzufügen …"
+                placeholder={t('secvitals.controlDetailPage.addStep')}
                 value={newTaskText}
                 onChange={(e) => setNewTaskText(e.target.value)}
                 className="flex-1 h-8 text-sm"
@@ -534,7 +548,7 @@ export default function ControlDetailPage() {
             </form>
             {(!tasks || tasks.length === 0) && !newTaskText && (
               <p className="text-xs text-muted-foreground">
-                Füge konkrete Umsetzungsschritte hinzu und hake sie ab, wenn sie abgeschlossen sind.
+                {t('secvitals.controlDetailPage.stepsEmpty')}
               </p>
             )}
           </CardContent>
@@ -558,7 +572,7 @@ export default function ControlDetailPage() {
         {/* Evidence */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Nachweise</CardTitle>
+            <CardTitle className="text-sm">{t('secvitals.controlDetailPage.evidence')}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {evidenceLoading ? (
@@ -568,18 +582,18 @@ export default function ControlDetailPage() {
             ) : !evidence || evidence.length === 0 ? (
               <div className="flex flex-col items-center py-12 text-center">
                 <FileText className="w-10 h-10 text-gray-300 mb-3" />
-                <p className="text-sm font-medium text-secondary">Noch keine Nachweise</p>
-                <p className="text-xs text-secondary mt-1">Füge Nachweise hinzu, um die Compliance zu belegen.</p>
+                <p className="text-sm font-medium text-secondary">{t('secvitals.controlDetailPage.noEvidence')}</p>
+                <p className="text-xs text-secondary mt-1">{t('secvitals.controlDetailPage.noEvidenceDesc')}</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Titel</TableHead>
-                    <TableHead>Typ</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ablaufdatum</TableHead>
-                    <TableHead>Hinzugefügt</TableHead>
+                    <TableHead>{t('secvitals.controlDetailPage.evidenceColTitle')}</TableHead>
+                    <TableHead>{t('secvitals.controlDetailPage.evidenceColType')}</TableHead>
+                    <TableHead>{t('secvitals.controlDetailPage.evidenceColStatus')}</TableHead>
+                    <TableHead>{t('secvitals.controlDetailPage.evidenceColExpiry')}</TableHead>
+                    <TableHead>{t('secvitals.controlDetailPage.evidenceColAdded')}</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -606,7 +620,7 @@ export default function ControlDetailPage() {
                             size="sm"
                             onClick={() => openReview(ev.id)}
                           >
-                            Prüfen
+                            {t('secvitals.controlDetailPage.review')}
                           </Button>
                         )}
                       </TableCell>
@@ -621,7 +635,7 @@ export default function ControlDetailPage() {
         {/* Evidence File Attachments */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Anhänge</CardTitle>
+            <CardTitle className="text-sm">{t('secvitals.controlDetailPage.attachments')}</CardTitle>
           </CardHeader>
           <CardContent>
             <EvidenceFileUpload controlId={controlId} />
@@ -649,30 +663,30 @@ export default function ControlDetailPage() {
       <Dialog open={approvalDialogOpen} onOpenChange={(v) => { if (!v) { setApprovalDialogOpen(false); setApprovalComment(''); setPendingStatus('') } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Statusänderung zur Genehmigung einreichen</DialogTitle>
+            <DialogTitle>{t('secvitals.controlDetailPage.approvalDialogTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-secondary">
-              Da das 4-Augen-Prinzip aktiv ist, wird diese Statusänderung zur Genehmigung durch einen Administrator eingereicht.
+              {t('secvitals.controlDetailPage.approvalDesc')}
             </p>
             <div className="text-sm space-y-1">
               <p>
-                <span className="font-medium text-primary">Beantragter Status:</span>{' '}
+                <span className="font-medium text-primary">{t('secvitals.controlDetailPage.requestedStatus')}:</span>{' '}
                 <span className="text-brand font-medium">
-                  {pendingStatus === 'missing' ? 'Offen'
-                    : pendingStatus === 'in_progress' ? 'In Bearbeitung'
-                    : pendingStatus === 'implemented' ? 'Umgesetzt'
-                    : pendingStatus === 'not_applicable' ? 'Nicht anwendbar'
+                  {pendingStatus === 'missing' ? t('secvitals.controlDetailPage.statusMissing')
+                    : pendingStatus === 'in_progress' ? t('secvitals.controlDetailPage.statusInProgress')
+                    : pendingStatus === 'implemented' ? t('secvitals.controlDetailPage.statusImplemented')
+                    : pendingStatus === 'not_applicable' ? t('secvitals.controlDetailPage.statusNotApplicable')
                     : pendingStatus}
                 </span>
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Begründung (optional)</Label>
+              <Label className="text-xs">{t('secvitals.controlDetailPage.approvalComment')}</Label>
               <Textarea
                 value={approvalComment}
                 onChange={(e) => setApprovalComment(e.target.value)}
-                placeholder="Warum soll der Status geändert werden?"
+                placeholder={t('secvitals.controlDetailPage.approvalPlaceholder')}
                 rows={3}
               />
             </div>
@@ -683,13 +697,13 @@ export default function ControlDetailPage() {
               onClick={() => { setApprovalDialogOpen(false); setApprovalComment(''); setPendingStatus('') }}
               disabled={requestApproval.isPending}
             >
-              Abbrechen
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSubmitApprovalRequest}
               disabled={requestApproval.isPending}
             >
-              {requestApproval.isPending ? 'Wird eingereicht…' : 'Zur Genehmigung einreichen'}
+              {requestApproval.isPending ? t('secvitals.controlDetailPage.submitting') : t('secvitals.controlDetailPage.submitApproval')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -698,36 +712,36 @@ export default function ControlDetailPage() {
       {/* Add Evidence Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nachweis hinzufügen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('secvitals.controlDetailPage.addEvidenceTitle')}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { void handleAdd(e) }}>
             <div className="py-4 space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="ev-title">Titel</Label>
+                <Label htmlFor="ev-title">{t('secvitals.controlDetailPage.evidenceLabelTitle')}</Label>
                 <Input
                   id="ev-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Richtliniendokument, Screenshot, etc."
+                  placeholder={t('secvitals.controlDetailPage.evidencePlaceholderTitle')}
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Typ</Label>
+                <Label>{t('secvitals.controlDetailPage.evidenceLabelType')}</Label>
                 <Select value={type} onValueChange={(v) => { setType(v as Evidence['type']); setFile(null) }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="manual">Manuell</SelectItem>
-                    <SelectItem value="document">Dokument (Datei hochladen)</SelectItem>
-                    <SelectItem value="automated">Automatisiert</SelectItem>
+                    <SelectItem value="manual">{t('secvitals.controlDetailPage.evidenceTypeManual')}</SelectItem>
+                    <SelectItem value="document">{t('secvitals.controlDetailPage.evidenceTypeDocument')}</SelectItem>
+                    <SelectItem value="automated">{t('secvitals.controlDetailPage.evidenceTypeAutomated')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {type === 'document' && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="ev-file">Datei</Label>
+                  <Label htmlFor="ev-file">{t('secvitals.controlDetailPage.evidenceLabelFile')}</Label>
                   <input
                     id="ev-file"
                     type="file"
@@ -742,8 +756,8 @@ export default function ControlDetailPage() {
                 <div className="flex items-start gap-2 p-3 bg-surface2 rounded-lg text-xs text-secondary">
                   <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-brand" />
                   <div>
-                    <p className="font-medium text-primary mb-1">Woher kommen automatisierte Nachweise?</p>
-                    <p>Scanner aus SecPulse (Trivy, Nuclei, OpenVAS) und Cloud-Integrationen (GitHub, AWS, Azure, AD) können automatisch Nachweise sammeln.</p>
+                    <p className="font-medium text-primary mb-1">{t('secvitals.controlDetailPage.automatedEvidenceTitle')}</p>
+                    <p>{t('secvitals.controlDetailPage.automatedEvidenceDesc')}</p>
                     <Button
                       type="button"
                       size="sm"
@@ -753,26 +767,26 @@ export default function ControlDetailPage() {
                       disabled={collectEvidence.isPending}
                     >
                       <RefreshCw className="w-3 h-3 mr-1" />
-                      {collectEvidence.isPending ? 'Sammle…' : 'Jetzt sammeln'}
+                      {collectEvidence.isPending ? t('secvitals.controlDetailPage.collecting') : t('secvitals.controlDetailPage.collectNow')}
                     </Button>
                   </div>
                 </div>
               )}
 
               <div className="space-y-1.5">
-                <Label htmlFor="ev-notes">Notizen (optional)</Label>
+                <Label htmlFor="ev-notes">{t('secvitals.controlDetailPage.evidenceLabelNotes')}</Label>
                 <textarea
                   id="ev-notes"
                   rows={3}
                   className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Zusätzlicher Kontext…"
+                  placeholder={t('secvitals.controlDetailPage.evidencePlaceholderNotes')}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="ev-expires-at">Ablaufdatum (optional)</Label>
+                <Label htmlFor="ev-expires-at">{t('secvitals.controlDetailPage.evidenceLabelExpiry')}</Label>
                 <Input
                   id="ev-expires-at"
                   type="date"
@@ -781,12 +795,12 @@ export default function ControlDetailPage() {
                   min={new Date().toISOString().split('T')[0]}
                 />
                 <p className="text-xs text-secondary">
-                  Falls gesetzt, wird eine Erinnerung 30 Tage vor Ablauf gesendet.
+                  {t('secvitals.controlDetailPage.evidenceExpiryHint')}
                 </p>
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>Abbrechen</Button>
+              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>{t('common.cancel')}</Button>
               <Button
                 type="submit"
                 disabled={
@@ -795,7 +809,7 @@ export default function ControlDetailPage() {
                   (type === 'document' && !file)
                 }
               >
-                {addEvidence.isPending || uploadEvidence.isPending ? 'Wird hinzugefügt…' : 'Nachweis hinzufügen'}
+                {addEvidence.isPending || uploadEvidence.isPending ? t('secvitals.controlDetailPage.adding') : t('secvitals.controlDetailPage.addEvidenceSubmit')}
               </Button>
             </DialogFooter>
           </form>
@@ -805,37 +819,37 @@ export default function ControlDetailPage() {
       {/* Review Dialog */}
       <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nachweis prüfen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('secvitals.controlDetailPage.reviewTitle')}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { void handleReview(e) }}>
             <div className="py-4 space-y-4">
               <div className="space-y-1.5">
-                <Label>Entscheidung</Label>
+                <Label>{t('secvitals.controlDetailPage.reviewDecision')}</Label>
                 <Select value={reviewStatus} onValueChange={(v) => setReviewStatus(v as 'approved' | 'rejected')}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="approved">Genehmigen</SelectItem>
-                    <SelectItem value="rejected">Ablehnen</SelectItem>
+                    <SelectItem value="approved">{t('secvitals.controlDetailPage.reviewApprove')}</SelectItem>
+                    <SelectItem value="rejected">{t('secvitals.controlDetailPage.reviewReject')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="review-notes">Notizen (optional)</Label>
+                <Label htmlFor="review-notes">{t('secvitals.controlDetailPage.reviewLabelNotes')}</Label>
                 <textarea
                   id="review-notes"
                   rows={3}
                   className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
-                  placeholder="Prüfer-Notizen…"
+                  placeholder={t('secvitals.controlDetailPage.reviewPlaceholderNotes')}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setReviewOpen(false)}>Abbrechen</Button>
+              <Button type="button" variant="outline" onClick={() => setReviewOpen(false)}>{t('common.cancel')}</Button>
               <Button type="submit" disabled={review.isPending}>
-                {review.isPending ? 'Wird gespeichert…' : 'Prüfung abschließen'}
+                {review.isPending ? t('secvitals.controlDetailPage.reviewSaving') : t('secvitals.controlDetailPage.reviewComplete')}
               </Button>
             </DialogFooter>
           </form>

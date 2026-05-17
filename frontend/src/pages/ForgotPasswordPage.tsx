@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '../api/client'
+import { useFieldValidation, required, email as emailRule } from '../shared/hooks/useFieldValidation'
+import { FieldError } from '../shared/components/FieldError'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -10,6 +12,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const emailValidation = useFieldValidation(email, [required, emailRule])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -69,7 +72,9 @@ export default function ForgotPasswordPage() {
                     placeholder="admin@example.com"
                     required
                     autoFocus
+                    aria-invalid={!!emailValidation.error}
                   />
+                  <FieldError error={emailValidation.error} />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Wird gesendet…' : 'Link anfordern'}

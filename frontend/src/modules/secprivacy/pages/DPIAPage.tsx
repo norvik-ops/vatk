@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ClipboardCheck, Plus, Pencil, Trash2, ShieldCheck, Download } from 'lucide-react'
+import { FileSearch, Plus, Pencil, Trash2, ShieldCheck, Download, ClipboardCheck } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -344,9 +344,9 @@ export default function DPIAPage() {
 
         {!isLoading && !isError && dpias?.length === 0 && (
           <EmptyState
-            icon={ClipboardCheck}
-            title="Noch keine DSFAs"
-            description="Erstellen Sie eine Datenschutz-Folgenabschätzung für risikoreiche Verarbeitungen."
+            icon={FileSearch}
+            title="Keine DSFAs"
+            description="Erstelle deine erste Datenschutz-Folgenabschätzung."
             action={
               <Button onClick={openCreate}>
                 <Plus className="w-4 h-4 mr-1" />

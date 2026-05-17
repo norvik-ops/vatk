@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
   Building2, Layers, Bell, Trash2, Plus, Check, X,
-  Webhook, Globe, Mail, Server, MapPin, Download, ShieldCheck, FileText, ExternalLink, Sparkles, Rocket, Key, Clock, ArrowUpCircle, RefreshCw,
+  Webhook, Globe, Mail, Server, MapPin, Download, ShieldCheck, FileText, ExternalLink, Sparkles, Rocket, Key, Clock, ArrowUpCircle, RefreshCw, Zap, FileBarChart2,
 } from 'lucide-react'
 import { PageHeader } from '../shared/components/PageHeader'
 import { Button } from '../components/ui/button'
@@ -13,6 +13,7 @@ import { Badge } from '../components/ui/badge'
 import { Switch } from '../components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
+import { useTranslation } from 'react-i18next'
 import { apiFetch, FeatureLockedError } from '../api/client'
 import { useAuthStore } from '../shared/stores/auth'
 import { cn } from '../lib/utils'
@@ -198,6 +199,7 @@ function daysUntilExpiry(expiresAt: string): number {
 }
 
 function LicenseSection() {
+  const { t } = useTranslation()
   const { data: lic, isLoading } = useLicense()
   const activate = useActivateLicense()
   const [licKey, setLicKey] = useState('')
@@ -207,7 +209,7 @@ function LicenseSection() {
   useEffect(() => () => clearTimeout(licTimerRef.current), [])
 
   if (isLoading) return (
-    <SectionCard title="Lizenz" icon={Sparkles}>
+    <SectionCard title={t('settingsPage.licenseTitle')} icon={Sparkles}>
       <div className="h-16 flex items-center justify-center">
         <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
@@ -229,16 +231,11 @@ function LicenseSection() {
   }
 
   return (
-    <SectionCard title="Lizenz" icon={Sparkles}>
+    <SectionCard title={t('settingsPage.licenseTitle')} icon={Sparkles}>
       <div className="space-y-4">
         {lic?.revoked && (
           <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
-            Ihr Pro-Abonnement wurde gekündigt. Ihr Zugang läuft mit dem Ende des aktuellen
-            Abrechnungszeitraums aus. Bei Fragen wenden Sie sich an{' '}
-            <a href="mailto:support@vakt.app" className="underline font-medium">
-              support@vakt.app
-            </a>
-            .
+            {t('settingsPage.licenseRevoked')}
           </div>
         )}
         <div className="flex items-center gap-3">
@@ -269,20 +266,20 @@ function LicenseSection() {
         {lic?.expires_at && daysUntilExpiry(lic.expires_at) < 30 && (
           <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">
             {daysUntilExpiry(lic.expires_at) === 0
-              ? 'Ihr Abonnement ist bereits abgelaufen.'
-              : `Ihr Abonnement läuft in ${daysUntilExpiry(lic.expires_at)} Tagen ab.`}
+              ? t('settingsPage.licenseExpired')
+              : t('settingsPage.licenseExpiringSoon', { days: daysUntilExpiry(lic.expires_at) })}
           </div>
         )}
 
         {isPro && !lic?.demo && (
           <a href={VAKT_LS_PORTAL_URL} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">
-            Abonnement verwalten →
+            {t('settingsPage.manageSubscription')}
           </a>
         )}
 
         {!isPro && (
           <div className="space-y-1.5">
-            <p className="text-xs text-secondary">Pro schaltet frei:</p>
+            <p className="text-xs text-secondary">{t('settingsPage.proFeatures')}</p>
             <ul className="text-xs text-secondary space-y-0.5 list-none">
               {[
                 'Rollen: Admin, Analyst, Viewer, Auditor',
@@ -305,12 +302,12 @@ function LicenseSection() {
 
         {/* Pro-Key activation */}
         <div className="pt-1 border-t border-border space-y-2">
-          <Label className="text-xs">Pro-Key aktivieren</Label>
+          <Label className="text-xs">{t('settingsPage.proKeyActivate')}</Label>
           <div className="flex gap-2">
             <Input
               value={licKey}
               onChange={(e) => { setLicKey(e.target.value); setActivateSuccess(false) }}
-              placeholder="Ihr Lizenzschlüssel"
+              placeholder={t('settingsPage.proKeyPlaceholder')}
               className="h-8 text-xs font-mono flex-1"
             />
             <Button
@@ -320,11 +317,11 @@ function LicenseSection() {
               disabled={!licKey.trim() || activate.isPending}
             >
               <Key className="w-3 h-3" />
-              {activate.isPending ? 'Aktiviere…' : 'Aktivieren'}
+              {activate.isPending ? t('settingsPage.activating') : t('settingsPage.activate')}
             </Button>
           </div>
           {activateSuccess && (
-            <p className="text-[11px] text-green-600 dark:text-green-400">Key aktiviert — Lizenz aktualisiert.</p>
+            <p className="text-[11px] text-green-600 dark:text-green-400">{t('settingsPage.keyActivated')}</p>
           )}
           {activate.isError && (
             <p className="text-[11px] text-red-500">{activate.error.message}</p>
@@ -356,6 +353,7 @@ function SectionCard({ title, icon: Icon, children }: {
 // ─── Organisation ─────────────────────────────────────────────────────────────
 
 function OrgSection() {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const { data: security, isLoading: secLoading } = useOrgSecurity()
   const updateSecurity = useUpdateOrgSecurity()
@@ -386,14 +384,14 @@ function OrgSection() {
   }
 
   return (
-    <SectionCard title="Organisation" icon={Building2}>
+    <SectionCard title={t('settingsPage.orgSectionTitle')} icon={Building2}>
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <Label className="text-xs">Administrator</Label>
+          <Label className="text-xs">{t('settingsPage.labelAdmin')}</Label>
           <Input value={user?.email ?? '—'} readOnly className="bg-surface2 h-8 text-sm" />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Anzeigename</Label>
+          <Label className="text-xs">{t('settingsPage.labelDisplayName')}</Label>
           <Input value={user?.display_name ?? '—'} readOnly className="bg-surface2 h-8 text-sm" />
         </div>
 
@@ -408,25 +406,25 @@ function OrgSection() {
               ) : (
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-primary">2-Faktor-Authentifizierung vorschreiben</p>
+                    <p className="text-sm font-medium text-primary">{t('settingsPage.mfaTitle')}</p>
                     <p className="text-[11px] text-secondary leading-relaxed">
-                      Alle Mitglieder müssen 2FA aktiviert haben um sich einzuloggen.
+                      {t('settingsPage.mfaDesc')}
                     </p>
                   </div>
                   <Switch
                     checked={mfaChecked}
                     onCheckedChange={handleMfaToggle}
                     disabled={updateSecurity.isPending}
-                    aria-label="2FA für alle Mitglieder vorschreiben"
+                    aria-label={t('settingsPage.mfaTitle')}
                   />
                 </div>
               )}
               {updateSecurity.isError && (
-                <p className="text-[11px] text-red-500 mt-1">Fehler beim Speichern. Bitte erneut versuchen.</p>
+                <p className="text-[11px] text-red-500 mt-1">{t('settingsPage.saveError')}</p>
               )}
               {updateSecurity.isSuccess && (
                 <p className="text-[11px] text-green-600 dark:text-green-400 mt-1">
-                  {mfaChecked ? '2FA-Pflicht aktiviert.' : '2FA-Pflicht deaktiviert.'}
+                  {mfaChecked ? t('settingsPage.mfaEnabled') : t('settingsPage.mfaDisabled')}
                 </p>
               )}
             </div>
@@ -440,25 +438,25 @@ function OrgSection() {
               ) : (
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-primary">4-Augen-Prinzip für Control-Änderungen</p>
+                    <p className="text-sm font-medium text-primary">{t('settingsPage.approvalTitle')}</p>
                     <p className="text-[11px] text-secondary leading-relaxed">
-                      Nicht-Admins müssen Statusänderungen zur Genehmigung einreichen. Admins können Status weiterhin direkt ändern.
+                      {t('settingsPage.approvalDesc')}
                     </p>
                   </div>
                   <Switch
                     checked={approvalChecked}
                     onCheckedChange={handleApprovalToggle}
                     disabled={updateApprovalSetting.isPending}
-                    aria-label="4-Augen-Prinzip für Control-Änderungen"
+                    aria-label={t('settingsPage.approvalTitle')}
                   />
                 </div>
               )}
               {updateApprovalSetting.isError && (
-                <p className="text-[11px] text-red-500 mt-1">Fehler beim Speichern. Bitte erneut versuchen.</p>
+                <p className="text-[11px] text-red-500 mt-1">{t('settingsPage.saveError')}</p>
               )}
               {updateApprovalSetting.isSuccess && (
                 <p className="text-[11px] text-green-600 dark:text-green-400 mt-1">
-                  {approvalChecked ? '4-Augen-Prinzip aktiviert.' : '4-Augen-Prinzip deaktiviert.'}
+                  {approvalChecked ? t('settingsPage.approvalEnabled') : t('settingsPage.approvalDisabled')}
                 </p>
               )}
             </div>
@@ -479,6 +477,7 @@ const FEDERAL_STATES = [
 ]
 
 function SectorSection() {
+  const { t } = useTranslation()
   const { data: settings } = useOrgSector()
   const { data: lic } = useLicense()
   const update = useUpdateOrgSector()
@@ -504,28 +503,27 @@ function SectorSection() {
   const isPro = lic?.is_pro ?? true // default to true while loading to avoid flicker
 
   return (
-    <SectionCard title="Sektor & NIS2-Konfiguration" icon={MapPin}>
+    <SectionCard title={t('settingsPage.sectorTitle')} icon={MapPin}>
       {lic !== undefined && !isPro ? (
         <div className="flex items-start gap-4">
           <div className="mt-0.5 p-2 rounded-lg bg-brand/10 shrink-0">
             <Sparkles className="w-4 h-4 text-brand" />
           </div>
           <div>
-            <p className="font-semibold text-primary text-sm mb-1">Pro-Feature</p>
+            <p className="font-semibold text-primary text-sm mb-1">{t('settingsPage.sectorProFeature')}</p>
             <p className="text-secondary text-sm leading-relaxed mb-2">
-              Die NIS2-Sektor-Konfiguration ist in der Community Edition nicht verfügbar.
-              Vakt Pro mit KRITIS-Sektor-Mapping ist in Planung.
+              {t('settingsPage.sectorProDesc')}
             </p>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand">
               <Clock className="w-3.5 h-3.5" />
-              Demnächst verfügbar
+              {t('settingsPage.comingSoon')}
             </span>
           </div>
         </div>
       ) : (
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">KRITIS-Sektor</Label>
+            <Label className="text-xs">{t('settingsPage.labelSector')}</Label>
             <Select value={sector} onValueChange={setSector}>
               <SelectTrigger className="h-8 text-sm" data-testid="sector-select">
                 <SelectValue />
@@ -536,13 +534,13 @@ function SectorSection() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-secondary">Bestimmt die zuständige NIS2-Meldebehörde.</p>
+            <p className="text-[11px] text-secondary">{t('settingsPage.sectorHint')}</p>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Bundesland</Label>
+            <Label className="text-xs">{t('settingsPage.labelFederalState')}</Label>
             <Select value={federalState} onValueChange={setFederalState}>
               <SelectTrigger className="h-8 text-sm" data-testid="federal-state-select">
-                <SelectValue placeholder="— auswählen —" />
+                <SelectValue placeholder={t('settingsPage.federalStatePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {FEDERAL_STATES.map((s) => (
@@ -550,7 +548,7 @@ function SectorSection() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-secondary">Für DSGVO-Meldungen an Landesdatenschutzbehörde.</p>
+            <p className="text-[11px] text-secondary">{t('settingsPage.federalStateHint')}</p>
           </div>
           <Button
             size="sm"
@@ -559,13 +557,13 @@ function SectorSection() {
             disabled={!isDirty || update.isPending}
             data-testid="sector-save-btn"
           >
-            {update.isPending ? 'Wird gespeichert…' : 'Speichern'}
+            {update.isPending ? t('common.saving') : t('common.save')}
           </Button>
           {update.isSuccess && (
-            <p className="text-[11px] text-green-600 dark:text-green-400">Gespeichert.</p>
+            <p className="text-[11px] text-green-600 dark:text-green-400">{t('settingsPage.saved')}</p>
           )}
           {update.isError && (
-            <p className="text-[11px] text-red-500">Fehler beim Speichern. Bitte erneut versuchen.</p>
+            <p className="text-[11px] text-red-500">{t('settingsPage.saveError')}</p>
           )}
         </div>
       )}
@@ -576,18 +574,19 @@ function SectorSection() {
 // ─── Module Status ────────────────────────────────────────────────────────────
 
 function ModulesSection() {
+  const { t } = useTranslation()
   const { data, isLoading, isError } = useModules()
   const modules = data?.data ?? []
 
   return (
-    <SectionCard title="Module" icon={Layers}>
+    <SectionCard title={t('settingsPage.modulesTitle')} icon={Layers}>
       {isLoading && (
         <div className="flex items-center justify-center h-16">
           <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
         </div>
       )}
       {isError && (
-        <p className="text-xs text-secondary">Nicht ladbar — Admin-Rechte erforderlich.</p>
+        <p className="text-xs text-secondary">{t('settingsPage.modulesNotLoadable')}</p>
       )}
       {!isLoading && !isError && (
         <div className="space-y-1.5">
@@ -600,14 +599,14 @@ function ModulesSection() {
                   {meta?.desc && <div className="text-[11px] text-secondary">{meta.desc}</div>}
                 </div>
                 {m.enabled
-                  ? <Badge variant="success" className="text-[10px] shrink-0"><Check className="w-2.5 h-2.5 mr-1" />Aktiv</Badge>
-                  : <Badge variant="secondary" className="text-[10px] shrink-0"><X className="w-2.5 h-2.5 mr-1" />Deaktiviert</Badge>
+                  ? <Badge variant="success" className="text-[10px] shrink-0"><Check className="w-2.5 h-2.5 mr-1" />{t('settingsPage.moduleEnabled')}</Badge>
+                  : <Badge variant="secondary" className="text-[10px] shrink-0"><X className="w-2.5 h-2.5 mr-1" />{t('settingsPage.moduleDisabled')}</Badge>
                 }
               </div>
             )
           })}
           <p className="text-[11px] text-secondary pt-1">
-            Aktivierung über <code className="font-mono bg-surface2 px-1 rounded">.env</code> — Neustart erforderlich.
+            {t('settingsPage.modulesEnvHint')}
           </p>
         </div>
       )}
@@ -618,6 +617,7 @@ function ModulesSection() {
 // ─── Weekly Digest Toggle ────────────────────────────────────────────────────
 
 function DigestToggleSection() {
+  const { t } = useTranslation()
   const { data, isLoading } = useRetentionConfig()
   const update = useUpdateDigestEnabled()
   const [checked, setChecked] = useState(false)
@@ -632,7 +632,7 @@ function DigestToggleSection() {
   }
 
   return (
-    <SectionCard title="Sicherheits-Digest" icon={Mail}>
+    <SectionCard title={t('settingsPage.digestTitle')} icon={Mail}>
       <div className="space-y-3">
         {isLoading ? (
           <div className="flex items-center justify-center h-10">
@@ -641,30 +641,29 @@ function DigestToggleSection() {
         ) : (
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-primary">Wöchentlicher Sicherheits-Digest</p>
+              <p className="text-sm font-medium text-primary">{t('settingsPage.digestToggleTitle')}</p>
               <p className="text-[11px] text-secondary leading-relaxed">
-                Jeden Montag eine Zusammenfassung offener Findings und Fristen per E-Mail an alle Admins.
+                {t('settingsPage.digestToggleDesc')}
               </p>
             </div>
             <Switch
               checked={checked}
               onCheckedChange={handleToggle}
               disabled={update.isPending}
-              aria-label="Wöchentlichen Sicherheits-Digest aktivieren"
+              aria-label={t('settingsPage.digestToggleTitle')}
             />
           </div>
         )}
         {update.isError && (
-          <p className="text-[11px] text-red-500">Fehler beim Speichern. Bitte erneut versuchen.</p>
+          <p className="text-[11px] text-red-500">{t('settingsPage.saveError')}</p>
         )}
         {update.isSuccess && (
           <p className="text-[11px] text-green-600 dark:text-green-400">
-            {checked ? 'Digest aktiviert.' : 'Digest deaktiviert.'}
+            {checked ? t('settingsPage.digestEnabled') : t('settingsPage.digestDisabled')}
           </p>
         )}
         <p className="text-[11px] text-secondary">
-          SMTP muss konfiguriert sein. Detaileinstellungen unter{' '}
-          <a href="/settings/retention" className="underline text-brand">Datenpflege</a>.
+          {t('settingsPage.digestSmtpHint')}
         </p>
       </div>
     </SectionCard>
@@ -674,34 +673,35 @@ function DigestToggleSection() {
 // ─── E-Mail / SMTP ────────────────────────────────────────────────────────────
 
 function SmtpSection() {
+  const { t } = useTranslation()
   return (
-    <SectionCard title="E-Mail (SMTP)" icon={Mail}>
+    <SectionCard title={t('settingsPage.smtpTitle')} icon={Mail}>
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <Label className="text-xs">SMTP-Host</Label>
+          <Label className="text-xs">{t('settingsPage.smtpHostLabel')}</Label>
           <Input
             placeholder="smtp.example.com"
             readOnly
             className="bg-surface2 h-8 text-sm text-secondary"
-            value="Wird über .env konfiguriert"
+            value={t('settingsPage.smtpConfiguredViaEnv')}
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">SMTP-Port</Label>
+          <Label className="text-xs">{t('settingsPage.smtpPortLabel')}</Label>
           <Input
             placeholder="587"
             readOnly
             className="bg-surface2 h-8 text-sm text-secondary"
-            value="Wird über .env konfiguriert"
+            value={t('settingsPage.smtpConfiguredViaEnv')}
           />
         </div>
         <div className="rounded-lg bg-surface2 p-3 text-[11px] text-secondary space-y-1 leading-relaxed">
-          <p className="font-medium text-primary">Konfiguration in der .env-Datei:</p>
+          <p className="font-medium text-primary">{t('settingsPage.smtpEnvHint')}</p>
           <code className="block font-mono">VAKT_SMTP_HOST=smtp.example.com</code>
           <code className="block font-mono">VAKT_SMTP_PORT=587</code>
           <code className="block font-mono">VAKT_SMTP_USER=user@example.com</code>
           <code className="block font-mono">VAKT_SMTP_PASS=geheimespasswort</code>
-          <p className="pt-1">Wird für Vakt Aware-Kampagnen und Einladungs-E-Mails verwendet.</p>
+          <p className="pt-1">{t('settingsPage.smtpUsage')}</p>
         </div>
       </div>
     </SectionCard>
@@ -723,6 +723,7 @@ const CHANNEL_LABELS: Record<string, string> = {
 }
 
 function NotificationsSection() {
+  const { t } = useTranslation()
   const [createOpen, setCreateOpen] = useState(false)
   const [type, setType] = useState<'slack' | 'email' | 'webhook'>('slack')
   const [name, setName] = useState('')
@@ -755,16 +756,16 @@ function NotificationsSection() {
   }
 
   return (
-    <SectionCard title="Benachrichtigungskanäle" icon={Bell}>
+    <SectionCard title={t('settingsPage.notificationsTitle')} icon={Bell}>
       <div className="space-y-2">
         {isLoading && (
           <div className="flex items-center justify-center h-12">
             <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
         )}
-        {isError && <p className="text-xs text-secondary">Nicht ladbar — Admin-Rechte erforderlich.</p>}
+        {isError && <p className="text-xs text-secondary">{t('settingsPage.notificationsNotLoadable')}</p>}
         {!isLoading && !isError && channels.length === 0 && (
-          <p className="text-xs text-secondary">Noch keine Kanäle eingerichtet.</p>
+          <p className="text-xs text-secondary">{t('settingsPage.noChannels')}</p>
         )}
         {!isLoading && !isError && channels.map((ch) => {
           const Icon = CHANNEL_ICONS[ch.type] ?? Globe
@@ -779,7 +780,7 @@ function NotificationsSection() {
               </div>
               <div className="flex items-center gap-1.5">
                 <Badge variant={ch.enabled ? 'success' : 'secondary'} className="text-[10px]">
-                  {ch.enabled ? 'Aktiv' : 'Inaktiv'}
+                  {ch.enabled ? t('settingsPage.channelActive') : t('settingsPage.channelInactive')}
                 </Badge>
                 <button
                   onClick={() => {
@@ -798,17 +799,17 @@ function NotificationsSection() {
         <div className="pt-1">
           <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)} className="h-7 text-xs">
             <Plus className="w-3 h-3 mr-1" />
-            Kanal hinzufügen
+            {t('settingsPage.addChannel')}
           </Button>
         </div>
       </div>
 
       <Dialog open={createOpen} onOpenChange={handleDialogClose}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Benachrichtigungskanal hinzufügen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('settingsPage.addChannelTitle')}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
-              <Label>Typ</Label>
+              <Label>{t('settingsPage.channelType')}</Label>
               <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -819,39 +820,39 @@ function NotificationsSection() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Name</Label>
+              <Label>{t('settingsPage.channelName')}</Label>
               <Input
-                placeholder="z.B. Security-Team Slack"
+                placeholder={t('settingsPage.channelNamePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onBlur={() => setFieldTouched((t) => ({ ...t, name: true }))}
+                onBlur={() => setFieldTouched((prev) => ({ ...prev, name: true }))}
                 aria-invalid={fieldTouched.name && !name.trim()}
               />
               {fieldTouched.name && !name.trim() && (
-                <p className="text-xs text-destructive mt-1">Name ist erforderlich.</p>
+                <p className="text-xs text-destructive mt-1">{t('settingsPage.channelNameRequired')}</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <Label>{type === 'email' ? 'E-Mail-Adresse' : 'URL'}</Label>
+              <Label>{type === 'email' ? t('settingsPage.channelEmail') : t('settingsPage.channelUrl')}</Label>
               <Input
                 placeholder={type === 'slack' ? 'https://hooks.slack.com/…' : type === 'email' ? 'team@example.com' : 'https://webhook.example.com'}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                onBlur={() => setFieldTouched((t) => ({ ...t, url: true }))}
+                onBlur={() => setFieldTouched((prev) => ({ ...prev, url: true }))}
                 aria-invalid={fieldTouched.url && !url.trim()}
               />
               {fieldTouched.url && !url.trim() && (
-                <p className="text-xs text-destructive mt-1">{type === 'email' ? 'E-Mail-Adresse ist erforderlich.' : 'URL ist erforderlich.'}</p>
+                <p className="text-xs text-destructive mt-1">{type === 'email' ? t('settingsPage.channelEmailRequired') : t('settingsPage.channelUrlRequired')}</p>
               )}
             </div>
           </div>
           {createChannel.isError && (
-            <p className="text-xs text-red-500 px-1">Fehler beim Erstellen des Kanals. Bitte erneut versuchen.</p>
+            <p className="text-xs text-red-500 px-1">{t('settingsPage.channelError')}</p>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => handleDialogClose(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => handleDialogClose(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleCreate} disabled={createChannel.isPending}>
-              {createChannel.isPending ? 'Wird gespeichert…' : 'Hinzufügen'}
+              {createChannel.isPending ? t('settingsPage.channelSaving') : t('settingsPage.channelAdd')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -863,34 +864,35 @@ function NotificationsSection() {
 // ─── Server Info ──────────────────────────────────────────────────────────────
 
 function UpdateSection() {
+  const { t } = useTranslation()
   const { data, isLoading } = useUpdateCheck()
 
   return (
-    <SectionCard title="Updates" icon={RefreshCw}>
+    <SectionCard title={t('settingsPage.updatesTitle')} icon={RefreshCw}>
       <div className="space-y-2 text-xs">
-        {isLoading && <p className="text-secondary">Wird geprüft…</p>}
+        {isLoading && <p className="text-secondary">{t('settingsPage.updatesChecking')}</p>}
 
         {!isLoading && !data?.check_enabled && (
           <p className="text-secondary">
-            Update-Prüfung deaktiviert. Aktivieren mit <code className="font-mono bg-surface2 px-1 rounded">VAKT_UPDATE_CHECK=true</code> in der <code className="font-mono bg-surface2 px-1 rounded">.env</code>.
+            {t('settingsPage.updatesDisabled')}
           </p>
         )}
 
         {!isLoading && data?.check_enabled && (
           <div className="space-y-1.5">
             <div className="flex justify-between py-1.5 px-3 rounded-lg bg-surface2">
-              <span className="text-secondary">Installierte Version</span>
+              <span className="text-secondary">{t('settingsPage.installedVersion')}</span>
               <span className="font-mono font-medium text-primary">{data.current_version || '—'}</span>
             </div>
             <div className="flex justify-between py-1.5 px-3 rounded-lg bg-surface2">
-              <span className="text-secondary">Neueste Version</span>
+              <span className="text-secondary">{t('settingsPage.latestVersion')}</span>
               <span className="font-mono font-medium text-primary">{data.latest_version || '—'}</span>
             </div>
 
             {data.update_available ? (
               <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                 <ArrowUpCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span className="text-amber-700 dark:text-amber-400 flex-1">Update verfügbar</span>
+                <span className="text-amber-700 dark:text-amber-400 flex-1">{t('settingsPage.updateAvailable')}</span>
                 {data.release_url && (
                   <a
                     href={data.release_url}
@@ -898,14 +900,14 @@ function UpdateSection() {
                     rel="noopener noreferrer"
                     className="font-medium text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
                   >
-                    Release Notes <ExternalLink className="w-3 h-3" />
+                    {t('settingsPage.releaseNotes')} <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </div>
             ) : (
               <div className="flex items-center gap-2 py-1.5 px-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                 <Check className="w-3.5 h-3.5 text-green-600 shrink-0" />
-                <span className="text-green-700 dark:text-green-400">Aktuell — kein Update erforderlich</span>
+                <span className="text-green-700 dark:text-green-400">{t('settingsPage.upToDate')}</span>
               </div>
             )}
           </div>
@@ -916,8 +918,9 @@ function UpdateSection() {
 }
 
 function ServerSection() {
+  const { t } = useTranslation()
   return (
-    <SectionCard title="Server" icon={Server}>
+    <SectionCard title={t('settingsPage.serverTitle')} icon={Server}>
       <div className="space-y-1.5 text-xs text-secondary">
         {[
           ['API-Port', '8080 (Standard)'],
@@ -931,7 +934,6 @@ function ServerSection() {
             <span className="text-primary font-medium">{v}</span>
           </div>
         ))}
-        <p className="pt-1">Alle Konfigurationswerte werden über Umgebungsvariablen gesetzt.</p>
       </div>
     </SectionCard>
   )
@@ -940,14 +942,14 @@ function ServerSection() {
 // ─── Data Export ─────────────────────────────────────────────────────────────
 
 function DataExportSection() {
+  const { t } = useTranslation()
   const { exportData, isLoading, error } = useExportData()
 
   return (
-    <SectionCard title="Datenschutz &amp; Export" icon={ShieldCheck}>
+    <SectionCard title={t('settingsPage.dataExportTitle')} icon={ShieldCheck}>
       <div className="space-y-3">
         <p className="text-xs text-secondary leading-relaxed">
-          Exportieren Sie alle Ihre Compliance-Daten als ZIP-Archiv (JSON-Format).
-          Enthält alle Controls, Risiken, Richtlinien, Nachweise, DSGVO-Dokumente und mehr.
+          {t('settingsPage.dataExportDesc')}
         </p>
         <Button
           size="sm"
@@ -959,12 +961,12 @@ function DataExportSection() {
           {isLoading ? (
             <>
               <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5" />
-              Wird exportiert…
+              {t('settingsPage.exporting')}
             </>
           ) : (
             <>
               <Download className="w-3 h-3 mr-1.5" />
-              Daten exportieren
+              {t('settingsPage.exportData')}
             </>
           )}
         </Button>
@@ -972,7 +974,7 @@ function DataExportSection() {
           <p className="text-[11px] text-red-500">{error}</p>
         )}
         <p className="text-[11px] text-secondary">
-          Alle Daten verbleiben lokal — kein Cloud-Upload. DSGVO Art. 20 (Datenportabilität).
+          {t('settingsPage.dataExportHint')}
         </p>
       </div>
     </SectionCard>
@@ -982,15 +984,14 @@ function DataExportSection() {
 // ─── Audit Report ─────────────────────────────────────────────────────────────
 
 function AuditReportSection() {
+  const { t } = useTranslation()
   const { generate, isGenerating, error } = useAuditReport()
 
   return (
-    <SectionCard title="Audit-Bericht" icon={FileText}>
+    <SectionCard title={t('settingsPage.auditReportTitle')} icon={FileText}>
       <div className="space-y-3">
         <p className="text-xs text-secondary leading-relaxed">
-          Generiert einen vollständigen Compliance-Auditbericht als PDF — mit allen
-          Framework-Scores, Controls, Risiken, Vorfällen, Richtlinien und CAPAs.
-          Bereit für externe Prüfer ohne manuelle Aufbereitung.
+          {t('settingsPage.auditReportDesc')}
         </p>
         <Button
           size="sm"
@@ -1001,12 +1002,12 @@ function AuditReportSection() {
           {isGenerating ? (
             <>
               <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              Wird erstellt…
+              {t('settingsPage.generatingReport')}
             </>
           ) : (
             <>
               <FileText className="w-3 h-3" />
-              Audit-Bericht generieren
+              {t('settingsPage.generateAuditReport')}
             </>
           )}
         </Button>
@@ -1018,7 +1019,7 @@ function AuditReportSection() {
           <p className="text-[11px] text-red-500">{error.message}</p>
         )}
         <p className="text-[11px] text-secondary">
-          Der Bericht enthält alle Compliance-Daten der Organisation — keine Cloud-Übertragung.
+          {t('settingsPage.auditReportHint')}
         </p>
       </div>
     </SectionCard>
@@ -1028,6 +1029,7 @@ function AuditReportSection() {
 // ─── Staging Release ─────────────────────────────────────────────────────────
 
 function StagingSection() {
+  const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
   const [result, setResult] = useState<'idle' | 'ok' | 'err'>('idle')
 
@@ -1048,15 +1050,12 @@ function StagingSection() {
 
   return (
     <div>
-      <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Staging</h3>
+      <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">{t('settingsPage.sectionStaging')}</h3>
       <div className="max-w-sm">
-        <SectionCard title="Zur Demo promoten" icon={Rocket}>
+        <SectionCard title={t('settingsPage.stagingPromoteTitle')} icon={Rocket}>
           <div className="space-y-3">
             <p className="text-xs text-secondary leading-relaxed">
-              Überträgt den aktuellen Staging-Stand auf die Demo-Umgebung.
-              Das Image <code className="font-mono bg-surface2 px-1 rounded">:staging</code> wird
-              als <code className="font-mono bg-surface2 px-1 rounded">:latest</code> veröffentlicht
-              und die Demo automatisch neu gestartet.
+              {t('settingsPage.stagingPromoteDesc')}
             </p>
             <Button
               size="sm"
@@ -1064,16 +1063,16 @@ function StagingSection() {
               onClick={() => { setResult('idle'); setConfirming(true) }}
             >
               <Rocket className="w-3 h-3" />
-              Zur Demo promoten
+              {t('settingsPage.stagingPromote')}
             </Button>
             {result === 'ok' && (
-              <p className="text-[11px] text-green-600">Workflow gestartet — Demo wird in ca. 2 Minuten aktualisiert.</p>
+              <p className="text-[11px] text-green-600">{t('settingsPage.stagingSuccess')}</p>
             )}
             {result === 'err' && (
               <p className="text-[11px] text-red-500">
                 {promote.error?.message
                   ? `Fehler: ${promote.error.message}`
-                  : 'Fehler beim Auslösen des Workflows. GitHub-Token prüfen.'}
+                  : t('settingsPage.stagingError')}
               </p>
             )}
           </div>
@@ -1083,21 +1082,20 @@ function StagingSection() {
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Demo wirklich aktualisieren?</DialogTitle>
+            <DialogTitle>{t('settingsPage.stagingConfirmTitle')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Der aktuelle Staging-Stand wird auf die öffentliche Demo-Umgebung übertragen.
-            Dieser Vorgang kann nicht rückgängig gemacht werden.
+            {t('settingsPage.stagingConfirmDesc')}
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirming(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => setConfirming(false)}>{t('common.cancel')}</Button>
             <Button
               onClick={() => promote.mutate()}
               disabled={promote.isPending}
             >
               {promote.isPending ? (
-                <><div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5" />Wird gestartet…</>
-              ) : 'Ja, promoten'}
+                <><div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5" />{t('settingsPage.stagingStarting')}</>
+              ) : t('settingsPage.stagingConfirm')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1109,14 +1107,15 @@ function StagingSection() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Settings() {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Einstellungen" description="Plattform-Konfiguration und Systemverwaltung." />
+      <PageHeader title={t('settingsPage.title')} description={t('settingsPage.description')} />
       <div className="flex-1 p-6 overflow-auto">
         <div className="max-w-5xl space-y-6">
           {/* Row 1: Organisation + Module + Sector + Lizenz */}
           <div>
-            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Plattform</h3>
+            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">{t('settingsPage.sectionPlatform')}</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <OrgSection />
               <ModulesSection />
@@ -1127,27 +1126,47 @@ export default function Settings() {
 
           {/* Row 2: Integrations — interactive, needs more visual weight */}
           <div>
-            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Integrationen</h3>
+            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">{t('settingsPage.sectionIntegrations')}</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <SmtpSection />
               <NotificationsSection />
               <DigestToggleSection />
+              <SectionCard title="Webhooks" icon={Zap}>
+                <div className="space-y-3">
+                  <p className="text-xs text-secondary leading-relaxed">
+                    {t('settingsPage.webhooksDesc')}
+                  </p>
+                  <Link to="/settings/webhooks" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+                    {t('settingsPage.webhooksManage')} <ExternalLink className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </SectionCard>
+              <SectionCard title={t('settingsPage.scheduledReportsPlan')} icon={FileBarChart2}>
+                <div className="space-y-3">
+                  <p className="text-xs text-secondary leading-relaxed">
+                    {t('settingsPage.scheduledReportsDesc')}
+                  </p>
+                  <Link to="/settings/reports" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+                    {t('settingsPage.scheduledReportsPlan')} <ExternalLink className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </SectionCard>
             </div>
           </div>
 
           {/* Row 3: Data & Privacy export + Audit Report + API Keys */}
           <div>
-            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Datenschutz &amp; Dokumentation</h3>
+            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">{t('settingsPage.sectionPrivacy')}</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-2xl">
               <DataExportSection />
               <AuditReportSection />
-              <SectionCard title="API-Keys" icon={Key}>
+              <SectionCard title={t('settingsPage.apiKeysTitle')} icon={Key}>
                 <div className="space-y-3">
                   <p className="text-xs text-secondary leading-relaxed">
-                    Persönliche API-Keys für programmatischen Zugang — für CI/CD-Pipelines, Skripte und Integrationen.
+                    {t('settingsPage.apiKeysDesc')}
                   </p>
                   <Link to="/settings/api-keys" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
-                    API-Keys verwalten <ExternalLink className="h-3.5 w-3.5" />
+                    {t('settingsPage.apiKeysManage')} <ExternalLink className="h-3.5 w-3.5" />
                   </Link>
                 </div>
               </SectionCard>
@@ -1156,14 +1175,14 @@ export default function Settings() {
 
           {/* Row 4: Trust Center */}
           <div>
-            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Öffentliche Seiten</h3>
+            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">{t('settingsPage.sectionPublicPages')}</h3>
             <div className="max-w-sm">
-              <SectionCard title="Trust Center" icon={Globe}>
+              <SectionCard title={t('settingsPage.trustCenterTitle')} icon={Globe}>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Öffentliche Compliance-Seite für Kunden, Partner und Auditoren.
+                  {t('settingsPage.trustCenterDesc2')}
                 </p>
                 <Link to="/settings/trust-center" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
-                  Trust Center konfigurieren <ExternalLink className="h-3.5 w-3.5" />
+                  {t('settingsPage.trustCenterConfigure2')} <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
               </SectionCard>
             </div>
@@ -1174,7 +1193,7 @@ export default function Settings() {
 
           {/* Row 4: System info — read-only reference, visually de-emphasized */}
           <div>
-            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">System</h3>
+            <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">{t('settingsPage.sectionSystem')}</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-2xl">
               <UpdateSection />
               <ServerSection />

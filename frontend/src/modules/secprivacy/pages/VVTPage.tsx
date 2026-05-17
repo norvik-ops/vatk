@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { FileText, Plus, Globe2, Pencil, Trash2, Download } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -26,10 +27,11 @@ const LEGAL_BASIS_OPTIONS = [
 ]
 
 function StatusBadge({ status }: { status: VVTEntry['status'] }) {
+  const { t } = useTranslation()
   return status === 'active' ? (
-    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Aktiv</Badge>
+    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">{t('secprivacy.vvtPage.statusActive')}</Badge>
   ) : (
-    <Badge variant="secondary">Archiviert</Badge>
+    <Badge variant="secondary">{t('secprivacy.vvtPage.statusArchived')}</Badge>
   )
 }
 
@@ -96,6 +98,7 @@ function VVTCard({
   onEdit: (e: VVTEntry) => void
   onDelete: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const date = new Date(entry.created_at).toLocaleDateString('de-DE', {
     year: 'numeric',
     month: 'short',
@@ -112,7 +115,7 @@ function VVTCard({
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {entry.third_country_transfer && (
-              <Globe2 className="w-4 h-4 text-amber-400" aria-label="Drittlandtransfer" />
+              <Globe2 className="w-4 h-4 text-amber-400" aria-label={t('secprivacy.vvtPage.thirdCountryTransfer')} />
             )}
             <StatusBadge status={entry.status} />
           </div>
@@ -128,16 +131,16 @@ function VVTCard({
           </div>
         )}
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Erstellt {date}</p>
+          <p className="text-xs text-muted-foreground">{t('secprivacy.vvtPage.createdOn')} {date}</p>
           <div className="flex gap-1">
-            <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Bearbeiten" onClick={() => onEdit(entry)}>
+            <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('common.edit')} onClick={() => onEdit(entry)}>
               <Pencil className="w-3.5 h-3.5" />
             </Button>
             <Button
               size="icon"
               variant="ghost"
               className="h-7 w-7 text-destructive hover:text-destructive"
-              aria-label="Löschen"
+              aria-label={t('common.delete')}
               onClick={() => onDelete(entry.id)}
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -156,32 +159,33 @@ function VVTForm({
   form: VVTFormState
   onChange: (f: VVTFormState) => void
 }) {
+  const { t } = useTranslation()
   const set = (patch: Partial<VVTFormState>) => onChange({ ...form, ...patch })
 
   return (
     <div className="space-y-4 py-2">
       <div className="space-y-1.5">
-        <Label>Bezeichnung *</Label>
+        <Label>{t('secprivacy.vvtPage.labelName')} *</Label>
         <Input
-          placeholder="z.B. Kundenverwaltung"
+          placeholder={t('secprivacy.vvtPage.placeholderName')}
           value={form.name}
           onChange={(e) => set({ name: e.target.value })}
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Zweck der Verarbeitung *</Label>
+        <Label>{t('secprivacy.vvtPage.labelPurpose')} *</Label>
         <Textarea
-          placeholder="Beschreiben Sie den Verarbeitungszweck …"
+          placeholder={t('secprivacy.vvtPage.placeholderPurpose')}
           rows={2}
           value={form.purpose}
           onChange={(e) => set({ purpose: e.target.value })}
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Rechtsgrundlage *</Label>
+        <Label>{t('secprivacy.vvtPage.labelLegalBasis')} *</Label>
         <Select value={form.legal_basis} onValueChange={(v) => set({ legal_basis: v })}>
           <SelectTrigger>
-            <SelectValue placeholder="Rechtsgrundlage wählen …" />
+            <SelectValue placeholder={t('secprivacy.vvtPage.placeholderLegalBasis')} />
           </SelectTrigger>
           <SelectContent>
             {LEGAL_BASIS_OPTIONS.map((o) => (
@@ -193,54 +197,54 @@ function VVTForm({
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label>Datenkategorien (kommagetrennt)</Label>
+        <Label>{t('secprivacy.vvtPage.labelCategories')}</Label>
         <Input
-          placeholder="z.B. Name, E-Mail, IP-Adresse"
+          placeholder={t('secprivacy.vvtPage.placeholderCategories')}
           value={form.rawCategories}
           onChange={(e) => set({ rawCategories: e.target.value })}
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Betroffene Personen (kommagetrennt)</Label>
+        <Label>{t('secprivacy.vvtPage.labelSubjects')}</Label>
         <Input
-          placeholder="z.B. Kunden, Mitarbeiter"
+          placeholder={t('secprivacy.vvtPage.placeholderSubjects')}
           value={form.rawSubjects}
           onChange={(e) => set({ rawSubjects: e.target.value })}
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Empfänger (kommagetrennt)</Label>
+        <Label>{t('secprivacy.vvtPage.labelRecipients')}</Label>
         <Input
-          placeholder="z.B. Steuerberater, Hosting-Anbieter"
+          placeholder={t('secprivacy.vvtPage.placeholderRecipients')}
           value={form.rawRecipients}
           onChange={(e) => set({ rawRecipients: e.target.value })}
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Löschfrist</Label>
+        <Label>{t('secprivacy.vvtPage.labelRetention')}</Label>
         <Input
-          placeholder="z.B. 10 Jahre (§ 257 HGB)"
+          placeholder={t('secprivacy.vvtPage.placeholderRetention')}
           value={form.retention_period}
           onChange={(e) => set({ retention_period: e.target.value })}
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Verantwortliche Person</Label>
+        <Label>{t('secprivacy.vvtPage.labelResponsible')}</Label>
         <Input
-          placeholder="z.B. Max Mustermann"
+          placeholder={t('secprivacy.vvtPage.placeholderResponsible')}
           value={form.responsible_person}
           onChange={(e) => set({ responsible_person: e.target.value })}
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Status</Label>
+        <Label>{t('secprivacy.vvtPage.labelStatus')}</Label>
         <Select value={form.status} onValueChange={(v) => set({ status: v as 'active' | 'archived' })}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="active">Aktiv</SelectItem>
-            <SelectItem value="archived">Archiviert</SelectItem>
+            <SelectItem value="active">{t('secprivacy.vvtPage.statusActive')}</SelectItem>
+            <SelectItem value="archived">{t('secprivacy.vvtPage.statusArchived')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -252,13 +256,13 @@ function VVTForm({
           onChange={(e) => set({ third_country_transfer: e.target.checked })}
           className="w-4 h-4"
         />
-        <Label htmlFor="vvt-thirdcountry">Drittlandtransfer (außerhalb EU/EWR)</Label>
+        <Label htmlFor="vvt-thirdcountry">{t('secprivacy.vvtPage.labelThirdCountry')}</Label>
       </div>
       {form.third_country_transfer && (
         <div className="space-y-1.5">
-          <Label>Schutzmaßnahmen (Art. 46 DSGVO)</Label>
+          <Label>{t('secprivacy.vvtPage.labelSafeguards')}</Label>
           <Textarea
-            placeholder="z.B. Standardvertragsklauseln (SCC)"
+            placeholder={t('secprivacy.vvtPage.placeholderSafeguards')}
             rows={2}
             value={form.safeguards}
             onChange={(e) => set({ safeguards: e.target.value })}
@@ -270,6 +274,7 @@ function VVTForm({
 }
 
 export default function VVTPage() {
+  const { t } = useTranslation()
   const [dialogMode, setDialogMode] = useState<'create' | 'edit' | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState<VVTFormState>(emptyForm())
@@ -333,27 +338,24 @@ export default function VVTPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Verarbeitungsverzeichnis (VVT)"
-        description="Art. 30 DSGVO — Dokumentation aller Verarbeitungstätigkeiten."
+        title={t('secprivacy.vvtPage.title')}
+        description={t('secprivacy.vvtPage.description')}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={exportVVT} disabled={!entries || entries.length === 0}>
               <Download className="w-4 h-4 mr-1" />
-              Als PDF exportieren
+              {t('secprivacy.vvtPage.exportPdf')}
             </Button>
             <Button onClick={openCreate}>
               <Plus className="w-4 h-4 mr-1" />
-              Eintrag anlegen
+              {t('secprivacy.vvtPage.createEntry')}
             </Button>
           </div>
         }
       />
 
-      <InfoBanner icon={FileText} title="Verzeichnis von Verarbeitungstätigkeiten (Art. 30 DSGVO)">
-        <p>
-          Das VVT dokumentiert alle personenbezogenen Datenverarbeitungen deiner Organisation — mit Zweck,
-          Rechtsgrundlage, Datenkategorien, Empfängern und Löschfristen.
-        </p>
+      <InfoBanner icon={FileText} title={t('secprivacy.vvtPage.infoBannerTitle')}>
+        <p>{t('secprivacy.vvtPage.infoBannerDesc')}</p>
       </InfoBanner>
 
       <div className="flex-1 p-6">
@@ -364,18 +366,18 @@ export default function VVTPage() {
         )}
         {isError && (
           <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">
-            Fehler beim Laden des Verarbeitungsverzeichnisses.
+            {t('secprivacy.vvtPage.loadError')}
           </div>
         )}
         {!isLoading && !isError && entries?.length === 0 && (
           <EmptyState
             icon={FileText}
-            title="Noch keine Einträge"
-            description="Dokumentieren Sie Ihre Verarbeitungstätigkeiten gemäß Art. 30 DSGVO."
+            title={t('secprivacy.vvtPage.noEntries')}
+            description={t('secprivacy.vvtPage.noEntriesDesc')}
             action={
               <Button onClick={openCreate}>
                 <Plus className="w-4 h-4 mr-1" />
-                Eintrag anlegen
+                {t('secprivacy.vvtPage.createEntry')}
               </Button>
             }
           />
@@ -397,14 +399,14 @@ export default function VVTPage() {
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eintrag löschen?</AlertDialogTitle>
+            <AlertDialogTitle>{t('secprivacy.vvtPage.deleteDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Aktion kann nicht rückgängig gemacht werden.
+              {t('secprivacy.vvtPage.deleteDialogDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Löschen</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('common.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -413,16 +415,16 @@ export default function VVTPage() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === 'create' ? 'VVT-Eintrag anlegen' : 'VVT-Eintrag bearbeiten'}
+              {dialogMode === 'create' ? t('secprivacy.vvtPage.createDialogTitle') : t('secprivacy.vvtPage.editDialogTitle')}
             </DialogTitle>
           </DialogHeader>
           <VVTForm form={form} onChange={setForm} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogMode(null)}>
-              Abbrechen
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={!canSubmit}>
-              {isPending ? 'Speichern …' : dialogMode === 'create' ? 'Eintrag anlegen' : 'Speichern'}
+              {isPending ? t('secprivacy.vvtPage.saving') : dialogMode === 'create' ? t('secprivacy.vvtPage.createEntry') : t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>

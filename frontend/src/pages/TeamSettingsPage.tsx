@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Plus, ShieldCheck, Trash2, Users } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../shared/components/PageHeader'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
+import { useFieldValidation, required, email as emailRule } from '../shared/hooks/useFieldValidation'
+import { FieldError } from '../shared/components/FieldError'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../components/ui/dialog'
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '../components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
@@ -69,16 +72,18 @@ interface InviteDialogProps {
 }
 
 function InviteDialog({ open, onClose }: InviteDialogProps) {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<Role>('editor')
   const create = useCreateInvitation()
+  const emailValidation = useFieldValidation(email, [required, emailRule])
 
   function handleSend() {
-    if (!email.trim()) return
+    if (!email.trim() || emailValidation.error) return
     create.mutate({ email: email.trim(), role }, {
       onSuccess: () => {
         handleClose()
-        toast('Einladung gesendet', 'success')
+        toast(t('teamSettingsPage.invitationSent'), 'success')
       },
       onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
     })
@@ -94,29 +99,31 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Mitglied einladen</DialogTitle>
+          <DialogTitle>{t('teamSettingsPage.inviteDialogTitle')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1">
-            <Label htmlFor="invite-email">E-Mail-Adresse</Label>
+            <Label htmlFor="invite-email">{t('teamSettingsPage.labelEmail')}</Label>
             <Input
               id="invite-email"
               type="email"
-              placeholder="kollegin@example.com"
+              placeholder={t('teamSettingsPage.placeholderEmail')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={!!emailValidation.error}
             />
+            <FieldError error={emailValidation.error} />
           </div>
           <div className="space-y-1">
-            <Label>Rolle</Label>
+            <Label>{t('teamSettingsPage.labelRole')}</Label>
             <Select value={role} onValueChange={(v) => setRole(v as Role)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="admin">Admin — Vollzugriff inkl. Einstellungen</SelectItem>
-                <SelectItem value="editor">Editor — Lesen und Schreiben</SelectItem>
-                <SelectItem value="viewer">Viewer — Nur lesen</SelectItem>
+                <SelectItem value="admin">{t('teamSettingsPage.roleAdmin')}</SelectItem>
+                <SelectItem value="editor">{t('teamSettingsPage.roleEditor')}</SelectItem>
+                <SelectItem value="viewer">{t('teamSettingsPage.roleViewer')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -125,9 +132,9 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>Abbrechen</Button>
-          <Button onClick={handleSend} disabled={!email.trim() || create.isPending}>
-            {create.isPending ? 'Sende...' : 'Einladung senden'}
+          <Button variant="outline" onClick={handleClose}>{t('common.cancel')}</Button>
+          <Button onClick={handleSend} disabled={!email.trim() || !!emailValidation.error || create.isPending}>
+            {create.isPending ? t('teamSettingsPage.sending') : t('teamSettingsPage.sendInvitation')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -145,13 +152,14 @@ interface PermissionsDialogProps {
 }
 
 function PermissionsDialog({ member, onClose }: PermissionsDialogProps) {
+  const { t } = useTranslation()
   return (
     <Dialog open={member !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Modulberechtigungen</DialogTitle>
+          <DialogTitle>{t('teamSettingsPage.permissionsDialogTitle')}</DialogTitle>
           <DialogDescription>
-            {member ? (member.name || member.email) : ''} — Zugriff je Modul konfigurieren
+            {member ? (member.name || member.email) : ''} — {t('teamSettingsPage.permissionsDialogDesc')}
           </DialogDescription>
         </DialogHeader>
         {member && <UserPermissionsEditor userId={member.id} />}
@@ -165,6 +173,7 @@ function PermissionsDialog({ member, onClose }: PermissionsDialogProps) {
 // ---------------------------------------------------------------------------
 
 function MembersTable({ members, currentUserID }: { members: TeamMember[]; currentUserID: string }) {
+  const { t } = useTranslation()
   const updateRole = useUpdateRole()
   const removeUser = useRemoveUser()
   const [removeTarget, setRemoveTarget] = useState<TeamMember | null>(null)
@@ -174,7 +183,7 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
 
   function handleRoleChange(member: TeamMember, newRole: Role) {
     updateRole.mutate({ id: member.id, role: newRole }, {
-      onSuccess: () => toast('Rolle gespeichert', 'success'),
+      onSuccess: () => toast(t('teamSettingsPage.roleSaved'), 'success'),
       onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
     })
   }
@@ -198,10 +207,10 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Mitglied</TableHead>
-            <TableHead>E-Mail</TableHead>
-            <TableHead>Rolle</TableHead>
-            <TableHead>Mitglied seit</TableHead>
+            <TableHead>{t('teamSettingsPage.colMember')}</TableHead>
+            <TableHead>{t('teamSettingsPage.colEmail')}</TableHead>
+            <TableHead>{t('teamSettingsPage.colRole')}</TableHead>
+            <TableHead>{t('teamSettingsPage.colMemberSince')}</TableHead>
             <TableHead />
           </TableRow>
         </TableHeader>
@@ -209,7 +218,7 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
           {members.length === 0 && (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-10 text-secondary">
-                Keine Mitglieder gefunden.
+                {t('teamSettingsPage.noMembersFound')}
               </TableCell>
             </TableRow>
           )}
@@ -226,7 +235,7 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
                     </div>
                     <span className="font-medium text-sm">
                       {member.name || member.email.split('@')[0]}
-                      {isSelf && <span className="ml-1 text-secondary text-xs">(Du)</span>}
+                      {isSelf && <span className="ml-1 text-secondary text-xs">({t('teamSettingsPage.you')})</span>}
                     </span>
                   </div>
                 </TableCell>
@@ -258,7 +267,7 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
                       variant="ghost"
                       size="sm"
                       onClick={() => setPermTarget(member)}
-                      title="Modulberechtigungen bearbeiten"
+                      title={t('teamSettingsPage.permissionsDialogTitle')}
                     >
                       <ShieldCheck className="w-4 h-4 text-secondary" />
                     </Button>
@@ -286,14 +295,14 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
       <AlertDialog open={removeTarget !== null} onOpenChange={(open) => !open && setRemoveTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Mitglied entfernen?</AlertDialogTitle>
+            <AlertDialogTitle>{t('teamSettingsPage.removeDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {removeTarget?.email} wird aus der Organisation entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
+              {t('teamSettingsPage.removeDialogDesc', { email: removeTarget?.email ?? '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRemoveTarget(null)}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Entfernen</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setRemoveTarget(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('common.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -306,6 +315,7 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
 // ---------------------------------------------------------------------------
 
 function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
+  const { t } = useTranslation()
   const revoke = useRevokeInvitation()
   const [revokeTarget, setRevokeTarget] = useState<TeamInvitation | null>(null)
 
@@ -318,7 +328,7 @@ function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
   function confirmRevoke() {
     if (revokeTarget) {
       revoke.mutate(revokeTarget.id, {
-        onSuccess: () => toast('Einladung widerrufen', 'success'),
+        onSuccess: () => toast(t('teamSettingsPage.revokeDialogTitle'), 'success'),
         onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
       })
     }
@@ -330,16 +340,16 @@ function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
   return (
     <div className="space-y-3">
       <h2 className="text-sm font-semibold text-secondary uppercase tracking-wide">
-        Ausstehende Einladungen
+        {t('teamSettingsPage.pendingInvitations')}
       </h2>
       <div className="rounded-lg border border-border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>E-Mail</TableHead>
-              <TableHead>Rolle</TableHead>
-              <TableHead>Eingeladen von</TableHead>
-              <TableHead>Laeuft ab in</TableHead>
+              <TableHead>{t('teamSettingsPage.colEmail')}</TableHead>
+              <TableHead>{t('teamSettingsPage.colRole')}</TableHead>
+              <TableHead>{t('teamSettingsPage.colInvitedBy')}</TableHead>
+              <TableHead>{t('teamSettingsPage.colExpiresIn')}</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -350,7 +360,7 @@ function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
                 <TableCell>{roleBadge(inv.role)}</TableCell>
                 <TableCell className="text-secondary text-sm">{inv.invited_by || '—'}</TableCell>
                 <TableCell className="text-secondary text-sm">
-                  {daysUntil(inv.expires_at)} Tage
+                  {daysUntil(inv.expires_at)} {t('teamSettingsPage.days')}
                 </TableCell>
                 <TableCell>
                   <Button
@@ -372,14 +382,14 @@ function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
       <AlertDialog open={revokeTarget !== null} onOpenChange={(open) => !open && setRevokeTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Einladung widerrufen?</AlertDialogTitle>
+            <AlertDialogTitle>{t('teamSettingsPage.revokeDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Die Einladung an {revokeTarget?.email} wird widerrufen.
+              {t('teamSettingsPage.revokeDialogDesc', { email: revokeTarget?.email ?? '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRevokeTarget(null)}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRevoke} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Widerrufen</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setRevokeTarget(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRevoke} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('teamSettingsPage.revokeDialogTitle')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -392,6 +402,7 @@ function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
 // ---------------------------------------------------------------------------
 
 export default function TeamSettingsPage() {
+  const { t } = useTranslation()
   const [dialogOpen, setDialogOpen] = useState(false)
   const { user } = useAuthStore()
   const { data: members = [], isLoading: membersLoading, isError: membersError, refetch: refetchMembers } = useTeamMembers()
@@ -403,30 +414,30 @@ export default function TeamSettingsPage() {
   return (
     <div className="p-6 space-y-8 max-w-5xl">
       <PageHeader
-        title="Team"
-        description="Verwalte Teammitglieder, vergib Rollen und lade neue Kolleginnen ein."
+        title={t('teamSettingsPage.title')}
+        description={t('teamSettingsPage.description')}
         actions={
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Mitglied einladen
+            {t('teamSettingsPage.inviteMember')}
           </Button>
         }
       />
 
       {isError ? (
         <ErrorState
-          message="Teamdaten konnten nicht geladen werden."
+          message={t('teamSettingsPage.loadError')}
           onRetry={() => { void refetchMembers(); void refetchInv() }}
         />
       ) : isLoading ? (
         <div className="flex items-center justify-center h-32 text-secondary text-sm">
-          Laden...
+          {t('teamSettingsPage.loading')}
         </div>
       ) : (
         <>
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-secondary uppercase tracking-wide">
-              Teammitglieder
+              {t('teamSettingsPage.teamMembersTitle')}
             </h2>
             <MembersTable members={members} currentUserID={user?.id ?? ''} />
           </div>
@@ -438,7 +449,7 @@ export default function TeamSettingsPage() {
       {members.length === 0 && !isLoading && (
         <div className="flex flex-col items-center gap-3 py-16 text-secondary">
           <Users className="w-10 h-10 opacity-30" />
-          <p className="text-sm">Noch keine Teammitglieder</p>
+          <p className="text-sm">{t('teamSettingsPage.noMembers')}</p>
         </div>
       )}
 

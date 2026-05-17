@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Save } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
+import { trackPage } from '../../../shared/hooks/useRecentPages'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
@@ -34,6 +36,10 @@ export default function RiskDetailPage() {
 
   const [form, setForm] = useState<UpdateRiskInput | null>(null)
   const [dirty, setDirty] = useState(false)
+
+  useEffect(() => {
+    if (risk) trackPage(`/secvitals/risks/${id}`, risk.title, '⚠️')
+  }, [risk?.id])
 
   useEffect(() => {
     if (risk && !form) {
@@ -74,6 +80,11 @@ export default function RiskDetailPage() {
 
   return (
     <div className="flex flex-col h-full">
+      <Breadcrumbs items={[
+        { label: 'SecVitals', href: '/secvitals' },
+        { label: 'Risiken', href: '/secvitals/risks' },
+        { label: risk.title },
+      ]} />
       <PageHeader
         title={risk.title}
         description={risk.category || 'Risikodetails'}

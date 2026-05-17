@@ -4,6 +4,8 @@ import { Building2 } from 'lucide-react'
 import { apiFetch } from '../api/client'
 import { useAuthStore } from '../shared/stores/auth'
 import { useDemoMode } from '../shared/hooks/useDemoMode'
+import { useFieldValidation, required, minLength, email as emailRule } from '../shared/hooks/useFieldValidation'
+import { FieldError } from '../shared/components/FieldError'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -54,6 +56,9 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const emailValidation = useFieldValidation(email, [required, emailRule])
+  const passwordValidation = useFieldValidation(password, [required, minLength(8)])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
@@ -97,9 +102,10 @@ export default function Login() {
                   required
                   aria-required="true"
                   aria-describedby={error ? 'login-error' : undefined}
-                  aria-invalid={!!error}
+                  aria-invalid={!!error || !!emailValidation.error}
                   autoFocus
                 />
+                <FieldError error={emailValidation.error} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="password">Passwort</Label>
@@ -111,8 +117,9 @@ export default function Login() {
                   required
                   aria-required="true"
                   aria-describedby={error ? 'login-error' : undefined}
-                  aria-invalid={!!error}
+                  aria-invalid={!!error || !!passwordValidation.error}
                 />
+                <FieldError error={passwordValidation.error} />
                 <div className="text-right">
                   <Link
                     to="/auth/forgot-password"

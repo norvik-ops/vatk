@@ -1,10 +1,13 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Server, ScanSearch, Upload } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { InfoBanner } from '../../../shared/components/InfoBanner'
 import { Pagination } from '../../../shared/components/Pagination'
+import { SortableHeader } from '../../../shared/components/SortableHeader'
+import { useSortableTable } from '../../../shared/hooks/useSortableTable'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog'
@@ -18,6 +21,13 @@ import type { CreateAssetInput, ImportAssetsResult } from '../hooks/useAssets'
 import { toast } from '../../../shared/hooks/useToast'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { CSVImportDialog } from '../../../shared/components/CSVImportDialog'
+
+const CRITICALITY_ORDER: Record<Asset['criticality'], number> = {
+  critical: 4, high: 3, medium: 2, low: 1,
+}
+
+type SortableAsset = Asset & { criticality_order: number }
 
 const criticalityVariant: Record<Asset['criticality'], React.ComponentProps<typeof Badge>['variant']> = {
   low: 'secondary',
@@ -50,13 +60,24 @@ const emptyForm: CreateAssetInput = {
 }
 
 export default function AssetsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
-  const { data: assets, isLoading, isError, error, pagination, refetch } = useAssets(page)
+  const { data: rawAssets, isLoading, isError, error, pagination, refetch } = useAssets(page)
+  const assetsWithOrder: SortableAsset[] = (rawAssets ?? []).map((a) => ({
+    ...a,
+    criticality_order: CRITICALITY_ORDER[a.criticality] ?? 0,
+  }))
+  const { sorted: sortedAssets, sortKey, sortDir, toggleSort } = useSortableTable<SortableAsset>(
+    assetsWithOrder, { key: 'name', dir: 'asc' },
+  )
+  const assets = rawAssets // keep for length check
+  const sortedAssetsForRender = sortedAssets
   const createAsset = useCreateAsset()
   const importAssets = useImportAssets()
   const [open, setOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [csvImportOpen, setCsvImportOpen] = useState(false)
   const [importResult, setImportResult] = useState<ImportAssetsResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<CreateAssetInput>(emptyForm)
@@ -117,24 +138,32 @@ export default function AssetsPage() {
 
   return (
     <div className="flex flex-col h-full">
+      <CSVImportDialog
+        open={csvImportOpen}
+        onClose={() => setCsvImportOpen(false)}
+        endpoint="/api/v1/secpulse/assets/import/csv"
+        entityLabel="Assets"
+        columns={['name', 'type', 'target', 'criticality', 'tags']}
+        onSuccess={() => void refetch()}
+      />
       <PageHeader
-        title="Assets"
-        description="Überwachte Assets und Infrastruktur verwalten"
+        title={t('secpulse.assetsPage.title')}
+        description={t('secpulse.assetsPage.description')}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleImportOpen}>
+            <Button variant="outline" onClick={() => setCsvImportOpen(true)}>
               <Upload className="w-4 h-4 mr-1" />
-              CSV importieren
+              {t('secpulse.assetsPage.csvImport')}
             </Button>
             <Button onClick={handleOpen}>
               <Plus className="w-4 h-4 mr-1" />
-              Neues Asset
+              {t('secpulse.assetsPage.newAsset')}
             </Button>
           </div>
         }
       />
 
-      <InfoBanner icon={ScanSearch} title="So funktioniert Vakt Scan">
+      <InfoBanner icon={ScanSearch} title={t('secpulse.assetsPage.scannerInfo')}>
         <p>Vakt Scan orchestriert lokale Scanner wie <strong>Trivy</strong>, <strong>Nuclei</strong> und <strong>OpenVAS</strong>. Lege zuerst ein Asset (Server, Web-App, Repo …) an — dann startest du einen Scan direkt aus der Asset-Detailseite.</p>
         <p className="mt-1">Die Scanner müssen von deiner Vakt-Instanz aus erreichbar sein. URLs und Credentials trägst du in <strong>Settings → Scanner</strong> ein.</p>
       </InfoBanner>
@@ -158,12 +187,12 @@ export default function AssetsPage() {
         {!isLoading && !isError && assets && assets.length === 0 && (
           <EmptyState
             icon={Server}
-            title="Noch keine Assets vorhanden"
-            description="Fügen Sie Ihr erstes Asset hinzu, um Schwachstellenscans zu starten."
+            title={t('secpulse.assetsPage.noAssets')}
+            description={t('secpulse.assetsPage.noAssetsDesc')}
             action={
               <Button onClick={handleOpen}>
                 <Plus className="w-4 h-4 mr-1" />
-                Neues Asset
+                {t('secpulse.assetsPage.newAsset')}
               </Button>
             }
           />
@@ -174,15 +203,16 @@ export default function AssetsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Target</TableHead>
-                  <TableHead>Criticality</TableHead>
-                  <TableHead>Tags</TableHead>
+                  <SortableHeader label={t('secpulse.assetsPage.colName')} sortKey="name" currentSortKey={sortKey} currentDir={sortDir} onSort={toggleSort} className="px-4 py-3 text-left text-sm font-medium text-secondary" />
+                  <SortableHeader label={t('secpulse.assetsPage.colType')} sortKey="type" currentSortKey={sortKey} currentDir={sortDir} onSort={toggleSort} className="px-4 py-3 text-left text-sm font-medium text-secondary" />
+                  <TableHead>{t('secpulse.assetsPage.colTarget')}</TableHead>
+                  <SortableHeader label={t('secpulse.assetsPage.colCriticality')} sortKey="criticality_order" currentSortKey={sortKey} currentDir={sortDir} onSort={toggleSort} className="px-4 py-3 text-left text-sm font-medium text-secondary" />
+                  <TableHead>{t('secpulse.assetsPage.colTags')}</TableHead>
+                  <SortableHeader label={t('common.date')} sortKey="created_at" currentSortKey={sortKey} currentDir={sortDir} onSort={toggleSort} className="px-4 py-3 text-left text-sm font-medium text-secondary" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {assets.map((asset) => (
+                {sortedAssetsForRender.map((asset) => (
                   <TableRow
                     key={asset.id}
                     className="cursor-pointer hover:bg-surface2"
@@ -208,6 +238,9 @@ export default function AssetsPage() {
                         ))}
                       </div>
                     </TableCell>
+                    <TableCell className="text-sm text-secondary">
+                      {new Date(asset.created_at).toLocaleDateString('de-DE')}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -225,9 +258,9 @@ export default function AssetsPage() {
       <Dialog open={importOpen} onOpenChange={(v) => { if (!v) setImportOpen(false) }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assets per CSV importieren</DialogTitle>
+            <DialogTitle>{t('secpulse.assetsPage.importDialogTitle')}</DialogTitle>
             <DialogDescription>
-              CSV mit Spalten: <code className="text-xs bg-surface2 px-1 rounded">name, type, target, criticality, tags</code>. Erlaubte Typen: web_app, server, database, container, repo. Criticality: low, medium, high, critical.
+              {t('secpulse.assetsPage.importDialogDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
@@ -242,12 +275,12 @@ export default function AssetsPage() {
             {importAssets.isPending && (
               <p className="text-sm text-secondary flex items-center gap-2">
                 <span className="w-3.5 h-3.5 border-2 border-brand border-t-transparent rounded-full animate-spin inline-block" />
-                Importiere …
+                {t('secpulse.assetsPage.importing')}
               </p>
             )}
             {importResult && (
               <div className={`p-3 rounded-lg text-sm space-y-1 ${importResult.errors.length > 0 ? 'bg-yellow-500/10' : 'bg-green-500/10'}`}>
-                <p className="font-medium">{importResult.inserted} Assets importiert, {importResult.errored} Fehler</p>
+                <p className="font-medium">{t('secpulse.assetsPage.importResult', { inserted: importResult.inserted, errored: importResult.errored })}</p>
                 {importResult.errors.map((e, i) => (
                   <p key={i} className="text-xs text-red-400">{e}</p>
                 ))}
@@ -255,7 +288,7 @@ export default function AssetsPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImportOpen(false)}>Schließen</Button>
+            <Button variant="outline" onClick={() => setImportOpen(false)}>{t('common.close')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -263,13 +296,13 @@ export default function AssetsPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Neues Asset</DialogTitle>
-            <DialogDescription>Fügen Sie ein neues Asset hinzu, um es auf Schwachstellen zu überwachen.</DialogDescription>
+            <DialogTitle>{t('secpulse.assetsPage.newAssetDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('secpulse.assetsPage.newAssetDialogDesc')}</DialogDescription>
           </DialogHeader>
           <form onSubmit={(e) => { void handleSubmit(e) }}>
             <div className="space-y-4 py-2">
               <div className="space-y-1">
-                <Label htmlFor="asset-name">Name</Label>
+                <Label htmlFor="asset-name">{t('secpulse.assetsPage.labelName')}</Label>
                 <Input
                   id="asset-name"
                   placeholder="My Web App"
@@ -280,7 +313,7 @@ export default function AssetsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="asset-type">Type</Label>
+                <Label htmlFor="asset-type">{t('secpulse.assetsPage.labelType')}</Label>
                 <Select
                   value={form.type}
                   onValueChange={(val) => setForm({ ...form, type: val as Asset['type'] })}
@@ -299,7 +332,7 @@ export default function AssetsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="asset-target">Target</Label>
+                <Label htmlFor="asset-target">{t('secpulse.assetsPage.labelTarget')}</Label>
                 <Input
                   id="asset-target"
                   placeholder="https://example.com or 192.168.1.1"
@@ -310,7 +343,7 @@ export default function AssetsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="asset-criticality">Criticality</Label>
+                <Label htmlFor="asset-criticality">{t('secpulse.assetsPage.labelCriticality')}</Label>
                 <Select
                   value={form.criticality}
                   onValueChange={(val) => setForm({ ...form, criticality: val as Asset['criticality'] })}
@@ -328,10 +361,10 @@ export default function AssetsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="asset-tags">Tags (comma-separated)</Label>
+                <Label htmlFor="asset-tags">{t('secpulse.assetsPage.labelTags')}</Label>
                 <Input
                   id="asset-tags"
-                  placeholder="production, web, external"
+                  placeholder={t('secpulse.assetsPage.placeholderTags')}
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                 />
@@ -344,13 +377,13 @@ export default function AssetsPage() {
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={createAsset.isPending}>
                 {createAsset.isPending ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                 ) : null}
-                Create Asset
+                {createAsset.isPending ? t('secpulse.assetsPage.creating') : t('secpulse.assetsPage.createAsset')}
               </Button>
             </DialogFooter>
           </form>

@@ -28,6 +28,7 @@ import (
 	"github.com/sechealth-app/sechealth/internal/license"
 	"github.com/sechealth-app/sechealth/internal/shared/demo"
 	sharedmw "github.com/sechealth-app/sechealth/internal/shared/middleware"
+	sharedwebhooks "github.com/sechealth-app/sechealth/internal/shared/webhooks"
 	"github.com/sechealth-app/sechealth/internal/shared/updatecheck"
 	"github.com/sechealth-app/sechealth/internal/modules/hr"
 	"github.com/sechealth-app/sechealth/internal/modules/secvitals"
@@ -74,6 +75,9 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
+
+	// X-Request-ID — applied first so every subsequent log entry can reference it.
+	e.Use(sharedmw.RequestID())
 
 	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
 		XSSProtection:         "0",
@@ -122,6 +126,9 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 			"sso_enabled": cfg.CasdoorURL != "",
 		})
 	})
+
+	// security.txt — public, no auth, RFC 9116.
+	e.GET("/.well-known/security.txt", admin.HandleSecurityTXT)
 
 	if cfg.DBUrl == "" {
 		log.Warn().Msg("VAKT_DB_URL not set — all routes disabled")
@@ -198,11 +205,22 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ready"})
 	})
 
+	// Auth routes — Redis-backed IP rate limit (10 req/min) on the four
+	// credential-submission endpoints, plus a broader in-memory limiter on the
+	// full auth group for burst protection on other endpoints.
 	authRateLimiter := middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(
 		middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(10.0 / 60.0), Burst: 10, ExpiresIn: 5 * time.Minute},
 	))
+	redisAuthRL := sharedmw.AuthRateLimit(rdb)
 	authSvc := auth.NewService(pool, rdb, pasetoKey)
-	auth.Register(api.Group("/auth", authRateLimiter), auth.NewHandler(authSvc, cfg))
+	authHandler := auth.NewHandler(authSvc, cfg)
+	authGroup := api.Group("/auth", authRateLimiter)
+	auth.Register(authGroup, authHandler)
+	// Apply Redis-backed rate limit specifically to the 4 credential routes.
+	api.POST("/auth/login", authHandler.Login, redisAuthRL)
+	api.POST("/auth/register", authHandler.Register, redisAuthRL)
+	api.POST("/auth/password-reset/request", authHandler.RequestPasswordReset, redisAuthRL)
+	api.POST("/auth/password-reset/confirm", authHandler.ResetPassword, redisAuthRL)
 	log.Info().Msg("auth routes registered")
 
 	// All subsequent routes require a valid Paseto token
@@ -402,6 +420,12 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 			log.Info().Msg("cloud integration routes registered")
 		}
 	}
+
+	// Outgoing webhooks — org-scoped event delivery (cross-module).
+	webhookSvc := sharedwebhooks.NewWebhookService(pool)
+	webhookHandler := sharedwebhooks.NewHandler(webhookSvc)
+	sharedwebhooks.Register(protected.Group("/webhooks"), webhookHandler)
+	log.Info().Msg("webhook routes registered")
 
 	// API key management — personal keys for programmatic access (Pro feature)
 	apikeys.Register(protected, pool)

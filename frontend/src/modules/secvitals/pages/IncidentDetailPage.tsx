@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Save, Link2, Clock, CheckCircle2, AlertTriangle, FileDown, ShieldAlert } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
+import { trackPage } from '../../../shared/hooks/useRecentPages'
 import { ProGate } from '../../../shared/components/ProGate'
 import { FeatureLockedError } from '../../../api/client'
 import { Button } from '../../../components/ui/button'
@@ -159,6 +161,10 @@ export default function IncidentDetailPage() {
   }
 
   useEffect(() => {
+    if (incident) trackPage(`/secvitals/incidents/${id}`, incident.title, '🚨')
+  }, [incident?.id])
+
+  useEffect(() => {
     if (incident && !form) {
       setForm({
         title: incident.title,
@@ -205,6 +211,11 @@ export default function IncidentDetailPage() {
 
   return (
     <div className="flex flex-col h-full">
+      <Breadcrumbs items={[
+        { label: 'SecVitals', href: '/secvitals' },
+        { label: 'Incidents', href: '/secvitals/incidents' },
+        { label: incident.title },
+      ]} />
       <PageHeader
         title={incident.title}
         description={`Entdeckt: ${new Date(incident.discovered_at).toLocaleDateString('de-DE')}`}

@@ -8,6 +8,7 @@ import {
   User, Trash2, MonitorSmartphone, Palette, Shield, FlaskConical,
   Building2, Bot, PackageX, Mail, GraduationCap, Target, Flag, LayoutTemplate, UserCog, Activity, UserCheck,
   Plug, ClipboardCheck, CalendarClock, Inbox, ExternalLink, Menu, X, ArrowUpCircle, ScrollText, HeartPulse, CalendarDays,
+  ChevronLeft, ChevronRight, HelpCircle, Webhook, FileBarChart2,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../stores/auth'
@@ -27,6 +28,8 @@ import { usePendingApprovalCount } from '../../modules/secvitals/hooks/useApprov
 import { useUpdateCheck } from '../hooks/useUpdateCheck'
 import { Toaster } from './Toaster'
 import { PWAInstallPrompt } from './PWAInstallPrompt'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal'
 
 interface NavItem {
   path: string
@@ -115,6 +118,8 @@ const MODULES_NAV: NavItem[] = [
   { path: '/integrations', label: 'Integrationen', icon: Plug },
 ]
 
+const SIDEBAR_COLLAPSED_KEY = 'vakt_sidebar_collapsed'
+
 export default function Layout() {
   const { t } = useTranslation()
   const location = useLocation()
@@ -126,6 +131,10 @@ export default function Layout() {
   const [demoBannerDismissed, setDemoBannerDismissed] = useState(false)
   const [updateDismissed, setUpdateDismissed] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true',
+  )
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const { data: updateInfo } = useUpdateCheck()
   const isAdminOrOwner = user?.roles?.includes('admin') || user?.roles?.includes('owner')
   const demoMode = useDemoMode()
@@ -135,6 +144,16 @@ export default function Layout() {
   const autoEvidenceCount = autoEvidence?.length ?? 0
   const { data: pendingApprovalData } = usePendingApprovalCount()
   const pendingApprovalCount = pendingApprovalData?.count ?? 0
+
+  useKeyboardShortcuts({ onOpenHelp: () => setShortcutsOpen(true) })
+
+  function toggleSidebarCollapsed() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next))
+      return next
+    })
+  }
 
   useEffect(() => {
     if (demoMode === true) document.title = 'Vakt Demo'
@@ -220,48 +239,71 @@ export default function Layout() {
         />
       )}
       {/* Sidebar */}
-      <aside className={cn(
-        'shrink-0 bg-surface border-r border-border flex flex-col',
-        'fixed inset-y-0 left-0 z-30 w-[210px] transition-transform duration-200 lg:static lg:translate-x-0',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
-      )}>
+      <aside
+        aria-expanded={!sidebarCollapsed}
+        className={cn(
+          'shrink-0 bg-surface border-r border-border flex flex-col',
+          'fixed inset-y-0 left-0 z-30 transition-all duration-200 lg:static lg:translate-x-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          sidebarCollapsed ? 'w-[56px]' : 'w-[210px]',
+        )}
+      >
 
         {/* Brand */}
-        <div className="px-3 pt-5 pb-4">
-          <div className="flex items-center gap-2.5 px-2 mb-1">
-            <img src="/logo.svg" alt="Vakt" className="w-7 h-7 shrink-0" />
-            <span className="font-bold text-[18px] text-brand leading-none">Vakt</span>
-            <button
-              className="ml-auto lg:hidden text-secondary hover:text-primary p-1 rounded"
-              onClick={() => setSidebarOpen(false)}
-              aria-label={t('nav.closeMenu')}
-            >
-              <X className="w-4 h-4" aria-hidden="true" />
-            </button>
+        <div className={cn('px-3 pt-5 pb-4', sidebarCollapsed && 'px-2')}>
+          <div className={cn('flex items-center gap-2.5 px-2 mb-1', sidebarCollapsed && 'justify-center px-0')}>
+            <img src="/logo.svg" alt="Vakt" className="w-7 h-7 shrink-0" title="Vakt" />
+            {!sidebarCollapsed && <span className="font-bold text-[18px] text-brand leading-none">Vakt</span>}
+            {!sidebarCollapsed && (
+              <button
+                className="ml-auto lg:hidden text-secondary hover:text-primary p-1 rounded"
+                onClick={() => setSidebarOpen(false)}
+                aria-label={t('nav.closeMenu')}
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            )}
           </div>
-          <p className="text-[11px] text-secondary px-2">Security Platform</p>
+          {!sidebarCollapsed && <p className="text-[11px] text-secondary px-2">Security Platform</p>}
         </div>
 
         {/* Search trigger */}
-        <div className="px-3 pb-2">
-          <button
-            type="button"
-            aria-label="Globale Suche öffnen (Cmd+K)"
-            onClickCapture={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))}
-            className="w-full flex items-center gap-2 text-xs text-secondary border border-border rounded-md px-3 py-1.5 hover:border-brand/40 transition-colors"
-          >
-            {/* WCAG 1.1.1: search icon is decorative, button is named by aria-label */}
-            <Search className="w-3 h-3" aria-hidden="true" />
-            <span>{t('nav.search')}</span>
-            <kbd className="ml-auto opacity-60" aria-hidden="true">⌘K</kbd>
-          </button>
-        </div>
+        {!sidebarCollapsed && (
+          <div className="px-3 pb-2">
+            <button
+              type="button"
+              aria-label="Globale Suche öffnen (Cmd+K)"
+              onClickCapture={() => window.dispatchEvent(new CustomEvent('vakt:open-search'))}
+              className="w-full flex items-center gap-2 text-xs text-secondary border border-border rounded-md px-3 py-1.5 hover:border-brand/40 transition-colors"
+            >
+              {/* WCAG 1.1.1: search icon is decorative, button is named by aria-label */}
+              <Search className="w-3 h-3" aria-hidden="true" />
+              <span>{t('nav.search')}</span>
+              <kbd className="ml-auto opacity-60" aria-hidden="true">⌘K</kbd>
+            </button>
+          </div>
+        )}
+        {sidebarCollapsed && (
+          <div className="px-2 pb-2">
+            <button
+              type="button"
+              aria-label="Globale Suche öffnen (Cmd+K)"
+              title="Suche (⌘K)"
+              onClickCapture={() => window.dispatchEvent(new CustomEvent('vakt:open-search'))}
+              className="w-full flex items-center justify-center p-2 text-secondary border border-border rounded-md hover:border-brand/40 transition-colors"
+            >
+              <Search className="w-4 h-4" aria-hidden="true" />
+            </button>
+          </div>
+        )}
 
         {/* Nav */}
-        <nav role="navigation" aria-label={t('nav.mainNav')} className="flex-1 px-3 overflow-y-auto">
-          <p className="px-2 mb-1 text-[10px] font-semibold text-secondary uppercase tracking-wider opacity-60">
-            {t('nav.modules')}
-          </p>
+        <nav role="navigation" aria-label={t('nav.mainNav')} className={cn('flex-1 overflow-y-auto', sidebarCollapsed ? 'px-2' : 'px-3')}>
+          {!sidebarCollapsed && (
+            <p className="px-2 mb-1 text-[10px] font-semibold text-secondary uppercase tracking-wider opacity-60">
+              {t('nav.modules')}
+            </p>
+          )}
           <div className="space-y-[2px] mb-4">
             {MODULES_NAV.map(({ path, label, icon: Icon, exact, children }) => {
               const active = isActive(path, exact)
@@ -273,8 +315,10 @@ export default function Layout() {
                     to={path}
                     onClick={() => setSidebarOpen(false)}
                     aria-current={active ? 'page' : undefined}
+                    title={sidebarCollapsed ? label : undefined}
                     className={cn(
-                      'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
+                      'flex items-center rounded-md text-[13px] font-medium transition-all duration-150',
+                      sidebarCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-[9px]',
                       active
                         ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
                         : 'text-secondary hover:bg-muted/50 hover:text-primary',
@@ -282,9 +326,9 @@ export default function Layout() {
                   >
                     {/* WCAG 1.1.1: nav icons are decorative — label comes from text */}
                     <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-brand' : '')} aria-hidden="true" />
-                    {label}
+                    {!sidebarCollapsed && label}
                   </Link>
-                  {expanded && (
+                  {expanded && !sidebarCollapsed && (
                     <div className="ml-3 mt-0.5 mb-1 pl-3 border-l border-border space-y-[1px]">
                       {children.map(({ path: cp, label: cl, icon: CIcon }) => {
                         const childActive = location.pathname === cp || location.pathname.startsWith(cp + '/')
@@ -340,245 +384,152 @@ export default function Layout() {
             })}
           </div>
 
-          <p className="px-2 mb-1 text-[10px] font-semibold text-secondary uppercase tracking-wider opacity-60">
-            {t('nav.system')}
-          </p>
+          {!sidebarCollapsed && (
+            <p className="px-2 mb-1 text-[10px] font-semibold text-secondary uppercase tracking-wider opacity-60">
+              {t('nav.system')}
+            </p>
+          )}
           {/* WCAG 2.4.4 + 4.1.2: aria-current="page" on each active system link */}
           <div className="space-y-[2px]">
-            <Link
-              to="/settings"
-              onClick={() => setSidebarOpen(false)}
-              aria-current={location.pathname === '/settings' ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                location.pathname === '/settings'
-                  ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                  : 'text-secondary hover:bg-muted/50 hover:text-primary',
-              )}
-            >
-              <Settings className={cn('w-4 h-4 shrink-0', location.pathname === '/settings' ? 'text-brand' : '')} aria-hidden="true" />
-              {t('nav.settings')}
-            </Link>
-            <Link
-              to="/settings/alerting"
-              onClick={() => setSidebarOpen(false)}
-              aria-current={isActive('/settings/alerting') ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                isActive('/settings/alerting')
-                  ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                  : 'text-secondary hover:bg-muted/50 hover:text-primary',
-              )}
-            >
-              <Bell className={cn('w-4 h-4 shrink-0', isActive('/settings/alerting') ? 'text-brand' : '')} aria-hidden="true" />
-              {t('nav.alerting')}
-            </Link>
-            <Link
-              to="/settings/retention"
-              onClick={() => setSidebarOpen(false)}
-              aria-current={isActive('/settings/retention') ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                isActive('/settings/retention')
-                  ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                  : 'text-secondary hover:bg-muted/50 hover:text-primary',
-              )}
-            >
-              <Trash2 className={cn('w-4 h-4 shrink-0', isActive('/settings/retention') ? 'text-brand' : '')} aria-hidden="true" />
-              {t('nav.retention')}
-            </Link>
-            <Link
-              to="/settings/branding"
-              onClick={() => setSidebarOpen(false)}
-              aria-current={isActive('/settings/branding') ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                isActive('/settings/branding')
-                  ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                  : 'text-secondary hover:bg-muted/50 hover:text-primary',
-              )}
-            >
-              <Palette className={cn('w-4 h-4 shrink-0', isActive('/settings/branding') ? 'text-brand' : '')} aria-hidden="true" />
-              Branding
-            </Link>
-            <Link
-              to="/settings/trust-center"
-              onClick={() => setSidebarOpen(false)}
-              aria-current={isActive('/settings/trust-center') ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                isActive('/settings/trust-center')
-                  ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                  : 'text-secondary hover:bg-muted/50 hover:text-primary',
-              )}
-            >
-              <Shield className={cn('w-4 h-4 shrink-0', isActive('/settings/trust-center') ? 'text-brand' : '')} aria-hidden="true" />
-              Trust Center
-            </Link>
-            <Link
-              to="/settings/auditors"
-              onClick={() => setSidebarOpen(false)}
-              aria-current={isActive('/settings/auditors') ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                isActive('/settings/auditors')
-                  ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                  : 'text-secondary hover:bg-muted/50 hover:text-primary',
-              )}
-            >
-              <UserCheck className={cn('w-4 h-4 shrink-0', isActive('/settings/auditors') ? 'text-brand' : '')} aria-hidden="true" />
-              Auditoren
-            </Link>
-            <Link
-              to="/settings/team"
-              onClick={() => setSidebarOpen(false)}
-              aria-current={isActive('/settings/team') ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                isActive('/settings/team')
-                  ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                  : 'text-secondary hover:bg-muted/50 hover:text-primary',
-              )}
-            >
-              <Users className={cn('w-4 h-4 shrink-0', isActive('/settings/team') ? 'text-brand' : '')} aria-hidden="true" />
-              Team
-            </Link>
-            {isAdminOrOwner && (
-              <Link
-                to="/settings/audit-log"
-                onClick={() => setSidebarOpen(false)}
-                aria-current={isActive('/settings/audit-log') ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                  isActive('/settings/audit-log')
-                    ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                    : 'text-secondary hover:bg-muted/50 hover:text-primary',
-                )}
-              >
-                <ScrollText className={cn('w-4 h-4 shrink-0', isActive('/settings/audit-log') ? 'text-brand' : '')} aria-hidden="true" />
-                Audit-Log
-              </Link>
-            )}
-            {isAdminOrOwner && (
-              <Link
-                to="/admin/health"
-                onClick={() => setSidebarOpen(false)}
-                aria-current={isActive('/admin/health') ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                  isActive('/admin/health')
-                    ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                    : 'text-secondary hover:bg-muted/50 hover:text-primary',
-                )}
-              >
-                <HeartPulse className={cn('w-4 h-4 shrink-0', isActive('/admin/health') ? 'text-brand' : '')} aria-hidden="true" />
-                System-Status
-              </Link>
-            )}
-            {isAdminOrOwner && (
-              <Link
-                to="/admin/tenants"
-                onClick={() => setSidebarOpen(false)}
-                aria-current={isActive('/admin/tenants') ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                  isActive('/admin/tenants')
-                    ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                    : 'text-secondary hover:bg-muted/50 hover:text-primary',
-                )}
-              >
-                <Building2 className={cn('w-4 h-4 shrink-0', isActive('/admin/tenants') ? 'text-brand' : '')} aria-hidden="true" />
-                Mandanten
-              </Link>
-            )}
-            {isAdminOrOwner && (
-              <Link
-                to="/admin/security"
-                onClick={() => setSidebarOpen(false)}
-                aria-current={isActive('/admin/security') ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                  isActive('/admin/security')
-                    ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                    : 'text-secondary hover:bg-muted/50 hover:text-primary',
-                )}
-              >
-                <ShieldAlert className={cn('w-4 h-4 shrink-0', isActive('/admin/security') ? 'text-brand' : '')} aria-hidden="true" />
-                Sicherheitsereignisse
-              </Link>
-            )}
-            <Link
-              to="/account"
-              onClick={() => setSidebarOpen(false)}
-              aria-current={isActive('/account') ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                isActive('/account')
-                  ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                  : 'text-secondary hover:bg-muted/50 hover:text-primary',
-              )}
-            >
-              <User className={cn('w-4 h-4 shrink-0', isActive('/account') ? 'text-brand' : '')} aria-hidden="true" />
-              {t('nav.account')}
-            </Link>
-            <Link
-              to="/account/sessions"
-              onClick={() => setSidebarOpen(false)}
-              aria-current={isActive('/account/sessions') ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] font-medium transition-all duration-150',
-                isActive('/account/sessions')
-                  ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
-                  : 'text-secondary hover:bg-muted/50 hover:text-primary',
-              )}
-            >
-              <MonitorSmartphone className={cn('w-4 h-4 shrink-0', isActive('/account/sessions') ? 'text-brand' : '')} aria-hidden="true" />
-              {t('nav.sessions')}
-            </Link>
+            {[
+              { to: '/settings', icon: Settings, label: t('nav.settings'), exact: true },
+              { to: '/settings/alerting', icon: Bell, label: t('nav.alerting') },
+              { to: '/settings/retention', icon: Trash2, label: t('nav.retention') },
+              { to: '/settings/branding', icon: Palette, label: 'Branding' },
+              { to: '/settings/trust-center', icon: Shield, label: 'Trust Center' },
+              { to: '/settings/auditors', icon: UserCheck, label: 'Auditoren' },
+              { to: '/settings/team', icon: Users, label: 'Team' },
+              { to: '/settings/webhooks', icon: Webhook, label: 'Webhooks' },
+              { to: '/settings/reports', icon: FileBarChart2, label: 'Geplante Berichte' },
+              ...(isAdminOrOwner ? [
+                { to: '/settings/audit-log', icon: ScrollText, label: 'Audit-Log' },
+                { to: '/admin/health', icon: HeartPulse, label: 'System-Status' },
+                { to: '/admin/tenants', icon: Building2, label: 'Mandanten' },
+                { to: '/admin/security', icon: ShieldAlert, label: 'Sicherheitsereignisse' },
+              ] : []),
+              { to: '/account', icon: User, label: t('nav.account') },
+              { to: '/account/sessions', icon: MonitorSmartphone, label: t('nav.sessions') },
+            ].map(({ to, icon: Icon, label, exact }) => {
+              const active = exact ? location.pathname === to : isActive(to)
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={() => setSidebarOpen(false)}
+                  aria-current={active ? 'page' : undefined}
+                  title={sidebarCollapsed ? label : undefined}
+                  className={cn(
+                    'flex items-center rounded-md text-[13px] font-medium transition-all duration-150',
+                    sidebarCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-[9px]',
+                    active
+                      ? 'bg-brand/10 dark:bg-muted/50 text-brand dark:text-primary'
+                      : 'text-secondary hover:bg-muted/50 hover:text-primary',
+                  )}
+                >
+                  <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-brand' : '')} aria-hidden="true" />
+                  {!sidebarCollapsed && label}
+                </Link>
+              )
+            })}
           </div>
         </nav>
 
         {/* Bottom */}
-        <div className="px-3 pb-4 border-t border-border pt-3 space-y-[2px]">
-          <div className="flex items-center px-3 py-[9px]">
+        <div className={cn('pb-4 border-t border-border pt-3 space-y-[2px]', sidebarCollapsed ? 'px-2' : 'px-3')}>
+          {/* Collapse toggle */}
+          <button
+            onClick={toggleSidebarCollapsed}
+            aria-label={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+            title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+            className={cn(
+              'w-full flex items-center rounded-md text-[13px] text-secondary hover:bg-muted/50 hover:text-primary transition-all duration-150',
+              sidebarCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-[9px]',
+            )}
+          >
+            {sidebarCollapsed
+              ? <ChevronRight className="w-4 h-4 shrink-0" aria-hidden="true" />
+              : <><ChevronLeft className="w-4 h-4 shrink-0" aria-hidden="true" /><span>Einklappen</span></>
+            }
+          </button>
+
+          {/* Help / keyboard shortcuts */}
+          <button
+            onClick={() => setShortcutsOpen(true)}
+            aria-label="Tastaturkürzel anzeigen"
+            title="Tastaturkürzel (?)"
+            className={cn(
+              'w-full flex items-center rounded-md text-[13px] text-secondary hover:bg-muted/50 hover:text-primary transition-all duration-150',
+              sidebarCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-[9px]',
+            )}
+          >
+            <HelpCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+            {!sidebarCollapsed && 'Tastaturkürzel'}
+          </button>
+
+          <div className={cn('flex items-center py-[9px]', sidebarCollapsed ? 'justify-center' : 'px-3')}>
             <NotificationBell />
           </div>
-          <a
-            href="https://github.com/norvik-ops/vakt/wiki"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] text-secondary hover:bg-muted/50 hover:text-primary transition-all duration-150"
-          >
-            <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
-            {t('nav.documentation')}
-            {/* WCAG 2.4.4: external-link icon is decorative; label names the link */}
-            <ExternalLink className="w-3 h-3 ml-auto opacity-40" aria-hidden="true" />
-          </a>
+
+          {!sidebarCollapsed && (
+            <a
+              href="https://github.com/norvik-ops/vakt/wiki"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] text-secondary hover:bg-muted/50 hover:text-primary transition-all duration-150"
+            >
+              <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
+              {t('nav.documentation')}
+              {/* WCAG 2.4.4: external-link icon is decorative; label names the link */}
+              <ExternalLink className="w-3 h-3 ml-auto opacity-40" aria-hidden="true" />
+            </a>
+          )}
+          {sidebarCollapsed && (
+            <a
+              href="https://github.com/norvik-ops/vakt/wiki"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Dokumentation"
+              className="w-full flex items-center justify-center p-2 rounded-md text-secondary hover:bg-muted/50 hover:text-primary transition-all duration-150"
+            >
+              <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
+            </a>
+          )}
+
           <button
             onClick={toggle}
             aria-label={theme === 'dark' ? 'Zu hellem Modus wechseln' : 'Zu dunklem Modus wechseln'}
-            className="w-full flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] text-secondary hover:bg-muted/50 hover:text-primary transition-all duration-150"
+            title={theme === 'dark' ? 'Heller Modus' : 'Dunkler Modus'}
+            className={cn(
+              'w-full flex items-center rounded-md text-[13px] text-secondary hover:bg-muted/50 hover:text-primary transition-all duration-150',
+              sidebarCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-[9px]',
+            )}
           >
             {theme === 'dark'
-              ? <><Sun className="w-4 h-4 shrink-0" aria-hidden="true" />{t('theme.light')}</>
-              : <><Moon className="w-4 h-4 shrink-0" aria-hidden="true" />{t('theme.dark')}</>
+              ? <><Sun className="w-4 h-4 shrink-0" aria-hidden="true" />{!sidebarCollapsed && t('theme.light')}</>
+              : <><Moon className="w-4 h-4 shrink-0" aria-hidden="true" />{!sidebarCollapsed && t('theme.dark')}</>
             }
           </button>
-          {user?.email && (
+          {!sidebarCollapsed && user?.email && (
             <div className="px-3 py-1">
               <p className="text-[11px] text-secondary truncate">{user.email}</p>
             </div>
           )}
           <button
             onClick={logout}
-            className="w-full flex items-center gap-2.5 px-3 py-[9px] rounded-md text-[13px] text-secondary hover:bg-muted/50 hover:text-red-500 transition-all duration-150"
+            title="Abmelden"
+            className={cn(
+              'w-full flex items-center rounded-md text-[13px] text-secondary hover:bg-muted/50 hover:text-red-500 transition-all duration-150',
+              sidebarCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-[9px]',
+            )}
           >
             <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
-            {t('auth.logout')}
+            {!sidebarCollapsed && t('auth.logout')}
           </button>
-          <div className="px-3 py-2 border-t border-border mt-1">
-            <p className="text-[10px] text-secondary/50">© 2026 NorvikOps · ELv2</p>
-          </div>
+          {!sidebarCollapsed && (
+            <div className="px-3 py-2 border-t border-border mt-1">
+              <p className="text-[10px] text-secondary/50">© 2026 NorvikOps · ELv2</p>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -605,6 +556,7 @@ export default function Layout() {
       </main>
       </div>
       <GlobalSearch />
+      <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       {demoMode && <FeedbackWidget />}
       <WhatsNewModal />
       <Toaster />

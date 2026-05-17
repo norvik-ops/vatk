@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Bug, FileCheck, Key, Fish, Eye,
@@ -6,6 +6,7 @@ import {
   ClipboardList, Clock, TriangleAlert, ListTodo,
   Shield, FileText, User, Database,
   TrendingUp, TrendingDown, Minus, CalendarDays,
+  Settings2,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -30,6 +31,9 @@ import type { FrameworkScore } from '../hooks/useDashboard'
 import { useScoreHistory } from '../modules/secvitals/hooks/useScoreHistory'
 import type { ScoreHistoryEntry } from '../modules/secvitals/hooks/useScoreHistory'
 import { useNextMilestone } from '../modules/secvitals/hooks/useMilestones'
+import { useRecentPages } from '../shared/hooks/useRecentPages'
+import { Switch } from '../components/ui/switch'
+import { Label } from '../components/ui/label'
 
 function fmt(n: number | null | undefined): string {
   return n == null ? '—' : n.toString()
@@ -469,6 +473,41 @@ function ScoreHistoryCard() {
 }
 
 // ---------------------------------------------------------------------------
+// Widget visibility config
+// ---------------------------------------------------------------------------
+
+const WIDGETS_KEY = 'vakt_dashboard_widgets'
+
+type WidgetKey = 'compliance_score' | 'open_findings' | 'incidents' | 'recent_pages' | 'onboarding' | 'evidence_expiry'
+
+const DEFAULT_WIDGETS: Record<WidgetKey, boolean> = {
+  compliance_score: true,
+  open_findings: true,
+  incidents: true,
+  recent_pages: true,
+  onboarding: true,
+  evidence_expiry: true,
+}
+
+const WIDGET_LABELS: Record<WidgetKey, string> = {
+  compliance_score: 'Compliance-Score',
+  open_findings: 'Offene Findings',
+  incidents: 'Incidents',
+  recent_pages: 'Zuletzt besucht',
+  onboarding: 'Onboarding-Checkliste',
+  evidence_expiry: 'Evidence-Ablauf',
+}
+
+function loadWidgets(): Record<WidgetKey, boolean> {
+  try {
+    const saved = JSON.parse(localStorage.getItem(WIDGETS_KEY) ?? '{}') as Partial<Record<WidgetKey, boolean>>
+    return { ...DEFAULT_WIDGETS, ...saved }
+  } catch {
+    return DEFAULT_WIDGETS
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main dashboard
 // ---------------------------------------------------------------------------
 
@@ -485,6 +524,30 @@ export default function Dashboard() {
   const { data: campaigns, isLoading: campLoading } = useCampaigns()
   const { data: breaches, isLoading: breachLoading } = useBreaches()
   const { data: nextMilestone } = useNextMilestone()
+  const recentPages = useRecentPages()
+  const [widgets, setWidgets] = useState<Record<WidgetKey, boolean>>(() => loadWidgets())
+  const [widgetMenuOpen, setWidgetMenuOpen] = useState(false)
+  const widgetMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close widget menu on outside click
+  useEffect(() => {
+    if (!widgetMenuOpen) return
+    function handler(e: MouseEvent) {
+      if (widgetMenuRef.current && !widgetMenuRef.current.contains(e.target as Node)) {
+        setWidgetMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [widgetMenuOpen])
+
+  function toggleWidget(key: WidgetKey) {
+    setWidgets((prev) => {
+      const next = { ...prev, [key]: !prev[key] }
+      try { localStorage.setItem(WIDGETS_KEY, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
 
   const kpiLoading = aggLoading
 
@@ -597,7 +660,39 @@ export default function Dashboard() {
       {/* Left panel — score + stats */}
       <div className="w-full lg:w-[260px] lg:shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-surface flex flex-col">
         <div className="flex-1 p-6 overflow-auto">
-          <h1 className="text-[20px] font-bold text-primary mb-6">Dashboard</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-[20px] font-bold text-primary">Dashboard</h1>
+            {/* Widget Toggle */}
+            <div className="relative" ref={widgetMenuRef}>
+              <button
+                onClick={() => setWidgetMenuOpen((o) => !o)}
+                aria-label="Widgets konfigurieren"
+                title="Widgets konfigurieren"
+                className="p-1.5 rounded-md text-secondary hover:text-primary hover:bg-muted/50 transition-colors"
+              >
+                <Settings2 className="w-4 h-4" aria-hidden="true" />
+              </button>
+              {widgetMenuOpen && (
+                <div className="absolute right-0 top-8 z-20 w-56 rounded-lg border border-border bg-surface shadow-xl p-3">
+                  <p className="text-[10px] font-semibold text-secondary uppercase tracking-wider mb-2">Widgets</p>
+                  <div className="space-y-2">
+                    {(Object.keys(WIDGET_LABELS) as WidgetKey[]).map((key) => (
+                      <div key={key} className="flex items-center justify-between gap-2">
+                        <Label htmlFor={`widget-${key}`} className="text-[12px] text-primary cursor-pointer flex-1">
+                          {WIDGET_LABELS[key]}
+                        </Label>
+                        <Switch
+                          id={`widget-${key}`}
+                          checked={widgets[key]}
+                          onCheckedChange={() => toggleWidget(key)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           <p className="text-[10px] font-semibold text-secondary uppercase tracking-wider mb-1 opacity-60">
             Security Score
@@ -673,7 +768,30 @@ export default function Dashboard() {
       {/* Right panel */}
       <div className="flex-1 overflow-auto p-6 space-y-6">
         {/* Getting Started Checklist */}
-        <GettingStartedChecklist />
+        {widgets.evidence_expiry && <GettingStartedChecklist />}
+
+        {/* ── Zuletzt besucht ── */}
+        {widgets.recent_pages && recentPages.length > 0 && (
+          <section>
+            <p className="text-[10px] font-semibold text-secondary uppercase tracking-wider mb-2 opacity-60">
+              Zuletzt besucht
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {recentPages.map((page) => (
+                <Link
+                  key={page.path}
+                  to={page.path}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border bg-surface hover:border-brand/60 transition-colors text-[12px] text-secondary hover:text-primary"
+                  title={page.label}
+                >
+                  <span>{page.icon}</span>
+                  <span className="font-medium">{page.label}</span>
+                  <span className="text-[10px] text-secondary/60 ml-1">{relativeTime(new Date(page.visitedAt).toISOString())}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Error banner when main dashboard data fails */}
         {(scoreError || aggError) && (
@@ -687,7 +805,7 @@ export default function Dashboard() {
         )}
 
         {/* Onboarding (preserved) */}
-        {onboarding && !onboarding.completed && !onboarding.dismissed && (
+        {widgets.onboarding && onboarding && !onboarding.completed && !onboarding.dismissed && (
           <OnboardingBanner status={onboarding} onOpen={() => setWizardOpen(true)} />
         )}
         {onboarding && !onboarding.dismissed && (
@@ -699,7 +817,7 @@ export default function Dashboard() {
         )}
 
         {/* ── Compliance KPI cards ── */}
-        <section>
+        {widgets.open_findings && <section>
           <h2 className="text-[14px] font-semibold text-primary mb-3">Compliance-Übersicht</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <KPICard
@@ -735,7 +853,7 @@ export default function Dashboard() {
               isLoading={kpiLoading}
             />
           </div>
-        </section>
+        </section>}
 
         {/* ── Next audit milestone widget ── */}
         {nextMilestone && (
@@ -765,10 +883,12 @@ export default function Dashboard() {
         )}
 
         {/* ── Compliance progress ── */}
-        <ComplianceProgressCard scores={agg?.framework_scores ?? []} isLoading={aggLoading} />
+        {widgets.compliance_score && (
+          <ComplianceProgressCard scores={agg?.framework_scores ?? []} isLoading={aggLoading} />
+        )}
 
         {/* ── Compliance trend chart ── */}
-        <ScoreHistoryCard />
+        {widgets.compliance_score && <ScoreHistoryCard />}
 
         {/* ── Framework progress + Top risks ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

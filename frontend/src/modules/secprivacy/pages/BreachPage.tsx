@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AlertTriangle, Plus, Clock, CheckCircle2, Pencil, Trash2, FileDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -14,12 +15,6 @@ import { InfoBanner } from '../../../shared/components/InfoBanner'
 import { Pagination } from '../../../shared/components/Pagination'
 import { useBreaches, useCreateBreach, useUpdateBreach, useDeleteBreach, useMarkAuthorityNotified, useExportBreachNotification } from '../hooks/useBreaches'
 import type { Breach, CreateBreachInput, UpdateBreachInput } from '../types'
-
-const STATUS_LABELS: Record<Breach['status'], string> = {
-  open: 'Offen',
-  authority_notified: 'Behörde informiert',
-  closed: 'Geschlossen',
-}
 
 const STATUS_CLASS: Record<Breach['status'], string> = {
   open: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -67,6 +62,7 @@ function formFromEntry(b: Breach): BreachFormState {
 }
 
 function DeadlineIndicator({ deadline }: { deadline: string }) {
+  const { t } = useTranslation()
   const now = new Date()
   const dl = new Date(deadline)
   const hoursLeft = (dl.getTime() - now.getTime()) / 1000 / 3600
@@ -76,8 +72,8 @@ function DeadlineIndicator({ deadline }: { deadline: string }) {
     <div className={`flex items-center gap-1 text-xs ${overdue ? 'text-red-400' : hoursLeft < 24 ? 'text-amber-400' : 'text-muted-foreground'}`}>
       <Clock className="w-3 h-3" />
       {overdue
-        ? `Frist überschritten (${dl.toLocaleDateString('de-DE')})`
-        : `Meldefrist: ${dl.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`}
+        ? `${t('secprivacy.breachPage.deadlineOverdue')} (${dl.toLocaleDateString('de-DE')})`
+        : `${t('secprivacy.breachPage.deadline')}: ${dl.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`}
     </div>
   )
 }
@@ -95,6 +91,12 @@ function BreachCard({
   onDelete: (id: string) => void
   onExportPDF: (id: string) => void
 }) {
+  const { t } = useTranslation()
+  const STATUS_LABELS: Record<Breach['status'], string> = {
+    open: t('secprivacy.breachPage.statusOpen'),
+    authority_notified: t('secprivacy.breachPage.statusNotified'),
+    closed: t('secprivacy.breachPage.statusClosed'),
+  }
   const discoveredDate = new Date(breach.discovered_at).toLocaleDateString('de-DE', {
     year: 'numeric', month: 'short', day: 'numeric',
   })
@@ -109,9 +111,9 @@ function BreachCard({
         <p className="text-xs text-muted-foreground line-clamp-2">{breach.description}</p>
         <DeadlineIndicator deadline={breach.authority_deadline_at} />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Entdeckt: {discoveredDate}</span>
+          <span>{t('secprivacy.breachPage.discovered')}: {discoveredDate}</span>
           {breach.affected_count != null && (
-            <span>{breach.affected_count.toLocaleString('de-DE')} Betroffene</span>
+            <span>{breach.affected_count.toLocaleString('de-DE')} {t('secprivacy.breachPage.affected')}</span>
           )}
         </div>
         {breach.data_categories.length > 0 && (
@@ -129,7 +131,7 @@ function BreachCard({
             onClick={() => onNotify(breach.id)}
           >
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-            Behörde informiert markieren
+            {t('secprivacy.breachPage.markAuthorityNotified')}
           </Button>
         )}
         <div className="flex justify-end gap-1">
@@ -137,19 +139,19 @@ function BreachCard({
             size="icon"
             variant="ghost"
             className="h-7 w-7 text-muted-foreground hover:text-primary"
-            title="Meldung als PDF exportieren (Art. 33 DSGVO)"
+            title={t('common.export')}
             onClick={() => onExportPDF(breach.id)}
           >
             <FileDown className="w-3.5 h-3.5" />
           </Button>
-          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Bearbeiten" onClick={() => onEdit(breach)}>
+          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('common.edit')} onClick={() => onEdit(breach)}>
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           <Button
             size="icon"
             variant="ghost"
             className="h-7 w-7 text-destructive hover:text-destructive"
-            aria-label="Löschen"
+            aria-label={t('common.delete')}
             onClick={() => onDelete(breach.id)}
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -161,6 +163,7 @@ function BreachCard({
 }
 
 export default function BreachPage() {
+  const { t } = useTranslation()
   const [dialogMode, setDialogMode] = useState<'create' | 'edit' | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState<BreachFormState>(emptyForm())
@@ -230,19 +233,19 @@ export default function BreachPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Datenpannen & Meldepflichten"
-        description="Art. 33/34 DSGVO — Datenschutzverletzungen dokumentieren und fristgerecht melden."
+        title={t('secprivacy.breachPage.title')}
+        description={t('secprivacy.breachPage.description')}
         actions={
           <Button onClick={openCreate} variant="destructive">
             <Plus className="w-4 h-4 mr-1" />
-            Datenpanne melden
+            {t('secprivacy.breachPage.reportBreach')}
           </Button>
         }
       />
 
-      <InfoBanner icon={AlertTriangle} title="Meldepflicht bei Datenpannen (Art. 33/34 DSGVO)" variant="warning">
-        <p>Eine Datenpanne, die voraussichtlich zu einem Risiko für Betroffene führt, <strong>muss binnen 72 Stunden</strong> der zuständigen Datenschutz-Aufsichtsbehörde gemeldet werden — ab dem Zeitpunkt der Entdeckung.</p>
-        <p className="mt-1">Bei hohem Risiko ist zusätzlich die direkte Benachrichtigung der betroffenen Personen (Art. 34 DSGVO) erforderlich. Dokumentiere jede Panne — auch wenn keine Meldung nötig ist.</p>
+      <InfoBanner icon={AlertTriangle} title={t('secprivacy.breachPage.infoBannerTitle')} variant="warning">
+        <p>{t('secprivacy.breachPage.infoBannerDesc')}</p>
+        <p className="mt-1">{t('secprivacy.breachPage.infoBannerDesc2')}</p>
       </InfoBanner>
 
       <div className="flex-1 p-6 space-y-6">
@@ -254,19 +257,19 @@ export default function BreachPage() {
 
         {isError && (
           <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">
-            Fehler beim Laden der Datenpannen.
+            {t('secprivacy.breachPage.loadError')}
           </div>
         )}
 
         {!isLoading && !isError && breaches?.length === 0 && (
           <EmptyState
             icon={AlertTriangle}
-            title="Keine Datenpannen gemeldet"
-            description="Dokumentieren Sie Datenschutzverletzungen und verfolgen Sie die 72-Stunden-Meldefrist."
+            title={t('secprivacy.breachPage.noBreaches')}
+            description={t('secprivacy.breachPage.noBreachesDesc')}
             action={
               <Button onClick={openCreate} variant="destructive">
                 <Plus className="w-4 h-4 mr-1" />
-                Datenpanne melden
+                {t('secprivacy.breachPage.reportBreach')}
               </Button>
             }
           />
@@ -276,7 +279,7 @@ export default function BreachPage() {
           <>
             {openBreaches.length > 0 && (
               <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-red-400">Offene Meldungen ({openBreaches.length})</h2>
+                <h2 className="text-sm font-semibold text-red-400">{t('secprivacy.breachPage.openReports', { count: openBreaches.length })}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {openBreaches.map((b) => (
                     <BreachCard
@@ -293,7 +296,7 @@ export default function BreachPage() {
             )}
             {otherBreaches.length > 0 && (
               <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-muted-foreground">Abgeschlossene Vorgänge</h2>
+                <h2 className="text-sm font-semibold text-muted-foreground">{t('secprivacy.breachPage.closedReports')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {otherBreaches.map((b) => (
                     <BreachCard
@@ -320,14 +323,14 @@ export default function BreachPage() {
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Datenpanne löschen?</AlertDialogTitle>
+            <AlertDialogTitle>{t('secprivacy.breachPage.deleteDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Aktion kann nicht rückgängig gemacht werden.
+              {t('secprivacy.breachPage.deleteDialogDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Löschen</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('common.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -336,27 +339,27 @@ export default function BreachPage() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === 'create' ? 'Datenpanne melden' : 'Datenpanne bearbeiten'}
+              {dialogMode === 'create' ? t('secprivacy.breachPage.createDialogTitle') : t('secprivacy.breachPage.editDialogTitle')}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             {dialogMode === 'create' && (
               <div className="p-3 rounded-lg bg-amber-500/10 text-amber-400 text-xs">
-                Die 72-Stunden-Meldefrist an die Aufsichtsbehörde beginnt ab dem Entdeckungszeitpunkt (Art. 33 DSGVO).
+                {t('secprivacy.breachPage.deadlineHint')}
               </div>
             )}
             <div className="space-y-1.5">
-              <Label>Bezeichnung *</Label>
+              <Label>{t('secprivacy.breachPage.labelTitle')} *</Label>
               <Input
-                placeholder="z.B. Unbefugter Zugriff auf Kundendaten"
+                placeholder={t('secprivacy.breachPage.placeholderTitle')}
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Beschreibung *</Label>
+              <Label>{t('secprivacy.breachPage.labelDescription')} *</Label>
               <Textarea
-                placeholder="Was ist passiert? Welche Daten sind betroffen?"
+                placeholder={t('secprivacy.breachPage.placeholderDescription')}
                 rows={3}
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -364,7 +367,7 @@ export default function BreachPage() {
             </div>
             {dialogMode === 'create' && (
               <div className="space-y-1.5">
-                <Label>Zeitpunkt der Entdeckung *</Label>
+                <Label>{t('secprivacy.breachPage.labelDiscovered')} *</Label>
                 <Input
                   type="datetime-local"
                   value={form.discovered_at}
@@ -373,19 +376,19 @@ export default function BreachPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label>Betroffene Datenkategorien (kommagetrennt)</Label>
+              <Label>{t('secprivacy.breachPage.labelCategories')}</Label>
               <Input
-                placeholder="z.B. E-Mail-Adressen, Passwort-Hashes"
+                placeholder={t('secprivacy.breachPage.placeholderCategories')}
                 value={form.rawCategories}
                 onChange={(e) => setForm((f) => ({ ...f, rawCategories: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Anzahl betroffener Personen (geschätzt)</Label>
+              <Label>{t('secprivacy.breachPage.labelAffectedCount')}</Label>
               <Input
                 type="number"
                 min="0"
-                placeholder="z.B. 500"
+                placeholder={t('secprivacy.breachPage.placeholderCount')}
                 value={form.rawCount}
                 onChange={(e) => setForm((f) => ({ ...f, rawCount: e.target.value }))}
               />
@@ -398,19 +401,19 @@ export default function BreachPage() {
                 onChange={(e) => setForm((f) => ({ ...f, subjects_notification_required: e.target.checked }))}
                 className="w-4 h-4"
               />
-              <Label htmlFor="breach-subjects">Benachrichtigung der Betroffenen erforderlich (Art. 34 DSGVO)</Label>
+              <Label htmlFor="breach-subjects">{t('secprivacy.breachPage.labelSubjectsNotification')}</Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogMode(null)}>
-              Abbrechen
+              {t('common.cancel')}
             </Button>
             <Button
               variant={dialogMode === 'create' ? 'destructive' : 'default'}
               onClick={handleSubmit}
               disabled={!canSubmit}
             >
-              {isPending ? 'Speichern …' : dialogMode === 'create' ? 'Datenpanne melden' : 'Speichern'}
+              {isPending ? t('secprivacy.breachPage.saving') : dialogMode === 'create' ? t('secprivacy.breachPage.reportBreach') : t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>

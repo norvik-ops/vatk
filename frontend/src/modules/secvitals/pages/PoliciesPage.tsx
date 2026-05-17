@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BookOpen, Plus, LayoutTemplate, Sparkles } from 'lucide-react'
+import { BookOpen, Plus, LayoutTemplate, Sparkles, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
@@ -14,9 +15,11 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
 import { ProGate } from '../../../shared/components/ProGate'
+import { useSortableTable } from '../../../shared/hooks/useSortableTable'
 import { usePolicies, useCreatePolicy, useGeneratePolicyDraft } from '../hooks/usePolicies'
 import { apiFetch } from '../../../api/client'
 import type { Policy, CreatePolicyInput, Framework } from '../types'
+
 import { toast } from '../../../shared/hooks/useToast'
 import { Skeleton } from '../../../components/ui/skeleton'
 
@@ -47,11 +50,13 @@ const STATUS_CLASS: Record<Policy['status'], string> = {
   archived: 'bg-secondary text-muted-foreground',
 }
 
-const STATUS_LABELS: Record<Policy['status'], string> = {
-  draft: 'Entwurf', active: 'Aktiv', archived: 'Archiviert',
-}
-
 function PolicyCard({ policy, onClick }: { policy: Policy; onClick: () => void }) {
+  const { t } = useTranslation()
+  const STATUS_LABELS: Record<Policy['status'], string> = {
+    draft: t('secvitals.policiesPage.statusDraft'),
+    active: t('secvitals.policiesPage.statusActive'),
+    archived: t('secvitals.policiesPage.statusArchived'),
+  }
   const reviewDate = policy.review_date
     ? new Date(policy.review_date).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' })
     : null
@@ -77,10 +82,10 @@ function PolicyCard({ policy, onClick }: { policy: Policy; onClick: () => void }
         )}
         {reviewDate && (
           <p className={`text-xs ${isOverdue ? 'text-amber-400' : 'text-muted-foreground'}`}>
-            Review: {reviewDate}{isOverdue ? ' ⚠ Überfällig' : ''}
+            {t('secvitals.policiesPage.reviewDate')}: {reviewDate}{isOverdue ? ` ⚠ ${t('secvitals.policiesPage.overdue')}` : ''}
           </p>
         )}
-        {policy.owner && <p className="text-xs text-muted-foreground">Verantwortlich: {policy.owner}</p>}
+        {policy.owner && <p className="text-xs text-muted-foreground">{t('secvitals.policiesPage.owner')}: {policy.owner}</p>}
       </CardContent>
     </Card>
   )
@@ -97,6 +102,7 @@ function emptyForm(): CreatePolicyInput {
 }
 
 export default function PoliciesPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -112,6 +118,17 @@ export default function PoliciesPage() {
   const { data: policies, isLoading, isError, pagination } = usePolicies(page)
   const createPolicy = useCreatePolicy()
   const generateDraft = useGeneratePolicyDraft()
+
+  const POLICY_SORT_OPTIONS: { key: keyof Policy; label: string }[] = [
+    { key: 'title', label: t('common.name') },
+    { key: 'status', label: t('common.status') },
+    { key: 'review_date', label: t('secvitals.policiesPage.labelReviewDate') },
+    { key: 'version_num', label: t('secvitals.policiesPage.labelVersion') },
+  ]
+
+  const { sorted: sortedPolicies, sortKey, sortDir, toggleSort } = useSortableTable<Policy>(
+    policies ?? [], { key: 'title', dir: 'asc' },
+  )
 
   const { data: frameworks } = useQuery<Framework[]>({
     queryKey: ['secvitals', 'frameworks'],
@@ -132,9 +149,9 @@ export default function PoliciesPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'policies'] })
       setTemplateOpen(false)
-      toast('Richtlinie aus Vorlage erstellt', 'success')
+      toast(t('secvitals.policiesPage.toastTemplateCreated'), 'success')
     },
-    onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+    onError: (err) => toast(`${t('common.error')}: ${err.message}`, 'error'),
   })
 
   function openDialog() {
@@ -146,9 +163,9 @@ export default function PoliciesPage() {
     createPolicy.mutate(form, {
       onSuccess: () => {
         setDialogOpen(false)
-        toast('Erfolgreich erstellt', 'success')
+        toast(t('secvitals.policiesPage.toastCreated'), 'success')
       },
-      onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      onError: (err) => toast(`${t('common.error')}: ${err.message}`, 'error'),
     })
   }
 
@@ -182,36 +199,65 @@ export default function PoliciesPage() {
       onSuccess: () => {
         setAiDraftOpen(false)
         setAiDraft('')
-        toast('Richtlinie aus KI-Entwurf erstellt', 'success')
+        toast(t('secvitals.policiesPage.toastAiCreated'), 'success')
       },
-      onError: (err) => toast(`Fehler: ${err.message}`, 'error'),
+      onError: (err) => toast(`${t('common.error')}: ${err.message}`, 'error'),
     })
   }
 
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Richtlinienmanagement"
-        description="Sicherheits- und Datenschutzrichtlinien erstellen, pflegen und prüfen."
+        title={t('secvitals.policiesPage.title')}
+        description={t('secvitals.policiesPage.description')}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setTemplateOpen(true)}>
               <LayoutTemplate className="w-4 h-4 mr-1" />
-              Aus Vorlage
+              {t('secvitals.policiesPage.fromTemplate')}
             </Button>
             <Button variant="outline" onClick={openAiDialog}>
               <Sparkles className="w-4 h-4 mr-1" />
-              KI-Entwurf generieren
+              {t('secvitals.policiesPage.aiDraft')}
             </Button>
             <Button onClick={openDialog}>
               <Plus className="w-4 h-4 mr-1" />
-              Richtlinie anlegen
+              {t('secvitals.policiesPage.createPolicy')}
             </Button>
           </div>
         }
       />
 
       <div className="flex-1 p-6">
+        {/* Sort toolbar */}
+        {!isLoading && !isError && policies && policies.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-secondary mb-4">
+            <span className="font-medium">{t('common.filter')}:</span>
+            {POLICY_SORT_OPTIONS.map((opt) => {
+              const isActive = sortKey === opt.key
+              return (
+                <button
+                  key={String(opt.key)}
+                  onClick={() => toggleSort(opt.key)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border transition-colors ${
+                    isActive
+                      ? 'border-brand/50 bg-brand/10 text-brand'
+                      : 'border-border hover:border-brand/30 hover:bg-surface2'
+                  }`}
+                >
+                  {opt.label}
+                  {isActive ? (
+                    sortDir === 'asc'
+                      ? <ChevronUp className="w-3 h-3" />
+                      : <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronsUpDown className="w-3 h-3 opacity-50" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -220,19 +266,19 @@ export default function PoliciesPage() {
           </div>
         )}
         {isError && (
-          <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">Fehler beim Laden der Richtlinien.</div>
+          <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">{t('secvitals.policiesPage.loadError')}</div>
         )}
         {!isLoading && !isError && policies?.length === 0 && (
           <EmptyState
             icon={BookOpen}
-            title="Keine Richtlinien"
-            description="Legen Sie Ihre Informationssicherheits- und Datenschutzrichtlinien an."
-            action={<Button onClick={openDialog}><Plus className="w-4 h-4 mr-1" />Richtlinie anlegen</Button>}
+            title={t('secvitals.policiesPage.noPolicies')}
+            description={t('secvitals.policiesPage.noPoliciesDesc')}
+            action={<Button onClick={openDialog}><Plus className="w-4 h-4 mr-1" />{t('secvitals.policiesPage.createPolicy')}</Button>}
           />
         )}
         {!isLoading && !isError && policies && policies.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {policies.map((p) => <PolicyCard key={p.id} policy={p} onClick={() => navigate(`/secvitals/policies/${p.id}`)} />)}
+            {sortedPolicies.map((p) => <PolicyCard key={p.id} policy={p} onClick={() => navigate(`/secvitals/policies/${p.id}`)} />)}
           </div>
         )}
         <Pagination
@@ -245,7 +291,7 @@ export default function PoliciesPage() {
       {/* Template picker dialog */}
       <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Richtlinie aus Vorlage erstellen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('secvitals.policiesPage.templateDialogTitle')}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             {templatesLoading && (
               <div className="flex items-center justify-center h-32">
@@ -267,13 +313,13 @@ export default function PoliciesPage() {
                   <Badge variant="outline" className="shrink-0 text-xs">{tpl.category}</Badge>
                 </div>
                 {applyTemplate.isPending && applyTemplate.variables === tpl.id && (
-                  <p className="text-xs text-muted-foreground mt-2">Erstelle Richtlinie …</p>
+                  <p className="text-xs text-muted-foreground mt-2">{t('secvitals.policiesPage.creatingFromTemplate')}</p>
                 )}
               </button>
             ))}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTemplateOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => setTemplateOpen(false)}>{t('common.cancel')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -284,17 +330,17 @@ export default function PoliciesPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-brand" />
-              KI-Richtlinienentwurf generieren
+              {t('secvitals.policiesPage.aiDialogTitle')}
             </DialogTitle>
           </DialogHeader>
 
           {!aiDraft ? (
             <div className="space-y-4 py-2">
               <div className="space-y-1.5">
-                <Label>Richtlinientyp *</Label>
+                <Label>{t('secvitals.policiesPage.aiPolicyType')} *</Label>
                 <Select value={aiPolicyType} onValueChange={setAiPolicyType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Richtlinientyp auswählen …" />
+                    <SelectValue placeholder={t('secvitals.policiesPage.aiPolicyTypePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {POLICY_TYPES.map((pt) => (
@@ -305,13 +351,13 @@ export default function PoliciesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Framework als Kontext (optional)</Label>
+                <Label>{t('secvitals.policiesPage.aiFramework')}</Label>
                 <Select value={aiFrameworkId} onValueChange={setAiFrameworkId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Kein Framework ausgewählt" />
+                    <SelectValue placeholder={t('secvitals.policiesPage.aiFrameworkPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Kein Framework</SelectItem>
+                    <SelectItem value="">{t('secvitals.policiesPage.noFramework')}</SelectItem>
                     {frameworks?.map((fw) => (
                       <SelectItem key={fw.id} value={fw.id}>{fw.name}</SelectItem>
                     ))}
@@ -320,10 +366,10 @@ export default function PoliciesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Zusätzlicher Kontext (optional)</Label>
+                <Label>{t('secvitals.policiesPage.aiContext')}</Label>
                 <Textarea
                   rows={3}
-                  placeholder="z.B. Wir nutzen Azure AD für Identity Management, 50 Mitarbeiter, Remote-First-Unternehmen …"
+                  placeholder={t('secvitals.policiesPage.aiContextPlaceholder')}
                   value={aiCustomContext}
                   onChange={(e) => setAiCustomContext(e.target.value)}
                 />
@@ -333,22 +379,22 @@ export default function PoliciesPage() {
               {generateDraft.isError && (
                 <div className="text-sm text-red-400 p-3 bg-red-500/10 rounded-lg">
                   {generateDraft.error?.message?.includes('nicht konfiguriert')
-                    ? 'KI-Features nicht konfiguriert. Bitte VAKT_AI_BASE_URL und VAKT_AI_PROVIDER in der Konfiguration setzen.'
-                    : 'Fehler bei der KI-Generierung. Bitte versuchen Sie es erneut.'}
+                    ? t('secvitals.policiesPage.aiNotConfigured')
+                    : t('secvitals.policiesPage.aiError')}
                 </div>
               )}
 
               {generateDraft.isPending && (
                 <div className="flex items-center gap-3 text-sm text-muted-foreground p-3 bg-accent rounded-lg">
                   <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin shrink-0" />
-                  Richtlinie wird generiert … dies kann 10–30 Sekunden dauern.
+                  {t('secvitals.policiesPage.aiGenerating')}
                 </div>
               )}
             </div>
           ) : (
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
-                Der Entwurf wurde generiert. Sie können ihn bearbeiten, bevor Sie ihn speichern.
+                {t('secvitals.policiesPage.aiDraftGenerated')}
               </p>
               <Textarea
                 rows={18}
@@ -362,7 +408,7 @@ export default function PoliciesPage() {
           <DialogFooter>
             {!aiDraft ? (
               <>
-                <Button variant="outline" onClick={() => setAiDraftOpen(false)}>Abbrechen</Button>
+                <Button variant="outline" onClick={() => setAiDraftOpen(false)}>{t('common.cancel')}</Button>
                 <Button
                   onClick={handleGenerateDraft}
                   disabled={!aiPolicyType || generateDraft.isPending}
@@ -370,12 +416,12 @@ export default function PoliciesPage() {
                   {generateDraft.isPending ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Generiert …
+                      {t('secvitals.policiesPage.generating')}
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-1" />
-                      Entwurf generieren
+                      {t('secvitals.policiesPage.generateDraft')}
                     </>
                   )}
                 </Button>
@@ -383,14 +429,14 @@ export default function PoliciesPage() {
             ) : (
               <>
                 <Button variant="outline" onClick={() => { setAiDraft(''); generateDraft.reset() }}>
-                  Neu generieren
+                  {t('secvitals.policiesPage.regenerate')}
                 </Button>
-                <Button variant="outline" onClick={() => setAiDraftOpen(false)}>Abbrechen</Button>
+                <Button variant="outline" onClick={() => setAiDraftOpen(false)}>{t('common.cancel')}</Button>
                 <Button
                   onClick={handleSaveDraftAsPolicy}
                   disabled={createPolicy.isPending}
                 >
-                  {createPolicy.isPending ? 'Speichern …' : 'Als Richtlinie speichern'}
+                  {createPolicy.isPending ? t('secvitals.policiesPage.saving') : t('secvitals.policiesPage.saveAsPolicy')}
                 </Button>
               </>
             )}
@@ -400,52 +446,52 @@ export default function PoliciesPage() {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Richtlinie anlegen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('secvitals.policiesPage.createDialogTitle')}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="pol-title">Titel *</Label>
-              <Input id="pol-title" placeholder="z.B. Informationssicherheits-Leitlinie" value={form.title}
+              <Label htmlFor="pol-title">{t('secvitals.policiesPage.labelTitle')} *</Label>
+              <Input id="pol-title" placeholder={t('secvitals.policiesPage.placeholderTitle')} value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="pol-category">Kategorie</Label>
-              <Input id="pol-category" placeholder="z.B. IT-Sicherheit, Datenschutz, HR" value={form.category ?? ''}
+              <Label htmlFor="pol-category">{t('secvitals.policiesPage.labelCategory')}</Label>
+              <Input id="pol-category" placeholder={t('secvitals.policiesPage.placeholderCategory')} value={form.category ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="pol-desc">Beschreibung</Label>
-              <Textarea id="pol-desc" rows={3} placeholder="Zweck und Geltungsbereich der Richtlinie …" value={form.description ?? ''}
+              <Label htmlFor="pol-desc">{t('secvitals.policiesPage.labelDescription')}</Label>
+              <Textarea id="pol-desc" rows={3} placeholder={t('secvitals.policiesPage.placeholderDescription')} value={form.description ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="pol-version">Version</Label>
+                <Label htmlFor="pol-version">{t('secvitals.policiesPage.labelVersion')}</Label>
                 <Input id="pol-version" placeholder="1.0" value={form.version ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, version: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="pol-owner">Verantwortlicher</Label>
-                <Input id="pol-owner" placeholder="z.B. CISO" value={form.owner ?? ''}
+                <Label htmlFor="pol-owner">{t('secvitals.policiesPage.labelOwner')}</Label>
+                <Input id="pol-owner" placeholder={t('secvitals.policiesPage.placeholderOwner')} value={form.owner ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, owner: e.target.value }))} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="pol-effective">Gültig ab</Label>
+                <Label htmlFor="pol-effective">{t('secvitals.policiesPage.labelEffectiveDate')}</Label>
                 <Input id="pol-effective" type="date" value={form.effective_date ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, effective_date: e.target.value || undefined }))} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="pol-review">Review-Datum</Label>
+                <Label htmlFor="pol-review">{t('secvitals.policiesPage.labelReviewDate')}</Label>
                 <Input id="pol-review" type="date" value={form.review_date ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, review_date: e.target.value || undefined }))} />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleSubmit} disabled={!form.title || createPolicy.isPending}>
-              {createPolicy.isPending ? 'Speichern …' : 'Richtlinie anlegen'}
+              {createPolicy.isPending ? t('secvitals.policiesPage.saving') : t('secvitals.policiesPage.createPolicy')}
             </Button>
           </DialogFooter>
         </DialogContent>

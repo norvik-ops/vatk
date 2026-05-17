@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ScanLine } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
+import { trackPage } from '../../../shared/hooks/useRecentPages'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
@@ -46,6 +48,10 @@ export default function AssetDetailPage() {
 
   useEffect(() => () => clearTimeout(scanTimerRef.current), [])
 
+  useEffect(() => {
+    if (asset) trackPage(`/secpulse/assets/${id}`, asset.name, '🖥️')
+  }, [asset?.id])
+
   async function handleScan() {
     try {
       await triggerScan.mutateAsync()
@@ -80,6 +86,11 @@ export default function AssetDetailPage() {
 
   return (
     <div className="flex flex-col h-full">
+      <Breadcrumbs items={[
+        { label: 'SecPulse', href: '/secpulse' },
+        { label: 'Assets', href: '/secpulse/assets' },
+        { label: asset.name },
+      ]} />
       <PageHeader
         title={asset.name}
         description={asset.target}

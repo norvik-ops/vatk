@@ -61,11 +61,11 @@ export default function TemplatesPage() {
         ) : !templates || templates.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="Noch keine Vorlagen vorhanden"
-            description="Erstellen Sie eine E-Mail-Vorlage für Phishing-Simulationen."
+            title="Keine Templates"
+            description="Erstelle dein erstes E-Mail-Template."
             action={
               <Button onClick={() => setOpen(true)}>
-                <Plus className="w-4 h-4 mr-1" />New Template
+                <Plus className="w-4 h-4 mr-1" />Template erstellen
               </Button>
             }
           />

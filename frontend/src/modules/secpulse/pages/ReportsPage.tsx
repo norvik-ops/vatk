@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { FileText, TrendingUp, Download } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Button } from '../../../components/ui/button'
@@ -21,6 +22,7 @@ const statusVariant: Record<Report['status'], React.ComponentProps<typeof Badge>
 }
 
 export default function ReportsPage() {
+  const { t } = useTranslation()
   const { data: trend } = useRiskTrend()
   const { data: reports, isLoading, error: reportsError } = useReports()
   const createReport = useCreateReport()
@@ -42,12 +44,12 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Reports"
-        description="Risikotrends und Compliance-Berichte"
+        title={t('secpulse.reportsPage.title')}
+        description={t('secpulse.reportsPage.description')}
         actions={
           <Button onClick={() => setOpen(true)}>
             <FileText className="w-4 h-4 mr-1" />
-            Bericht erstellen
+            {t('secpulse.reportsPage.createReport')}
           </Button>
         }
       />
@@ -58,12 +60,12 @@ export default function ReportsPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-secondary" />
-              <CardTitle>Risiko-Trend</CardTitle>
+              <CardTitle>{t('secpulse.reportsPage.riskTrend')}</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             {chartData.length === 0 ? (
-              <p className="text-sm text-secondary py-8 text-center">No trend data yet.</p>
+              <p className="text-sm text-secondary py-8 text-center">{t('secpulse.reportsPage.noTrendData')}</p>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={chartData}>
@@ -79,22 +81,22 @@ export default function ReportsPage() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Report History</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t('secpulse.reportsPage.reportHistory')}</CardTitle></CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
               </div>
             ) : !reports || reports.length === 0 ? (
-              <p className="text-sm text-secondary py-8 text-center">No reports generated yet.</p>
+              <p className="text-sm text-secondary py-8 text-center">{t('secpulse.reportsPage.noReports')}</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Expires</TableHead>
+                    <TableHead>{t('secpulse.reportsPage.colTitle')}</TableHead>
+                    <TableHead>{t('secpulse.reportsPage.colStatus')}</TableHead>
+                    <TableHead>{t('secpulse.reportsPage.colCreated')}</TableHead>
+                    <TableHead>{t('secpulse.reportsPage.colExpires')}</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -134,11 +136,11 @@ export default function ReportsPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Bericht erstellen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('secpulse.reportsPage.createReport')}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { void handleCreate(e) }}>
             <div className="py-4 space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="report-title">Report Title</Label>
+                <Label htmlFor="report-title">{t('secpulse.reportsPage.reportTitleLabel')}</Label>
                 <Input
                   id="report-title"
                   value={title}
@@ -152,9 +154,9 @@ export default function ReportsPage() {
               )}
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Abbrechen</Button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
               <Button type="submit" disabled={createReport.isPending}>
-                {createReport.isPending ? 'Generating…' : 'Generate'}
+                {createReport.isPending ? t('secpulse.reportsPage.generating') : t('secpulse.reportsPage.generate')}
               </Button>
             </DialogFooter>
           </form>

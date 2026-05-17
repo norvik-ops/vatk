@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ClipboardList, Plus } from 'lucide-react'
+import { ClipboardCheck, Plus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -19,11 +20,13 @@ const STATUS_CLASS: Record<AuditRecord['status'], string> = {
   completed: 'bg-green-500/20 text-green-400 border-green-500/30',
 }
 
-const STATUS_LABELS: Record<AuditRecord['status'], string> = {
-  planned: 'Geplant', in_progress: 'Laufend', completed: 'Abgeschlossen',
-}
-
 function AuditCard({ record, onClick }: { record: AuditRecord; onClick: () => void }) {
+  const { t } = useTranslation()
+  const STATUS_LABELS: Record<AuditRecord['status'], string> = {
+    planned: t('secvitals.auditsPage.statusPlanned'),
+    in_progress: t('secvitals.auditsPage.statusInProgress'),
+    completed: t('secvitals.auditsPage.statusCompleted'),
+  }
   const date = new Date(record.audit_date).toLocaleDateString('de-DE', {
     year: 'numeric', month: 'short', day: 'numeric',
   })
@@ -34,9 +37,9 @@ function AuditCard({ record, onClick }: { record: AuditRecord; onClick: () => vo
           <p className="font-medium text-sm">{record.title}</p>
           <Badge className={STATUS_CLASS[record.status]}>{STATUS_LABELS[record.status]}</Badge>
         </div>
-        {record.scope && <p className="text-xs text-muted-foreground">Scope: {record.scope}</p>}
-        {record.auditor && <p className="text-xs text-muted-foreground">Auditor: {record.auditor}</p>}
-        <p className="text-xs text-muted-foreground">Datum: {date}</p>
+        {record.scope && <p className="text-xs text-muted-foreground">{t('secvitals.auditsPage.scope')}: {record.scope}</p>}
+        {record.auditor && <p className="text-xs text-muted-foreground">{t('secvitals.auditsPage.auditor')}: {record.auditor}</p>}
+        <p className="text-xs text-muted-foreground">{t('secvitals.auditsPage.date')}: {date}</p>
         {record.findings && (
           <p className="text-xs text-muted-foreground line-clamp-2 border-t border-border pt-2 mt-2">{record.findings}</p>
         )}
@@ -57,6 +60,7 @@ function emptyForm(): CreateAuditRecordInput {
 }
 
 export default function AuditsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState<CreateAuditRecordInput>(emptyForm())
@@ -76,12 +80,12 @@ export default function AuditsPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Interne Audits"
-        description="Interne Prüfungen planen, durchführen und dokumentieren."
+        title={t('secvitals.auditsPage.title')}
+        description={t('secvitals.auditsPage.description')}
         actions={
           <Button onClick={openDialog}>
             <Plus className="w-4 h-4 mr-1" />
-            Audit anlegen
+            {t('secvitals.auditsPage.createAudit')}
           </Button>
         }
       />
@@ -93,14 +97,14 @@ export default function AuditsPage() {
           </div>
         )}
         {isError && (
-          <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">Fehler beim Laden der Audit-Aufzeichnungen.</div>
+          <div className="text-sm text-red-400 p-4 bg-red-500/10 rounded-lg">{t('secvitals.auditsPage.loadError')}</div>
         )}
         {!isLoading && !isError && records?.length === 0 && (
           <EmptyState
-            icon={ClipboardList}
-            title="Keine Audits geplant"
-            description="Dokumentieren Sie interne Prüfungen als Audit-Nachweise für ISO 27001 und NIS2."
-            action={<Button onClick={openDialog}><Plus className="w-4 h-4 mr-1" />Audit anlegen</Button>}
+            icon={ClipboardCheck}
+            title={t('secvitals.auditsPage.noAudits')}
+            description={t('secvitals.auditsPage.noAuditsDesc')}
+            action={<Button onClick={openDialog}><Plus className="w-4 h-4 mr-1" />{t('secvitals.auditsPage.createAudit')}</Button>}
           />
         )}
         {!isLoading && !isError && records && records.length > 0 && (
@@ -112,45 +116,45 @@ export default function AuditsPage() {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Audit anlegen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('secvitals.auditsPage.dialogTitle')}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="audit-title">Titel *</Label>
-              <Input id="audit-title" placeholder="z.B. ISO 27001 Internes Audit Q2 2025" value={form.title}
+              <Label htmlFor="audit-title">{t('secvitals.auditsPage.labelTitle')} *</Label>
+              <Input id="audit-title" placeholder={t('secvitals.auditsPage.placeholderTitle')} value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="audit-scope">Prüfumfang</Label>
-              <Input id="audit-scope" placeholder="z.B. A.9 Zugangskontrolle, A.12 Betrieb" value={form.scope ?? ''}
+              <Label htmlFor="audit-scope">{t('secvitals.auditsPage.labelScope')}</Label>
+              <Input id="audit-scope" placeholder={t('secvitals.auditsPage.placeholderScope')} value={form.scope ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="audit-auditor">Auditor</Label>
-                <Input id="audit-auditor" placeholder="z.B. Interne IT" value={form.auditor ?? ''}
+                <Label htmlFor="audit-auditor">{t('secvitals.auditsPage.labelAuditor')}</Label>
+                <Input id="audit-auditor" placeholder={t('secvitals.auditsPage.placeholderAuditor')} value={form.auditor ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, auditor: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="audit-date">Prüfdatum *</Label>
+                <Label htmlFor="audit-date">{t('secvitals.auditsPage.labelDate')} *</Label>
                 <Input id="audit-date" type="date" value={form.audit_date}
                   onChange={(e) => setForm((f) => ({ ...f, audit_date: e.target.value }))} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="audit-findings">Feststellungen</Label>
-              <Textarea id="audit-findings" rows={3} placeholder="Festgestellte Abweichungen und Beobachtungen …" value={form.findings ?? ''}
+              <Label htmlFor="audit-findings">{t('secvitals.auditsPage.labelFindings')}</Label>
+              <Textarea id="audit-findings" rows={3} placeholder={t('secvitals.auditsPage.placeholderFindings')} value={form.findings ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, findings: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="audit-recommendations">Empfehlungen</Label>
-              <Textarea id="audit-recommendations" rows={2} placeholder="Empfohlene Maßnahmen zur Behebung …" value={form.recommendations ?? ''}
+              <Label htmlFor="audit-recommendations">{t('secvitals.auditsPage.labelRecommendations')}</Label>
+              <Textarea id="audit-recommendations" rows={2} placeholder={t('secvitals.auditsPage.placeholderRecommendations')} value={form.recommendations ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, recommendations: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleSubmit} disabled={!form.title || !form.audit_date || createRecord.isPending}>
-              {createRecord.isPending ? 'Speichern …' : 'Audit anlegen'}
+              {createRecord.isPending ? t('secvitals.auditsPage.saving') : t('secvitals.auditsPage.createAudit')}
             </Button>
           </DialogFooter>
         </DialogContent>

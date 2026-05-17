@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ShieldCheck, ShieldOff, Copy, Check, RefreshCw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../shared/components/PageHeader'
 import { RecoveryCodesDialog } from '../shared/components/RecoveryCodesDialog'
 import { Button } from '../components/ui/button'
@@ -93,6 +94,7 @@ function useRegenerateRecoveryCodes() {
 type SetupStep = 'qr' | 'confirm' | 'backup'
 
 function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation()
   const [step, setStep] = useState<SetupStep>('qr')
   const [code, setCode] = useState('')
   const [backupCodes, setBackupCodes] = useState<string[]>([])
@@ -165,26 +167,25 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
     >
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Zwei-Faktor-Authentifizierung einrichten</DialogTitle>
+          <DialogTitle>{t('accountSettingsPage.setupDialogTitle')}</DialogTitle>
         </DialogHeader>
 
         {/* Step 1: QR / URI */}
         {step === 'qr' && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Scanne diesen Link in deiner Authenticator-App (z.B. Aegis, Google
-              Authenticator, 1Password) oder gib den Secret-Key manuell ein.
+              {t('accountSettingsPage.setupStep1Desc')}
             </p>
             {setup.isPending && (
               <p className="text-sm text-muted-foreground animate-pulse">
-                Generiere Secret...
+                {t('accountSettingsPage.generatingSecret')}
               </p>
             )}
             {setupData && (
               <div className="space-y-3">
                 <div>
                   <Label className="text-xs text-muted-foreground mb-1 block">
-                    Secret-Key (manuell eingeben)
+                    {t('accountSettingsPage.secretKeyLabel')}
                   </Label>
                   <code className="block p-2 rounded bg-muted text-xs break-all select-all font-mono">
                     {setupData.secret}
@@ -192,12 +193,12 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground mb-1 block">
-                    OTP-Auth Link (in Authenticator-App scannen / importieren)
+                    {t('accountSettingsPage.otpLinkLabel')}
                   </Label>
                   <a
                     href={setupData.uri}
                     className="block p-2 rounded bg-muted text-xs break-all text-blue-400 hover:underline font-mono"
-                    title="In Authenticator-App öffnen"
+                    title={t('accountSettingsPage.otpLinkLabel')}
                   >
                     {setupData.uri}
                   </a>
@@ -209,13 +210,13 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
             )}
             <DialogFooter>
               <Button variant="outline" onClick={handleClose}>
-                Abbrechen
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={() => setStep('confirm')}
                 disabled={!setupData || setup.isPending}
               >
-                Weiter
+                {t('accountSettingsPage.continue')}
               </Button>
             </DialogFooter>
           </div>
@@ -225,11 +226,10 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
         {step === 'confirm' && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Gib den 6-stelligen Code aus deiner Authenticator-App ein, um die
-              Einrichtung abzuschließen.
+              {t('accountSettingsPage.step2Desc')}
             </p>
             <div className="space-y-1">
-              <Label htmlFor="totp-code">Authentifizierungscode</Label>
+              <Label htmlFor="totp-code">{t('accountSettingsPage.authCodeLabel')}</Label>
               <Input
                 id="totp-code"
                 value={code}
@@ -245,13 +245,13 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setStep('qr')}>
-                Zurück
+                {t('accountSettingsPage.backStep')}
               </Button>
               <Button
                 onClick={handleConfirm}
                 disabled={code.length !== 6 || confirm.isPending}
               >
-                {confirm.isPending ? 'Prüfe...' : 'Bestätigen'}
+                {confirm.isPending ? t('accountSettingsPage.verifying') : t('accountSettingsPage.confirm')}
               </Button>
             </DialogFooter>
           </div>
@@ -261,9 +261,7 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
         {step === 'backup' && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              <strong>Wichtig:</strong> Speichere diese Backup-Codes sicher. Jeder Code
-              kann nur einmal verwendet werden, falls du keinen Zugriff auf deine
-              Authenticator-App hast.
+              <strong>{t('accountSettingsPage.backupCodesTitle')}:</strong> {t('accountSettingsPage.backupCodesDesc')}
             </p>
             <div className="p-3 rounded bg-muted font-mono text-sm grid grid-cols-2 gap-1">
               {backupCodes.map((c) => (
@@ -275,11 +273,11 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
             <Button variant="outline" className="w-full" onClick={copyBackupCodes}>
               {copied ? (
                 <>
-                  <Check className="mr-2 h-4 w-4 text-green-500" /> Kopiert
+                  <Check className="mr-2 h-4 w-4 text-green-500" /> {t('accountSettingsPage.copied')}
                 </>
               ) : (
                 <>
-                  <Copy className="mr-2 h-4 w-4" /> Codes kopieren
+                  <Copy className="mr-2 h-4 w-4" /> {t('accountSettingsPage.copyCodes')}
                 </>
               )}
             </Button>
@@ -289,12 +287,12 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
                 className="w-full"
                 onClick={() => setRecoveryDialogOpen(true)}
               >
-                Wiederherstellungscodes anzeigen
+                {t('accountSettingsPage.showRecoveryCodes')}
               </Button>
             )}
             <DialogFooter>
               <Button onClick={handleClose} className="w-full">
-                2FA ist jetzt aktiv
+                {t('accountSettingsPage.twoFANowActive')}
               </Button>
             </DialogFooter>
           </div>
@@ -313,6 +311,7 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
 // ─── Disable Dialog ───────────────────────────────────────────────────────────
 
 function DisableDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation()
   const [code, setCode] = useState('')
   const [codeError, setCodeError] = useState('')
   const disable = useDisable2FA()
@@ -343,15 +342,14 @@ function DisableDialog({ open, onClose }: { open: boolean; onClose: () => void }
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose() }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>2FA deaktivieren</DialogTitle>
+          <DialogTitle>{t('accountSettingsPage.disableDialogTitle')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Gib deinen aktuellen Authentifizierungscode ein, um die
-            Zwei-Faktor-Authentifizierung zu deaktivieren.
+            {t('accountSettingsPage.disableDesc')}
           </p>
           <div className="space-y-1">
-            <Label htmlFor="disable-code">Authentifizierungscode</Label>
+            <Label htmlFor="disable-code">{t('accountSettingsPage.authCodeLabel')}</Label>
             <Input
               id="disable-code"
               value={code}
@@ -368,14 +366,14 @@ function DisableDialog({ open, onClose }: { open: boolean; onClose: () => void }
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Abbrechen
+            {t('common.cancel')}
           </Button>
           <Button
             variant="destructive"
             onClick={handleDisable}
             disabled={code.length !== 6 || disable.isPending}
           >
-            {disable.isPending ? 'Deaktiviere...' : '2FA deaktivieren'}
+            {disable.isPending ? t('accountSettingsPage.disabling') : t('accountSettingsPage.disableDialogTitle')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -386,6 +384,7 @@ function DisableDialog({ open, onClose }: { open: boolean; onClose: () => void }
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AccountSettingsPage() {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const { data: totpStatus, isLoading } = useTOTPStatus()
   const [setupOpen, setSetupOpen] = useState(false)
@@ -409,20 +408,20 @@ export default function AccountSettingsPage() {
   return (
     <div className="space-y-6 p-6">
       <PageHeader
-        title="Konto-Einstellungen"
-        description="Verwalte dein Profil und deine Sicherheitseinstellungen."
+        title={t('accountSettingsPage.title')}
+        description={t('accountSettingsPage.description')}
       />
 
       {/* ── Profil ────────────────────────────────────────────────────────── */}
       <Card className="p-6 space-y-4">
-        <h2 className="text-base font-semibold">Profil</h2>
+        <h2 className="text-base font-semibold">{t('accountSettingsPage.profileTitle')}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">E-Mail</Label>
+            <Label className="text-xs text-muted-foreground">{t('accountSettingsPage.labelEmail')}</Label>
             <p className="text-sm font-medium">{user?.email ?? '–'}</p>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Anzeigename</Label>
+            <Label className="text-xs text-muted-foreground">{t('accountSettingsPage.labelDisplayName')}</Label>
             <p className="text-sm font-medium">{user?.display_name ?? '–'}</p>
           </div>
         </div>
@@ -433,25 +432,25 @@ export default function AccountSettingsPage() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h2 className="text-base font-semibold flex items-center gap-2">
-              Zwei-Faktor-Authentifizierung
+              {t('accountSettingsPage.twoFATitle')}
               {!isLoading && (
                 is2FAEnabled ? (
                   <Badge className="bg-green-900/40 text-green-300 border-green-800/40 text-xs">
                     <ShieldCheck className="mr-1 h-3 w-3" />
-                    Aktiv
+                    {t('accountSettingsPage.twoFAActive')}
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="text-xs text-muted-foreground">
                     <ShieldOff className="mr-1 h-3 w-3" />
-                    Inaktiv
+                    {t('accountSettingsPage.twoFAInactive')}
                   </Badge>
                 )
               )}
             </h2>
             <p className="text-sm text-muted-foreground">
               {is2FAEnabled
-                ? 'Dein Konto ist mit einem TOTP-Authenticator geschützt.'
-                : 'Aktiviere 2FA mit einer Authenticator-App für mehr Sicherheit.'}
+                ? t('accountSettingsPage.twoFAEnabled')
+                : t('accountSettingsPage.twoFADisabled')}
             </p>
           </div>
         </div>
@@ -460,7 +459,7 @@ export default function AccountSettingsPage() {
           {!is2FAEnabled && (
             <Button onClick={() => setSetupOpen(true)} disabled={isLoading}>
               <ShieldCheck className="mr-2 h-4 w-4" />
-              2FA aktivieren
+              {t('accountSettingsPage.enable2FA')}
             </Button>
           )}
           {is2FAEnabled && (
@@ -469,7 +468,7 @@ export default function AccountSettingsPage() {
               onClick={() => setDisableOpen(true)}
             >
               <ShieldOff className="mr-2 h-4 w-4" />
-              2FA deaktivieren
+              {t('accountSettingsPage.disable2FA')}
             </Button>
           )}
         </div>
@@ -481,12 +480,10 @@ export default function AccountSettingsPage() {
           <div className="space-y-1">
             <h2 className="text-base font-semibold flex items-center gap-2">
               <RefreshCw className="h-4 w-4" />
-              Wiederherstellungscodes
+              {t('accountSettingsPage.recoveryCodesTitle')}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Falls du keinen Zugriff auf deine Authenticator-App hast, kannst du einen
-              Wiederherstellungscode zum Einloggen verwenden. Neue Codes generieren
-              macht alle bestehenden Codes ungültig.
+              {t('accountSettingsPage.recoveryCodesDesc')}
             </p>
           </div>
           <Button
@@ -495,7 +492,7 @@ export default function AccountSettingsPage() {
             disabled={regenerate.isPending}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            {regenerate.isPending ? 'Generiere...' : 'Neue Wiederherstellungscodes generieren'}
+            {regenerate.isPending ? t('accountSettingsPage.generating') : t('accountSettingsPage.regenerateCodes')}
           </Button>
           {regenerate.isError && (
             <p className="text-xs text-destructive">{regenerate.error.message}</p>

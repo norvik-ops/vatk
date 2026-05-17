@@ -38,7 +38,11 @@ func Register(g *echo.Group, h *Handler) {
 	// --- Pro: Findings bulk export/import and Wazuh import — must be before /:id routes ---
 	assets.GET("/findings/export", h.ExportFindings, license.Require(license.FeatureSecPulse))
 	assets.POST("/findings/import", h.ImportFindings, rw, license.Require(license.FeatureSecPulse))
+	assets.POST("/findings/import/csv", h.ImportFindingsCSV, rw, license.Require(license.FeatureSecPulse))
 	assets.POST("/import/wazuh", h.ImportWazuh, rw, license.Require(license.FeatureSecPulse))
+
+	// --- Pro: Assets CSV import (extended format: name,type,ip,owner,criticality) ---
+	assets.POST("/assets/import/csv", h.ImportAssetsCSVNew, rw, license.Require(license.FeatureSecPulse))
 	// Community: basic findings list and individual finding management
 	assets.GET("/findings/bulk", h.ListFindings) // keep as list
 	assets.POST("/findings/bulk", h.BulkUpdateFindings, rw)
