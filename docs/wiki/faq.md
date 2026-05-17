@@ -203,9 +203,21 @@ Für die eigene DSGVO-Dokumentation (VVT, DPIA, AVV) stellt Vakt das Privacy-Mod
 
 ---
 
-### Gibt es eine Jira-Integration?
+### Warum gibt es keine Jira-Integration?
 
-Eine native Jira-Integration ist in Planung. Bis dahin können Findings manuell exportiert oder via Webhook weitergeleitet werden.
+Vakt ist self-hosted und sendet keine Daten an externe Dienste. Jira-Cloud würde Finding-Daten an Atlassian übertragen. Nutze stattdessen Outgoing Webhooks mit deiner eigenen Automatisierung (z.B. n8n, Make, Zapier self-hosted).
+
+---
+
+### Wie richte ich Webhooks ein?
+
+Einstellungen → Webhooks → "Webhook hinzufügen". Gib URL und optionales Secret ein, wähle Events. Webhooks werden HMAC-SHA256-signiert (Header: `X-Vakt-Signature`).
+
+---
+
+### Kann ich Berichte automatisch versenden?
+
+Ja: Einstellungen → Geplante Berichte. Wähle Typ, Zeitplan und Empfänger. Voraussetzung: SMTP konfiguriert (`VAKT_SMTP_HOST`).
 
 ---
 

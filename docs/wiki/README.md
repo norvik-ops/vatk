@@ -40,6 +40,16 @@ Datenbankmigrationen laufen automatisch beim Start. Kein manueller Setup-Schritt
 
 ---
 
+## Features (Auswahl)
+
+- **Compliance-Frameworks** — NIS2, ISO 27001, BSI IT-Grundschutz, DORA, TISAX, EU AI Act, DSGVO TOM, ISO 42001, CRA
+- **Scheduled Reports** — Compliance-, Findings- und Risk-Berichte automatisch per E-Mail planen (wöchentlich/monatlich/vierteljährlich)
+- **Excel-Export** — Findings, Risks und Controls als `.xlsx` exportieren
+- **CSV-Import** — Lieferanten, Assets und Controls per CSV-Datei importieren
+- **Webhooks** — Ausgehende Webhooks für `finding.created`, `finding.severity_changed`, `incident.created`, `incident.status_changed`, `control.status_changed`; HMAC-SHA256-signiert
+
+---
+
 ## Grundprinzipien
 
 - **Lokal first** — Keine Daten verlassen deinen Server. Kein Phone-home, kein Telemetry.

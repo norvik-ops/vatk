@@ -50,6 +50,7 @@ import (
 	ghintegration "github.com/sechealth-app/sechealth/internal/shared/integrations/github"
 	cloudintegration "github.com/sechealth-app/sechealth/internal/shared/integrations/cloud"
 	"github.com/sechealth-app/sechealth/internal/shared/metrics"
+	"github.com/sechealth-app/sechealth/internal/shared/notifications"
 	"github.com/sechealth-app/sechealth/internal/shared/notify"
 	"github.com/sechealth-app/sechealth/internal/shared/retention"
 	"github.com/sechealth-app/sechealth/internal/shared/search"
@@ -440,6 +441,12 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	// Shared comments — threaded discussion on findings and controls
 	comments.Register(protected, pool)
 	log.Info().Msg("comments routes registered")
+
+	// Notification preferences — per-user email and in-app opt-in/out settings
+	notifPrefsSvc := notifications.NewPreferencesService(pool)
+	notifPrefsHandler := notifications.NewPreferencesHandler(notifPrefsSvc)
+	notifications.RegisterPreferences(protected.Group("/notifications"), notifPrefsHandler)
+	log.Info().Msg("notification preferences routes registered")
 
 	// Audit log — compliance event history
 	auditlog.RegisterRoutes(protected.Group("/audit-log"), pool)

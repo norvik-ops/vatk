@@ -27,6 +27,7 @@ VAKT_MODULES_ENABLED=secpulse,secvault,secreflex,secprivacy
 | **DSGVO Art. 32 TOM** | 13 TOMs mit ISO-27001-Deckungsanalyse |
 | **ISO 42001** | KI-Management-System-Framework |
 | **CRA** (Cyber Resilience Act) | Controls für Hersteller von Produkten mit digitalen Elementen |
+| **CIS Controls v8** | 61 IG1-Safeguards in 18 Kontrollgruppen mit CIS ↔ ISO 27001 Mapping |
 
 Mehrere Frameworks können gleichzeitig aktiv sein. Vakt zeigt pro Framework einen Readiness-Score und eine Gap-Analyse.
 
@@ -46,6 +47,10 @@ Jedes Framework besteht aus Controls — einzelnen Anforderungen, die umgesetzt 
 | `not_applicable` | Nicht relevant für diese Organisation |
 
 Pro Control können beliebig viele Implementierungsaufgaben angelegt und abgehakt werden.
+
+### Control Approvals
+
+Optional kann das Vier-Augen-Prinzip für Control-Statusänderungen aktiviert werden (Org-Setting unter Einstellungen). Statusänderungen müssen dann von einem zweiten Benutzer genehmigt werden, bevor sie wirksam werden.
 
 ---
 
@@ -140,6 +145,18 @@ Interne Audit-Records dokumentieren:
 - Scope und Auditor
 - Befunde mit Schweregrad
 - Empfehlungen und Maßnahmen
+
+---
+
+## Zertifizierungs-Timeline
+
+Countdown-Karten und Kalender-Ansicht für Audit-Meilensteine (z. B. geplantes Zertifizierungsaudit, Überwachungsaudit). Fälligkeitsdaten werden im Dashboard hervorgehoben.
+
+---
+
+## Score-Verlauf
+
+Der Compliance-Score wird über Zeit aufgezeichnet und als Recharts-Diagramm im Dashboard dargestellt. So ist der Fortschritt von Woche zu Woche nachvollziehbar.
 
 ---
 

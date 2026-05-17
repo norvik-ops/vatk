@@ -34,9 +34,10 @@ type dsrSummary struct {
 	Overdue  int // due_date already passed, not completed/rejected
 }
 
-// adminEmail holds the e-mail address of an admin user.
+// adminEmail holds the e-mail address and user ID of an admin user.
 type adminEmail struct {
-	Email string
+	Email  string
+	UserID string
 }
 
 // DigestService sends weekly digest e-mails for an organisation.
@@ -88,8 +89,12 @@ func (s *DigestService) SendDigest(ctx context.Context, orgID string) error {
 	// 5. Build e-mail body.
 	subject, body := s.buildEmail(orgID, severityCounts, dsr)
 
-	// 6. Send to each admin.
+	// 6. Send to each admin — respecting per-user email_weekly_digest preference.
 	for _, a := range admins {
+		if !s.weeklyDigestEnabled(ctx, a.UserID) {
+			log.Debug().Str("org_id", orgID).Str("user_id", a.UserID).Msg("emaildigest: skipped (preference disabled)")
+			continue
+		}
 		if err := s.send(a.Email, subject, body); err != nil {
 			log.Error().Err(err).Str("org_id", orgID).Str("to", a.Email).Msg("emaildigest: send failed")
 		} else {
@@ -175,7 +180,7 @@ func (s *DigestService) fetchDSRSummary(ctx context.Context, orgID string) (dsrS
 
 func (s *DigestService) fetchAdminEmails(ctx context.Context, orgID string) ([]adminEmail, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT u.email
+		SELECT u.email, u.id::text
 		FROM   org_members om
 		JOIN   users u ON u.id = om.user_id
 		JOIN   roles r ON r.id = om.role_id
@@ -192,12 +197,29 @@ func (s *DigestService) fetchAdminEmails(ctx context.Context, orgID string) ([]a
 	var admins []adminEmail
 	for rows.Next() {
 		var a adminEmail
-		if err := rows.Scan(&a.Email); err != nil {
+		if err := rows.Scan(&a.Email, &a.UserID); err != nil {
 			return nil, err
 		}
 		admins = append(admins, a)
 	}
 	return admins, rows.Err()
+}
+
+// weeklyDigestEnabled returns true if the user has not disabled the weekly digest.
+// Defaults to true when no preference row exists.
+func (s *DigestService) weeklyDigestEnabled(ctx context.Context, userID string) bool {
+	var enabled bool
+	err := s.db.QueryRow(ctx, `
+		SELECT email_weekly_digest
+		FROM notification_preferences
+		WHERE user_id = $1::uuid`,
+		userID,
+	).Scan(&enabled)
+	if err != nil {
+		// No row yet → default is true.
+		return true
+	}
+	return enabled
 }
 
 func (s *DigestService) buildEmail(orgID string, severityCounts []findingSeverityCount, dsr dsrSummary) (subject, body string) {

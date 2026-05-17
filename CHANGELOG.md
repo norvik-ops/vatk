@@ -9,6 +9,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v0.5.2] — 2026-05-17
+
+### Entfernt
+- **Jira-Integration** — entfernt wegen Datenabfluss zu Atlassian-Cloud (DSGVO Art. 28). Ersatz: Outgoing Webhooks für eigene Automatisierungen.
+
+### Hinzugefügt
+- **Webhooks aktiv** — `finding.created`, `finding.severity_changed`, `incident.created`, `incident.status_changed`, `control.status_changed` lösen jetzt tatsächlich Webhooks aus
+- **Scheduled Reports** — Compliance-, Findings- und Risk-Berichte automatisch per E-Mail planen (wöchentlich/monatlich/vierteljährlich)
+- **Excel-Export** — Findings, Risks und Controls als `.xlsx` aus der Toolbar exportieren
+- **Risk Matrix interaktiv** — Klick auf Zelle zeigt Risiken der jeweiligen Kombination
+- **Compliance-Score-Prognose** — Linearer Trend im Dashboard ("Bei aktuellem Tempo: 82% in 6 Wochen")
+- **Notification Preferences** — Nutzer steuern welche E-Mails und In-App-Benachrichtigungen sie erhalten
+- **In-App-Tour** — 5-Schritte-Tooltip-Guide für neue Nutzer
+- **i18n vollständig** — alle Seiten auf Deutsch/Englisch (1.093 Keys)
+
+### Sicherheit
+- **Datenschutz-Grundsatz** in CLAUDE.md dokumentiert: keine Drittanbieter-SaaS-Integrationen die Vakt-Daten empfangen
+
+### Upgrade
+Neue Migrationen: `099_remove_jira`, `100_scheduled_reports`
+
+---
+
 ## [v0.5.0] — 2026-05-17
 
 ### Added

@@ -82,9 +82,9 @@ VAKT_FRONTEND_URL=https://sechealth.meine-firma.de
 
 ---
 
-## SMTP (SecReflex)
+## SMTP (SecReflex & Scheduled Reports)
 
-SecReflex benötigt einen SMTP-Server, um Phishing-Simulations-E-Mails zu versenden. Für Entwicklung und Tests ist [Mailpit](https://github.com/axllent/mailpit) vorkonfiguriert (Port 1025, keine Authentifizierung).
+SecReflex benötigt einen SMTP-Server, um Phishing-Simulations-E-Mails zu versenden. Auch **Scheduled Reports** (automatisch geplante Compliance-, Findings- und Risk-Berichte) verwenden dieselbe SMTP-Konfiguration. Für Entwicklung und Tests ist [Mailpit](https://github.com/axllent/mailpit) vorkonfiguriert (Port 1025, keine Authentifizierung).
 
 | Variable | Pflicht | Standard | Beschreibung |
 |---|---|---|---|
