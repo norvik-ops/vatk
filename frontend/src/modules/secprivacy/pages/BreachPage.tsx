@@ -13,6 +13,7 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { InfoBanner } from '../../../shared/components/InfoBanner'
 import { Pagination } from '../../../shared/components/Pagination'
+import { Skeleton } from '../../../components/ui/skeleton'
 import { useBreaches, useCreateBreach, useUpdateBreach, useDeleteBreach, useMarkAuthorityNotified, useExportBreachNotification } from '../hooks/useBreaches'
 import type { Breach, CreateBreachInput, UpdateBreachInput } from '../types'
 
@@ -250,8 +251,10 @@ export default function BreachPage() {
 
       <div className="flex-1 p-6 space-y-6">
         {isLoading && (
-          <div className="flex items-center justify-center h-48">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
+            ))}
           </div>
         )}
 

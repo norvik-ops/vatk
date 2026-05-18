@@ -233,9 +233,9 @@ export default function IncidentsPage() {
         )}
 
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full rounded-lg" />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
         )}
@@ -245,9 +245,9 @@ export default function IncidentsPage() {
         {!isLoading && !isError && incidents?.length === 0 && (
           <EmptyState
             icon={Siren}
-            title={t('secvitals.incidentsPage.noIncidents')}
-            description={t('secvitals.incidentsPage.noIncidentsDesc')}
-            action={<Button onClick={openDialog} variant="destructive"><Plus className="w-4 h-4 mr-1" />{t('secvitals.incidentsPage.reportIncident')}</Button>}
+            title="Kein offener Vorfall"
+            description="Das ist gut! Wenn etwas passiert, dokumentierst du Vorfälle hier — NIS2-konform"
+            action={<Button onClick={openDialog} variant="destructive"><Plus className="w-4 h-4 mr-1" />Vorfall anlegen</Button>}
           />
         )}
         {!isLoading && !isError && incidents && incidents.length > 0 && (

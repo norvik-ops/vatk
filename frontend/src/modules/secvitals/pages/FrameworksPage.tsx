@@ -227,8 +227,16 @@ export default function FrameworksPage() {
           {!isLoading && !isError && frameworks && frameworks.length === 0 && (
             <EmptyState
               icon={ShieldCheck}
-              title={t('secvitals.frameworksPage.noFrameworks')}
-              description={t('secvitals.frameworksPage.noFrameworksDesc')}
+              title="Noch kein Compliance-Framework aktiv"
+              description="Starte mit ISO 27001 — dem Standard für KMU in der DACH-Region"
+              action={
+                <Button onClick={() => {
+                  document.getElementById('framework-catalogue')?.scrollIntoView({ behavior: 'smooth' })
+                }}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Framework hinzufügen
+                </Button>
+              }
             />
           )}
           {!isLoading && !isError && frameworks && frameworks.length > 0 && (
@@ -241,7 +249,7 @@ export default function FrameworksPage() {
         </section>
 
         {/* Framework Catalogue */}
-        <section>
+        <section id="framework-catalogue">
           <div className="flex items-center gap-2 mb-3">
             <BookOpen className="w-4 h-4 text-secondary" />
             <h2 className="text-sm font-semibold text-secondary uppercase tracking-wider">

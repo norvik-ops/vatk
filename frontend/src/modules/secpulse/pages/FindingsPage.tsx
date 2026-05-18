@@ -20,18 +20,162 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../../../components/ui/dialog'
-import { useFindings, exportFindingsCsv, useBulkUpdateFindings, useDeleteFinding } from '../hooks/useFindings'
+import { useFindings, exportFindingsCsv, useBulkUpdateFindings, useDeleteFinding, usePatchFinding } from '../hooks/useFindings'
+import { apiFetch } from '../../../api/client'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Finding } from '../types'
 import { cn } from '../../../lib/utils'
 import { ImportFindingsDialog } from '../components/ImportFindingsDialog'
 import { CSVImportDialog } from '../../../shared/components/CSVImportDialog'
 import { useKeyboardNav } from '../../../shared/hooks/useKeyboardNav'
+import { useTableKeyboard } from '../../../shared/hooks/useTableKeyboard'
 import { toast } from '../../../shared/hooks/useToast'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { exportToCSV } from '../../../lib/csv'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { useJiraConfig, useCreateJiraIssue } from '../../../hooks/useJira'
 import type { JiraIssue } from '../../../hooks/useJira'
+
+// ── Inline editable status cell ──────────────────────────────────────────────
+
+function InlineStatusCell({ finding }: { finding: Finding }) {
+  const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const patch = usePatchFinding(finding.id)
+
+  function handleChange(value: string) {
+    const newStatus = value as Finding['status']
+    setEditing(false)
+    patch.mutate(
+      { status: newStatus },
+      {
+        onError: () => {
+          toast(t('secpulse.findingsPage.saveFailed'), 'error')
+        },
+      },
+    )
+  }
+
+  if (patch.isPending) {
+    return (
+      <span className="flex items-center gap-1.5 text-sm text-secondary">
+        <span className="w-3.5 h-3.5 border-2 border-brand border-t-transparent rounded-full animate-spin inline-block" />
+        {finding.status.replace(/_/g, ' ')}
+      </span>
+    )
+  }
+
+  if (editing) {
+    return (
+      <Select
+        defaultOpen
+        value={finding.status}
+        onValueChange={handleChange}
+        onOpenChange={(open) => { if (!open) setEditing(false) }}
+      >
+        <SelectTrigger
+          className="h-7 text-xs w-36"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent onClick={(e) => e.stopPropagation()}>
+          <SelectItem value="open">{t('secpulse.status.open')}</SelectItem>
+          <SelectItem value="in_progress">{t('secpulse.status.in_progress')}</SelectItem>
+          <SelectItem value="accepted_risk">{t('secpulse.status.accepted_risk')}</SelectItem>
+          <SelectItem value="false_positive">{t('secpulse.status.false_positive')}</SelectItem>
+          <SelectItem value="resolved">{t('secpulse.status.resolved')}</SelectItem>
+        </SelectContent>
+      </Select>
+    )
+  }
+
+  return (
+    <span
+      className="text-sm text-secondary capitalize cursor-pointer hover:text-primary hover:underline underline-offset-2 transition-colors"
+      onClick={(e) => { e.stopPropagation(); setEditing(true) }}
+      title="Klicken zum Bearbeiten"
+    >
+      {finding.status.replace(/_/g, ' ')}
+    </span>
+  )
+}
+
+// ── Inline editable severity cell ────────────────────────────────────────────
+
+function InlineSeverityCell({ finding }: { finding: Finding }) {
+  const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [displaySeverity, setDisplaySeverity] = useState<Finding['severity']>(finding.severity)
+  const queryClient = useQueryClient()
+
+  async function handleChange(value: string) {
+    const newSeverity = value as Finding['severity']
+    setEditing(false)
+    setSaving(true)
+    const prev = displaySeverity
+    setDisplaySeverity(newSeverity)
+    try {
+      await apiFetch<Finding>(`/secpulse/findings/${finding.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ severity: newSeverity }),
+      })
+      void queryClient.invalidateQueries({ queryKey: ['secpulse', 'findings'] })
+    } catch {
+      setDisplaySeverity(prev)
+      toast(t('secpulse.findingsPage.saveFailed'), 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const badgeClass = severityClass[displaySeverity]
+
+  if (saving) {
+    return (
+      <span className="flex items-center gap-1.5">
+        <span className="w-3.5 h-3.5 border-2 border-brand border-t-transparent rounded-full animate-spin inline-block" />
+        <Badge className={cn('capitalize', badgeClass)}>{displaySeverity}</Badge>
+      </span>
+    )
+  }
+
+  if (editing) {
+    return (
+      <Select
+        defaultOpen
+        value={displaySeverity}
+        onValueChange={(v) => { void handleChange(v) }}
+        onOpenChange={(open) => { if (!open) setEditing(false) }}
+      >
+        <SelectTrigger
+          className="h-7 text-xs w-28"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent onClick={(e) => e.stopPropagation()}>
+          <SelectItem value="critical">{t('secpulse.severity.critical')}</SelectItem>
+          <SelectItem value="high">{t('secpulse.severity.high')}</SelectItem>
+          <SelectItem value="medium">{t('secpulse.severity.medium')}</SelectItem>
+          <SelectItem value="low">{t('secpulse.severity.low')}</SelectItem>
+          <SelectItem value="info">{t('secpulse.severity.info')}</SelectItem>
+        </SelectContent>
+      </Select>
+    )
+  }
+
+  return (
+    <Badge
+      className={cn('capitalize cursor-pointer', badgeClass)}
+      onClick={(e) => { e.stopPropagation(); setEditing(true) }}
+      title="Klicken zum Bearbeiten"
+    >
+      {displaySeverity}
+    </Badge>
+  )
+}
 
 const severityClass: Record<Finding['severity'], string> = {
   info:     'bg-[#374151] text-[#94a3b8] border-transparent',
@@ -153,6 +297,13 @@ export default function FindingsPage() {
       if (findings[i]) navigate(`/secpulse/findings/${findings[i].id}`)
     },
   })
+
+  const { focusIdx: tableKeyIdx, setFocusIdx: setTableKeyIdx, onKeyDown: tableRowKeyDown } = useTableKeyboard(
+    findings.length,
+    (idx) => {
+      if (findings[idx]) navigate(`/secpulse/findings/${findings[idx].id}`)
+    },
+  )
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -464,8 +615,12 @@ export default function FindingsPage() {
                   <TableRow
                     key={f.id}
                     tabIndex={0}
+                    ref={(el) => {
+                      if (el && tableKeyIdx === index) el.focus()
+                    }}
                     /* WCAG 2.1.1: onKeyDown allows keyboard activation of the row */
                     onKeyDown={(e) => {
+                      tableRowKeyDown(e, index)
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
                         navigate(`/secpulse/findings/${f.id}`)
@@ -474,10 +629,10 @@ export default function FindingsPage() {
                     aria-selected={selected.has(f.id)}
                     className={cn(
                       'cursor-pointer hover:bg-surface2',
-                      index === focusedIndex && 'ring-1 ring-brand bg-brand/10 dark:bg-muted/50',
+                      (index === focusedIndex || index === tableKeyIdx) && 'ring-1 ring-brand bg-brand/10 dark:bg-muted/50',
                       selected.has(f.id) && 'bg-brand/5',
                     )}
-                    onClick={() => setFocusedIndex(index)}
+                    onClick={() => { setFocusedIndex(index); setTableKeyIdx(index) }}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <input
@@ -494,11 +649,11 @@ export default function FindingsPage() {
                     >
                       {f.title}
                     </TableCell>
-                    <TableCell onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
-                      <Badge className={cn('capitalize', severityClass[f.severity])}>{f.severity}</Badge>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <InlineSeverityCell finding={f} />
                     </TableCell>
-                    <TableCell onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
-                      <span className="text-sm text-secondary capitalize">{f.status.replace(/_/g, ' ')}</span>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <InlineStatusCell finding={f} />
                     </TableCell>
                     <TableCell className="text-sm text-secondary" onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
                       {f.asset_name ?? '—'}

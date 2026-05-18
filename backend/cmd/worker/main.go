@@ -5,12 +5,15 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/smtp"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"syscall"
 	"time"
@@ -26,6 +29,7 @@ import (
 	"github.com/sechealth-app/sechealth/internal/shared/demo"
 	"github.com/sechealth-app/sechealth/internal/config"
 	cloudintegration "github.com/sechealth-app/sechealth/internal/shared/integrations/cloud"
+	ghintegration "github.com/sechealth-app/sechealth/internal/shared/integrations/github"
 	"github.com/sechealth-app/sechealth/internal/modules/secprivacy"
 	"github.com/sechealth-app/sechealth/internal/modules/secreflex"
 	"github.com/sechealth-app/sechealth/internal/modules/secpulse"
@@ -79,6 +83,15 @@ func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 	mux.HandleFunc(secpulse.TaskScanTrivy, handleScanJob(cfg, pool))
 	mux.HandleFunc(secpulse.TaskScanNuclei, handleScanJob(cfg, pool))
 	mux.HandleFunc(secpulse.TaskScanOpenVAS, handleScanJob(cfg, pool))
+
+	// ── SecVitals: daily control-owner due-date reminder ─────────────────────
+	mux.HandleFunc(taskControlOwnerReminder, handleControlOwnerReminder(cfg, pool))
+
+	// ── GitHub CI evidence sync (daily) ──────────────────────────────────────
+	mux.HandleFunc(taskGitHubCISync, handleGitHubCISync(cfg, pool))
+
+	// ── SecPulse EPSS enrichment (daily) ─────────────────────────────────────
+	mux.HandleFunc(secpulse.TaskEPSSEnrich, handleEPSSEnrich(pool))
 
 	// ── SecPulse report generation ────────────────────────────────────────────
 	mux.HandleFunc(secpulse.TaskGenerateReport, handleGenerateReport(cfg, pool))
@@ -1165,6 +1178,178 @@ func handleProcessScheduledReports(cfg *config.Config, pool *pgxpool.Pool) asynq
 	}
 }
 
+// taskControlOwnerReminder is the Asynq task name for the daily control-owner reminder.
+const taskControlOwnerReminder = "secvitals:control_owner_reminder"
+
+// taskGitHubCISync is the Asynq task name for the daily GitHub CI evidence sync.
+const taskGitHubCISync = "github:ci_evidence:sync"
+
+// reEmail matches a basic e-mail address to decide whether to send a reminder.
+var reEmail = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
+
+// handleControlOwnerReminder queries all controls whose due_date (from ck_tasks) is in
+// exactly 7 days, whose status is neither implemented nor not_applicable, and whose
+// soa_responsible looks like a valid e-mail address, then sends a plain-HTML reminder.
+func handleControlOwnerReminder(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
+	return func(ctx context.Context, _ *asynq.Task) error {
+		if cfg == nil || cfg.SMTPHost == "" {
+			log.Info().Msg("control_owner_reminder: SMTP not configured, skipping")
+			return nil
+		}
+
+		// Query controls with a task due in exactly 7 days that are not yet done.
+		type reminderRow struct {
+			OrgID       string
+			ControlID   string
+			ControlDBID string
+			Title       string
+			Responsible string
+			DueDate     time.Time
+		}
+
+		rows, err := pool.Query(ctx, `
+			SELECT
+			    c.org_id::text,
+			    c.control_id,
+			    c.id::text,
+			    c.title,
+			    COALESCE(c.soa_responsible, '') AS responsible,
+			    t.due_date::timestamptz
+			FROM ck_controls c
+			JOIN ck_tasks t ON t.entity_id = c.id
+			                AND t.entity_type = 'control'
+			                AND t.org_id = c.org_id
+			WHERE t.due_date = CURRENT_DATE + INTERVAL '7 days'
+			  AND t.status NOT IN ('done', 'closed')
+			  AND COALESCE(c.manual_status, '') NOT IN ('implemented', 'not_applicable')
+			  AND c.not_applicable = false
+			  AND COALESCE(c.soa_responsible, '') <> ''
+		`)
+		if err != nil {
+			return fmt.Errorf("control_owner_reminder: query: %w", err)
+		}
+		defer rows.Close()
+
+		var reminders []reminderRow
+		for rows.Next() {
+			var r reminderRow
+			if err := rows.Scan(&r.OrgID, &r.ControlID, &r.ControlDBID, &r.Title, &r.Responsible, &r.DueDate); err != nil {
+				log.Warn().Err(err).Msg("control_owner_reminder: scan row")
+				continue
+			}
+			reminders = append(reminders, r)
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("control_owner_reminder: rows error: %w", err)
+		}
+
+		if len(reminders) == 0 {
+			log.Info().Msg("control_owner_reminder: no controls due in 7 days")
+			return nil
+		}
+
+		smtpAddr := cfg.SMTPHost + ":" + cfg.SMTPPort
+		if smtpAddr == ":" {
+			smtpAddr = "localhost:25"
+		}
+		var smtpAuth smtp.Auth
+		if cfg.SMTPUser != "" && cfg.SMTPPass != "" {
+			smtpAuth = smtp.PlainAuth("", cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPHost)
+		}
+
+		frontendURL := cfg.FrontendURL
+		if frontendURL == "" {
+			frontendURL = "https://app.vakt.io"
+		}
+
+		sent := 0
+		for _, r := range reminders {
+			if !reEmail.MatchString(r.Responsible) {
+				log.Debug().
+					Str("control_id", r.ControlDBID).
+					Str("responsible", r.Responsible).
+					Msg("control_owner_reminder: not a valid e-mail, skipping")
+				continue
+			}
+
+			subject := fmt.Sprintf("Erinnerung: Control %s fällig in 7 Tagen", r.ControlID)
+			link := fmt.Sprintf("%s/secvitals/controls/%s", frontendURL, r.ControlDBID)
+			dueDateStr := r.DueDate.Format("02.01.2006")
+
+			var buf bytes.Buffer
+			buf.WriteString(`<!DOCTYPE html><html><body style="font-family:sans-serif;color:#1a202c;">`)
+			buf.WriteString(`<h2 style="color:#2b6cb0;">Vakt — Control-Erinnerung</h2>`)
+			buf.WriteString(fmt.Sprintf(`<p>Das folgende Control ist in <strong>7 Tagen</strong> fällig:</p>`))
+			buf.WriteString(fmt.Sprintf(`<table border="0" cellpadding="6"><tbody>`))
+			buf.WriteString(fmt.Sprintf(`<tr><td><strong>Control:</strong></td><td>%s — %s</td></tr>`, r.ControlID, r.Title))
+			buf.WriteString(fmt.Sprintf(`<tr><td><strong>Fälligkeitsdatum:</strong></td><td>%s</td></tr>`, dueDateStr))
+			buf.WriteString(fmt.Sprintf(`<tr><td><strong>Link:</strong></td><td><a href="%s">Control öffnen</a></td></tr>`, link))
+			buf.WriteString(`</tbody></table>`)
+			buf.WriteString(`<p style="color:#718096;font-size:0.85em;">Diese E-Mail wurde automatisch von Vakt versandt.</p>`)
+			buf.WriteString(`</body></html>`)
+
+			headers := fmt.Sprintf(
+				"From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n",
+				cfg.SMTPFrom, r.Responsible, subject,
+			)
+			msg := []byte(headers + buf.String())
+
+			if sendErr := smtp.SendMail(smtpAddr, smtpAuth, cfg.SMTPFrom, []string{r.Responsible}, msg); sendErr != nil {
+				log.Warn().
+					Err(sendErr).
+					Str("control_id", r.ControlDBID).
+					Str("to", r.Responsible).
+					Msg("control_owner_reminder: send failed")
+				continue
+			}
+			sent++
+			log.Info().
+				Str("control_id", r.ControlDBID).
+				Str("to", r.Responsible).
+				Msg("control_owner_reminder: sent")
+		}
+
+		log.Info().
+			Int("sent", sent).
+			Int("total", len(reminders)).
+			Msg("control_owner_reminder: completed")
+		return nil
+	}
+}
+
+// handleGitHubCISync collects GitHub Actions CI run evidence for all organisations.
+// For each org, it queries all GitHub integrations and fetches the 10 most recent
+// completed runs, inserting a ck_evidence row for each successful run.
+func handleGitHubCISync(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
+	return func(ctx context.Context, _ *asynq.Task) error {
+		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations WHERE is_deleted = false`)
+		if err != nil {
+			return fmt.Errorf("github_ci_sync: list orgs: %w", err)
+		}
+		defer rows.Close()
+
+		var orgIDs []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				continue
+			}
+			orgIDs = append(orgIDs, id)
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+		for _, orgID := range orgIDs {
+			if err := ghintegration.CollectCIEvidence(ctx, pool, orgID); err != nil {
+				log.Error().Err(err).Str("org_id", orgID).Msg("github_ci_sync: org failed")
+			}
+		}
+		log.Info().Int("orgs", len(orgIDs)).Msg("github_ci_sync: completed")
+		return nil
+	}
+}
+
 // handleCloudSync runs evidence collection for all enabled AWS + Azure cloud integrations.
 func handleCloudSync(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 	return func(ctx context.Context, _ *asynq.Task) error {
@@ -1261,6 +1446,27 @@ func buildScheduler(cfg *config.Config) *asynq.Scheduler {
 		bsi.NewBSIFeedSyncTask(),
 	); err != nil {
 		log.Error().Err(err).Msg("failed to register BSI feed sync cron")
+	}
+
+	// Daily at 01:00 UTC: enrich all findings with EPSS scores from FIRST.org.
+	if _, err := scheduler.Register("0 1 * * *",
+		asynq.NewTask(secpulse.TaskEPSSEnrich, nil),
+	); err != nil {
+		log.Error().Err(err).Msg("failed to register EPSS enrich cron")
+	}
+
+	// Daily at 09:00 UTC: send control-owner due-date reminders (7-day advance notice).
+	if _, err := scheduler.Register("0 9 * * *",
+		asynq.NewTask(taskControlOwnerReminder, nil),
+	); err != nil {
+		log.Error().Err(err).Msg("failed to register control owner reminder cron")
+	}
+
+	// Daily at 05:00 UTC: collect GitHub Actions CI run evidence for all orgs.
+	if _, err := scheduler.Register("0 5 * * *",
+		asynq.NewTask(taskGitHubCISync, nil),
+	); err != nil {
+		log.Error().Err(err).Msg("failed to register GitHub CI evidence sync cron")
 	}
 
 	// Daily at 09:00 UTC: alert on evidence expiring within 30 days.
@@ -1375,6 +1581,39 @@ func handleQueueHealthCheck(cfg *config.Config) asynq.HandlerFunc {
 					Msg("queue_health: high archived job count — consider running 'asynq queue purge'")
 			}
 		}
+		return nil
+	}
+}
+
+// handleEPSSEnrich enriches all open findings across all organisations with
+// EPSS scores fetched from the FIRST.org API. Errors for individual orgs are
+// logged but do not abort processing of remaining orgs.
+func handleEPSSEnrich(pool *pgxpool.Pool) asynq.HandlerFunc {
+	return func(ctx context.Context, _ *asynq.Task) error {
+		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations WHERE is_deleted = false`)
+		if err != nil {
+			return fmt.Errorf("epss_enrich: list orgs: %w", err)
+		}
+		defer rows.Close()
+
+		var orgIDs []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				continue
+			}
+			orgIDs = append(orgIDs, id)
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+		for _, orgID := range orgIDs {
+			if err := secpulse.UpdateEPSSScores(ctx, pool, orgID); err != nil {
+				log.Error().Err(err).Str("org_id", orgID).Msg("epss_enrich: org failed")
+			}
+		}
+		log.Info().Int("orgs", len(orgIDs)).Msg("epss_enrich: completed")
 		return nil
 	}
 }

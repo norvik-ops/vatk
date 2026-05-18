@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { apiFetch } from '../../api/client'
+import { formatDateTime } from '../utils/date'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -15,6 +16,12 @@ interface Comment {
   content: string
   created_at: string
   can_delete: boolean
+}
+
+interface TeamMember {
+  id: string
+  name: string
+  email: string
 }
 
 // ── Relative time helper ──────────────────────────────────────────────────────
@@ -46,6 +53,22 @@ function initials(name: string): string {
   const parts = name.trim().split(/\s+/)
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   return name.slice(0, 2).toUpperCase()
+}
+
+// ── Team members hook ─────────────────────────────────────────────────────────
+
+function useTeamMembers() {
+  return useQuery<TeamMember[]>({
+    queryKey: ['settings', 'team', 'members'],
+    queryFn: async () => {
+      try {
+        return await apiFetch<TeamMember[]>('/settings/team/members')
+      } catch {
+        return []
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+  })
 }
 
 // ── Hooks ──────────────────────────────────────────────────────────────────────
@@ -113,9 +136,72 @@ export function Comments({ entityType, entityId }: CommentsProps) {
   const { data: comments, isLoading } = useComments(entityType, entityId)
   const createComment = useCreateComment(entityType, entityId)
   const deleteComment = useDeleteComment(entityType, entityId)
+  const { data: teamMembers = [] } = useTeamMembers()
 
   const [content, setContent] = useState('')
   const [expanded, setExpanded] = useState(true)
+
+  // Mention dropdown state
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
+  const [mentionStart, setMentionStart] = useState(0)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const filteredMembers = mentionQuery !== null
+    ? teamMembers.filter(
+        (m) =>
+          m.name.toLowerCase().includes(mentionQuery.toLowerCase()) ||
+          m.email.toLowerCase().includes(mentionQuery.toLowerCase()),
+      ).slice(0, 5)
+    : []
+
+  const showMentionDropdown = mentionQuery !== null && filteredMembers.length > 0
+
+  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value
+    const cursor = e.target.selectionStart ?? val.length
+    setContent(val)
+
+    // Find if there's a `@` before the cursor without a space after it
+    const textBeforeCursor = val.slice(0, cursor)
+    const atIdx = textBeforeCursor.lastIndexOf('@')
+    if (atIdx !== -1) {
+      const fragment = textBeforeCursor.slice(atIdx + 1)
+      // Only show if no space in fragment (still typing the name)
+      if (!fragment.includes(' ') && !fragment.includes('\n')) {
+        setMentionStart(atIdx)
+        setMentionQuery(fragment)
+        return
+      }
+    }
+    setMentionQuery(null)
+  }, [])
+
+  const insertMention = useCallback((member: TeamMember) => {
+    const before = content.slice(0, mentionStart)
+    const queryLen = mentionQuery !== null ? mentionQuery.length : 0
+    const after = content.slice(mentionStart + 1 + queryLen)
+    const newContent = `${before}@${member.name}${after}`
+    setContent(newContent)
+    setMentionQuery(null)
+    // Restore focus to textarea
+    setTimeout(() => {
+      if (textareaRef.current) {
+        const pos = before.length + 1 + member.name.length
+        textareaRef.current.focus()
+        textareaRef.current.setSelectionRange(pos, pos)
+      }
+    }, 0)
+  }, [content, mentionStart, mentionQuery])
+
+  // Close dropdown on Escape
+  useEffect(() => {
+    if (!showMentionDropdown) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMentionQuery(null)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [showMentionDropdown])
 
   const count = comments?.length ?? 0
   const lang = i18n.language
@@ -186,7 +272,7 @@ export function Comments({ entityType, entityId }: CommentsProps) {
                     <span className="text-xs font-medium text-primary">{comment.author_name}</span>
                     <span
                       className="text-xs text-secondary"
-                      title={new Date(comment.created_at).toLocaleString(lang === 'en' ? 'en-GB' : 'de-DE')}
+                      title={formatDateTime(comment.created_at)}
                     >
                       {relativeTime(comment.created_at, lang)}
                     </span>
@@ -214,14 +300,37 @@ export function Comments({ entityType, entityId }: CommentsProps) {
 
         {/* New comment form */}
         <form onSubmit={handleSubmit} className="space-y-2 border-t border-border pt-4">
-          <textarea
-            rows={3}
-            placeholder={t('comments.placeholder')}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            maxLength={4000}
-            className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand resize-none"
-          />
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              rows={3}
+              placeholder={t('comments.placeholder')}
+              value={content}
+              onChange={handleContentChange}
+              maxLength={4000}
+              className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand resize-none"
+            />
+            {/* @mention dropdown */}
+            {showMentionDropdown && (
+              <div className="absolute left-0 bottom-full mb-1 z-50 w-64 bg-background border border-border rounded-lg shadow-lg py-1">
+                {filteredMembers.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
+                    onMouseDown={(e) => {
+                      // prevent textarea blur
+                      e.preventDefault()
+                      insertMention(m)
+                    }}
+                  >
+                    <span className="font-medium text-primary">{m.name}</span>
+                    <span className="text-secondary ml-2 text-xs">{m.email}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex justify-end">
             <Button
               type="submit"

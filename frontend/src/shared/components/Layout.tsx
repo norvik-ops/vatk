@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import {
-  Bug, FileCheck, Key, Fish, Eye, LayoutDashboard, LogOut, Sun, Moon, Settings,
+  Bug, FileCheck, Key, Fish, Eye, LayoutDashboard, LogOut, Sun, Moon, Monitor, Settings,
   ShieldCheck, ShieldAlert, Siren, BookOpen, ClipboardList,
   FileText, FileSearch, Handshake, AlertTriangle, Users,
   Server, ScanSearch, BarChart2, Clock, Search, Bell,
@@ -28,6 +28,7 @@ import { usePendingApprovalCount } from '../../modules/secvitals/hooks/useApprov
 import { useUpdateCheck } from '../hooks/useUpdateCheck'
 import { Toaster } from './Toaster'
 import { PWAInstallPrompt } from './PWAInstallPrompt'
+import { PageTransition } from './PageTransition'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal'
 import { AppTour } from './AppTour'
@@ -499,17 +500,26 @@ export default function Layout() {
 
           <button
             onClick={toggle}
-            aria-label={theme === 'dark' ? 'Zu hellem Modus wechseln' : 'Zu dunklem Modus wechseln'}
-            title={theme === 'dark' ? 'Heller Modus' : 'Dunkler Modus'}
+            aria-label={
+              theme === 'light'
+                ? 'Zu dunklem Modus wechseln'
+                : theme === 'dark'
+                ? 'Zu System-Modus wechseln'
+                : 'Zu hellem Modus wechseln'
+            }
+            title={theme === 'light' ? 'Dunkel' : theme === 'dark' ? 'System' : 'Hell'}
             className={cn(
               'w-full flex items-center rounded-md text-[13px] text-secondary hover:bg-muted/50 hover:text-primary transition-all duration-150',
               sidebarCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-[9px]',
             )}
           >
-            {theme === 'dark'
-              ? <><Sun className="w-4 h-4 shrink-0" aria-hidden="true" />{!sidebarCollapsed && t('theme.light')}</>
-              : <><Moon className="w-4 h-4 shrink-0" aria-hidden="true" />{!sidebarCollapsed && t('theme.dark')}</>
-            }
+            {theme === 'light' ? (
+              <><Moon className="w-4 h-4 shrink-0" aria-hidden="true" />{!sidebarCollapsed && t('theme.dark')}</>
+            ) : theme === 'dark' ? (
+              <><Monitor className="w-4 h-4 shrink-0" aria-hidden="true" />{!sidebarCollapsed && 'System'}</>
+            ) : (
+              <><Sun className="w-4 h-4 shrink-0" aria-hidden="true" />{!sidebarCollapsed && t('theme.light')}</>
+            )}
           </button>
           {!sidebarCollapsed && user?.email && (
             <div className="px-3 py-1">
@@ -547,13 +557,36 @@ export default function Layout() {
             {/* WCAG 1.1.1: icon is decorative, button is named by aria-label */}
             <Menu className="w-5 h-5" aria-hidden="true" />
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <img src="/logo.svg" alt="Vakt" className="w-5 h-5 shrink-0" />
             <span className="font-bold text-[15px] text-brand leading-none">Vakt</span>
           </div>
+          {/* Theme toggle — mobile only */}
+          <button
+            onClick={toggle}
+            aria-label={
+              theme === 'light'
+                ? 'Zu dunklem Modus wechseln'
+                : theme === 'dark'
+                ? 'Zu System-Modus wechseln'
+                : 'Zu hellem Modus wechseln'
+            }
+            title={theme === 'light' ? 'Dunkel' : theme === 'dark' ? 'System' : 'Hell'}
+            className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-surface2"
+          >
+            {theme === 'light' ? (
+              <Sun className="w-4 h-4" aria-hidden="true" />
+            ) : theme === 'dark' ? (
+              <Moon className="w-4 h-4" aria-hidden="true" />
+            ) : (
+              <Monitor className="w-4 h-4" aria-hidden="true" />
+            )}
+          </button>
         </div>
         <div className="flex-1 overflow-auto">
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </div>
       </main>
       </div>

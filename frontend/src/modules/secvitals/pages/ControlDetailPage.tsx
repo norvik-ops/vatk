@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Download, FileText, ChevronRight, RefreshCw, Info,
-  Circle, Clock, CheckCircle2, MinusCircle, Trash2, ListChecks,
+  Circle, Clock, CheckCircle2, MinusCircle, Trash2, ListChecks, History,
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { apiFetch } from '../../../api/client'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
 import { trackPage } from '../../../shared/hooks/useRecentPages'
@@ -57,6 +59,83 @@ const evidenceStatusVariant: Record<Evidence['status'], React.ComponentProps<typ
   approved: 'success',
   rejected: 'destructive',
   expired: 'secondary',
+}
+
+// ── Change log ───────────────────────────────────────────────────────────────
+
+interface ChangeLogEntry {
+  id: string
+  field: string
+  old_value?: string | null
+  new_value: string
+  user_email?: string | null
+  changed_at: string
+}
+
+function fieldLabel(field: string): string {
+  const map: Record<string, string> = {
+    status: 'Status',
+    not_applicable: 'Nicht anwendbar',
+    not_applicable_reason: 'Begründung',
+    manual_status: 'Manueller Status',
+    maturity_score: 'Reifegrad',
+    review_interval_days: 'Prüfungsintervall',
+  }
+  return map[field] ?? field
+}
+
+function formatDate(isoString: string): string {
+  return new Date(isoString).toLocaleString('de-DE', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function ChangeLogTab({ controlId }: { controlId: string }) {
+  const { data: changes } = useQuery<ChangeLogEntry[]>({
+    queryKey: ['control-changelog', controlId],
+    queryFn: async () => {
+      try {
+        return await apiFetch<ChangeLogEntry[]>(`/secvitals/controls/${controlId}/changelog`)
+      } catch {
+        return []
+      }
+    },
+    enabled: !!controlId,
+    staleTime: 2 * 60 * 1000,
+  })
+
+  return (
+    <div className="space-y-3">
+      {(changes ?? []).map((entry) => (
+        <div key={entry.id} className="flex gap-3 text-sm">
+          <div className="w-7 h-7 rounded-full bg-surface2 flex items-center justify-center shrink-0 mt-0.5">
+            <History className="w-3.5 h-3.5 text-secondary" aria-hidden="true" />
+          </div>
+          <div>
+            <p className="text-primary">
+              <span className="font-medium">{entry.user_email ?? 'System'}</span>
+              {' hat '}
+              <span className="text-secondary">{fieldLabel(entry.field)}</span>
+              {' geändert'}
+            </p>
+            <p className="text-xs text-secondary mt-0.5">
+              {entry.old_value != null ? (
+                <><span className="line-through">{entry.old_value}</span>{' → '}</>
+              ) : (
+                'Gesetzt auf '
+              )}
+              <span className="font-medium text-primary">{entry.new_value}</span>
+            </p>
+            <p className="text-xs text-secondary mt-0.5">{formatDate(entry.changed_at)}</p>
+          </div>
+        </div>
+      ))}
+      {(!changes || changes.length === 0) && (
+        <p className="text-sm text-secondary py-4 text-center">Noch keine Änderungen aufgezeichnet</p>
+      )}
+    </div>
+  )
 }
 
 // ── NA dialog ────────────────────────────────────────────────────────────────
@@ -647,6 +726,19 @@ export default function ControlDetailPage() {
 
         {/* Comments */}
         <Comments entityType="control" entityId={controlId} />
+
+        {/* Change Log */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <History className="w-4 h-4" aria-hidden="true" />
+              Änderungen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChangeLogTab controlId={controlId} />
+          </CardContent>
+        </Card>
       </div>
 
       {/* NA Dialog */}

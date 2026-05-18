@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { formatDate, formatDateTime } from '../../../shared/utils/date'
 import { ArrowLeft, Save, Link2, Clock, CheckCircle2, AlertTriangle, FileDown, ShieldAlert } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
@@ -218,7 +219,7 @@ export default function IncidentDetailPage() {
       ]} />
       <PageHeader
         title={incident.title}
-        description={`Entdeckt: ${new Date(incident.discovered_at).toLocaleDateString('de-DE')}`}
+        description={`Entdeckt: ${formatDate(incident.discovered_at)}`}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate('/secvitals/incidents')}>
@@ -503,9 +504,9 @@ export default function IncidentDetailPage() {
 
             <Card>
               <CardContent className="pt-4 space-y-1 text-xs text-muted-foreground">
-                <p>Entdeckt: {new Date(incident.discovered_at).toLocaleDateString('de-DE')}</p>
-                {incident.resolved_at && <p>Gelöst: {new Date(incident.resolved_at).toLocaleDateString('de-DE')}</p>}
-                <p>Erstellt: {new Date(incident.created_at).toLocaleDateString('de-DE')}</p>
+                <p>Entdeckt: {formatDateTime(incident.discovered_at)}</p>
+                {incident.resolved_at && <p>Gelöst: {formatDateTime(incident.resolved_at)}</p>}
+                <p>Erstellt: {formatDate(incident.created_at)}</p>
               </CardContent>
             </Card>
           </div>

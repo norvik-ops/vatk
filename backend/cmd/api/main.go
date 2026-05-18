@@ -103,6 +103,13 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 		},
 	}))
 	e.Use(middleware.Recover())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:  []string{"*"},
+		AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowHeaders:  []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization, "X-Request-ID"},
+		ExposeHeaders: []string{"X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "X-Request-ID"},
+		MaxAge:        86400,
+	}))
 	e.Use(middleware.BodyLimit("10MB"))
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
 		Timeout:      30 * time.Second,

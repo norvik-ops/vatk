@@ -1,14 +1,15 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ScanLine } from 'lucide-react'
+import { ArrowLeft, ScanLine, Trash2 } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
 import { trackPage } from '../../../shared/hooks/useRecentPages'
+import { ConfirmDeleteDialog } from '../../../shared/components/ConfirmDeleteDialog'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
-import { useAsset, useTriggerScan } from '../hooks/useAssets'
+import { useAsset, useTriggerScan, useDeleteAsset } from '../hooks/useAssets'
 import { useFindings } from '../hooks/useFindings'
 import type { Asset, Finding } from '../types'
 import { cn } from '../../../lib/utils'
@@ -41,8 +42,10 @@ export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [scanTriggered, setScanTriggered] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const { data: asset, isLoading, error } = useAsset(id ?? '')
   const triggerScan = useTriggerScan(id ?? '')
+  const deleteAsset = useDeleteAsset()
   const { data: findingsResponse } = useFindings({ asset_id: id })
   const scanTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
@@ -60,6 +63,15 @@ export default function AssetDetailPage() {
     } catch {
       // error handled by isPending/isError states
     }
+  }
+
+  function handleDeleteConfirm() {
+    if (!id) return
+    deleteAsset.mutate(id, {
+      onSuccess: () => {
+        navigate('/secpulse/assets')
+      },
+    })
   }
 
   if (isLoading) {
@@ -108,9 +120,28 @@ export default function AssetDetailPage() {
               )}
               Trigger Scan
             </Button>
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Löschen
+            </Button>
           </div>
         }
       />
+
+      {asset && (
+        <ConfirmDeleteDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          resourceName={asset.name}
+          resourceType="Asset"
+          onConfirm={handleDeleteConfirm}
+          isPending={deleteAsset.isPending}
+        />
+      )}
 
       {triggerScan.isError && (
         <div className="px-6 pt-4">

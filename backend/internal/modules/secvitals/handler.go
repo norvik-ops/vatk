@@ -137,6 +137,20 @@ func (h *Handler) GetControlMappings(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{"mappings": mappings})
 }
 
+// GetControlChangelog handles GET /secvitals/controls/:id/changelog.
+// Returns the last 50 field-level change log entries for the given control.
+func (h *Handler) GetControlChangelog(c echo.Context) error {
+	entries, err := h.service.repo.ListControlChanges(c.Request().Context(), orgID(c), c.Param("id"))
+	if err != nil {
+		log.Error().Err(err).Msg("get control changelog")
+		return errResp(c, http.StatusInternalServerError, "failed to get control changelog", "CK_CHANGELOG_FAILED")
+	}
+	if entries == nil {
+		entries = []ChangeLogEntry{}
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{"changelog": entries})
+}
+
 // UpdateControl handles PATCH /api/v1/secvitals/controls/:id.
 // Accepts not_applicable, reason, and manual_status fields.
 func (h *Handler) UpdateControl(c echo.Context) error {
@@ -147,6 +161,10 @@ func (h *Handler) UpdateControl(c echo.Context) error {
 	if err := h.validate.Struct(in); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, map[string]string{"error": "Ungültige Eingabe", "code": "VALIDATION_ERROR"})
 	}
+
+	// Snapshot old values for changelog comparison.
+	oldCtrl, _ := h.service.GetControl(c.Request().Context(), orgID(c), c.Param("id"))
+
 	ctrl, err := h.service.UpdateControl(c.Request().Context(), orgID(c), c.Param("id"), in)
 	if err != nil {
 		if strings.Contains(err.Error(), "maturity_score must be between") {
@@ -155,6 +173,32 @@ func (h *Handler) UpdateControl(c echo.Context) error {
 		log.Error().Err(err).Msg("update control")
 		return errResp(c, http.StatusInternalServerError, "failed to update control", "CK_UPDATE_CONTROL_FAILED")
 	}
+
+	// Append changelog entries for each changed field.
+	if oldCtrl != nil {
+		uid := userID(c)
+		uemail, _ := c.Get("user_email").(string)
+		appendIfChanged := func(field, oldVal, newVal string) {
+			if oldVal != newVal {
+				h.service.repo.AppendControlChange(c.Request().Context(), orgID(c), ctrl.ID, uid, uemail, field, oldVal, newVal)
+			}
+		}
+		oldNA := "false"
+		newNA := "false"
+		if oldCtrl.NotApplicable {
+			oldNA = "true"
+		}
+		if ctrl.NotApplicable {
+			newNA = "true"
+		}
+		appendIfChanged("not_applicable", oldNA, newNA)
+		appendIfChanged("not_applicable_reason", oldCtrl.NotApplicableReason, ctrl.NotApplicableReason)
+		appendIfChanged("manual_status", oldCtrl.ManualStatus, ctrl.ManualStatus)
+		oldScore := strconv.Itoa(oldCtrl.MaturityScore)
+		newScore := strconv.Itoa(ctrl.MaturityScore)
+		appendIfChanged("maturity_score", oldScore, newScore)
+	}
+
 	auditlog.Log(c.Request().Context(), h.db, auditlog.Entry{
 		OrgID:        orgID(c),
 		UserID:       userID(c),

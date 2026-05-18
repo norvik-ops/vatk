@@ -52,6 +52,7 @@ import { useUpdateControl } from '../hooks/useControls'
 import { toast } from '../../../shared/hooks/useToast'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { exportAsRTF } from '../../../shared/utils/exportRtf'
 
 // ── DORA → ISO 27001 mapping info block ──────────────────────────────────────
 
@@ -867,6 +868,29 @@ export default function FrameworkDetailPage() {
                 CIS Controls v8 öffnen
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const sections = controls
+                  ? Array.from(
+                      controls.reduce((map, ctrl) => {
+                        const list = map.get(ctrl.domain) ?? []
+                        list.push(ctrl)
+                        map.set(ctrl.domain, list)
+                        return map
+                      }, new Map<string, typeof controls>()),
+                    ).map(([domain, domainControls]) => ({
+                      heading: domain,
+                      rows: domainControls.map((c) => [c.control_id, c.title, effectiveStatus(c)]),
+                    }))
+                  : []
+                exportAsRTF(framework?.name ?? 'Framework', sections)
+              }}
+            >
+              <FileDown className="w-4 h-4 mr-1" />
+              Word Export
+            </Button>
             <Button variant="outline" size="sm" onClick={() => downloadPDF(frameworkId, framework?.name)}>
               <FileDown className="w-4 h-4 mr-1" />
               PDF Export

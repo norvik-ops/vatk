@@ -1,11 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type Theme = 'dark' | 'light'
+export type Theme = 'dark' | 'light' | 'system'
 
 interface ThemeStore {
   theme: Theme
   toggle: () => void
+  setTheme: (theme: Theme) => void
   apply: () => void
 }
 
@@ -14,9 +15,16 @@ export const useThemeStore = create<ThemeStore>()(
     (set, get) => ({
       theme: 'dark',
       toggle: () => {
-        const next: Theme = get().theme === 'dark' ? 'light' : 'dark'
+        // Cycle: dark → light → system → dark
+        const cycle: Theme[] = ['dark', 'light', 'system']
+        const current = get().theme
+        const next = cycle[(cycle.indexOf(current) + 1) % cycle.length]
         set({ theme: next })
         applyTheme(next)
+      },
+      setTheme: (theme: Theme) => {
+        set({ theme })
+        applyTheme(theme)
       },
       apply: () => applyTheme(get().theme),
     }),
@@ -25,9 +33,9 @@ export const useThemeStore = create<ThemeStore>()(
 )
 
 function applyTheme(theme: Theme) {
-  if (theme === 'dark') {
-    document.documentElement.classList.add('dark')
-  } else {
-    document.documentElement.classList.remove('dark')
-  }
+  const root = document.documentElement
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  root.classList.toggle('dark', isDark)
 }

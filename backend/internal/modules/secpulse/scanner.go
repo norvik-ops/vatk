@@ -497,10 +497,133 @@ func ComputeRiskScore(f *Finding) {
 	f.RiskScore = &score
 }
 
-// UpdateEPSSScores is a placeholder for EPSS enrichment.
-// A real implementation would call the FIRST EPSS API and update cvss/epss fields.
+// epssAPIResponse is the parsed response from https://api.first.org/data/v1/epss.
+type epssAPIResponse struct {
+	Data []struct {
+		CVE        string `json:"cve"`
+		EPSS       string `json:"epss"`
+		Percentile string `json:"percentile"`
+	} `json:"data"`
+}
+
+// UpdateEPSSScores fetches EPSS scores from the FIRST.org API for all open findings
+// that have a CVE ID and updates epss_score + epss_percentile in the database.
+// Findings without a CVE are skipped. HTTP errors are logged and not fatal.
 func UpdateEPSSScores(ctx context.Context, db *pgxpool.Pool, orgID string) error {
-	log.Info().Str("org_id", orgID).
-		Msg("EPSS enrichment would call FIRST-EPSS API here")
+	// 1. Collect distinct CVE IDs for open findings in this org.
+	rows, err := db.Query(ctx, `
+		SELECT DISTINCT cve_id
+		FROM vb_findings
+		WHERE org_id = $1::uuid
+		  AND cve_id IS NOT NULL
+		  AND cve_id <> ''
+		  AND status NOT IN ('resolved', 'false_positive')
+	`, orgID)
+	if err != nil {
+		return fmt.Errorf("epss: query cve ids: %w", err)
+	}
+	defer rows.Close()
+
+	var cveIDs []string
+	for rows.Next() {
+		var cve string
+		if err := rows.Scan(&cve); err != nil {
+			continue
+		}
+		cveIDs = append(cveIDs, cve)
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("epss: scan cve ids: %w", err)
+	}
+	if len(cveIDs) == 0 {
+		log.Info().Str("org_id", orgID).Msg("epss: no CVE IDs found, skipping enrichment")
+		return nil
+	}
+
+	// 2. Process in batches of 100 (FIRST API limit).
+	const batchSize = 100
+	httpClient := &http.Client{Timeout: 30 * time.Second}
+
+	for i := 0; i < len(cveIDs); i += batchSize {
+		end := i + batchSize
+		if end > len(cveIDs) {
+			end = len(cveIDs)
+		}
+		batch := cveIDs[i:end]
+
+		cveParam := strings.Join(batch, ",")
+		apiURL := "https://api.first.org/data/v1/epss?cve=" + cveParam
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+		if err != nil {
+			log.Warn().Err(err).Msg("epss: build request failed, skipping batch")
+			continue
+		}
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			log.Warn().Err(err).Msg("epss: HTTP request failed, skipping batch")
+			continue
+		}
+
+		body, readErr := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if readErr != nil {
+			log.Warn().Err(readErr).Msg("epss: read response body failed, skipping batch")
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			log.Warn().
+				Int("status", resp.StatusCode).
+				Str("body", string(bytes.TrimSpace(body))).
+				Msg("epss: non-200 response, skipping batch")
+			continue
+		}
+
+		var apiResp epssAPIResponse
+		if err := json.Unmarshal(body, &apiResp); err != nil {
+			log.Warn().Err(err).Msg("epss: parse response failed, skipping batch")
+			continue
+		}
+
+		// 3. Update each CVE that returned data.
+		for _, entry := range apiResp.Data {
+			if entry.CVE == "" || entry.EPSS == "" {
+				continue
+			}
+
+			var epssScore, epssPercentile float64
+			if _, err := fmt.Sscanf(entry.EPSS, "%f", &epssScore); err != nil {
+				log.Warn().Str("cve", entry.CVE).Str("epss", entry.EPSS).Msg("epss: parse epss score failed")
+				continue
+			}
+			if _, err := fmt.Sscanf(entry.Percentile, "%f", &epssPercentile); err != nil {
+				log.Warn().Str("cve", entry.CVE).Str("percentile", entry.Percentile).Msg("epss: parse percentile failed")
+				continue
+			}
+
+			_, updateErr := db.Exec(ctx, `
+				UPDATE vb_findings
+				SET epss_score      = $1,
+				    epss_percentile = $2,
+				    updated_at      = NOW()
+				WHERE org_id = $3::uuid
+				  AND cve_id = $4
+				  AND status NOT IN ('resolved', 'false_positive')
+			`, epssScore, epssPercentile, orgID, entry.CVE)
+			if updateErr != nil {
+				log.Warn().Err(updateErr).Str("cve", entry.CVE).Msg("epss: update finding failed")
+			}
+		}
+
+		log.Info().
+			Str("org_id", orgID).
+			Int("batch_start", i).
+			Int("batch_size", len(batch)).
+			Int("results", len(apiResp.Data)).
+			Msg("epss: batch enriched")
+	}
+
 	return nil
 }

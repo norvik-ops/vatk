@@ -26,7 +26,7 @@ export function Toaster() {
 
   return (
     <RadixToast.Provider swipeDirection="right">
-      {toasts.map(({ id, message, variant }) => {
+      {toasts.map(({ id, message, variant }, i) => {
         const cfg = VARIANT_CONFIG[variant]
         const Icon = cfg.icon
         return (
@@ -38,11 +38,14 @@ export function Toaster() {
             role={variant === 'error' ? 'alert' : 'status'}
             aria-live={variant === 'error' ? 'assertive' : 'polite'}
             aria-atomic="true"
+            style={{ bottom: `${16 + i * 64}px` }}
             className={cn(
+              'fixed right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)]',
               'flex items-start gap-3 rounded-lg border px-4 py-3 shadow-lg',
+              'transition-all duration-200',
               'data-[state=open]:animate-in data-[state=closed]:animate-out',
               'data-[state=closed]:fade-out-80 data-[state=open]:fade-in-0',
-              'data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full',
+              'data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-bottom-full',
               'bg-surface text-primary text-sm',
               cfg.className,
             )}
@@ -62,7 +65,7 @@ export function Toaster() {
       })}
       {/* WCAG 4.1.3: Viewport is the live region anchor for screen readers */}
       <RadixToast.Viewport
-        className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-[360px] max-w-[calc(100vw-2rem)]"
+        className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-[360px] max-w-[calc(100vw-2rem)] pointer-events-none"
         aria-label="Benachrichtigungen"
       />
     </RadixToast.Provider>

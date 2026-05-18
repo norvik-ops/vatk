@@ -83,8 +83,9 @@ func registerRoutes(g *echo.Group, h *Handler) {
 	g.DELETE("/framework-mappings/:id", h.DeleteFrameworkMapping)
 
 	// Controls
-	// CRITICAL: /controls/:id/mappings must be registered BEFORE /controls/:id to avoid route conflict.
+	// CRITICAL: /controls/:id/mappings and /controls/:id/changelog must be registered BEFORE /controls/:id to avoid route conflict.
 	g.GET("/controls/:id/mappings", h.GetControlMappings)
+	g.GET("/controls/:id/changelog", h.GetControlChangelog)
 	g.PATCH("/controls/:id", h.UpdateControl)
 	g.PATCH("/controls/:id/soa", h.UpdateControlSoAMetadata)
 	g.POST("/controls/:id/evidence", h.AddEvidence)

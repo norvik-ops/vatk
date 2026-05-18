@@ -86,6 +86,17 @@ export function useSLADashboard() {
   })
 }
 
+export function useDeleteAsset() {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, string>({
+    mutationFn: (id) =>
+      apiFetch<void>(`/secpulse/assets/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['secpulse', 'assets'] })
+    },
+  })
+}
+
 export function useTriggerScan(assetId: string) {
   const queryClient = useQueryClient()
   return useMutation<void, Error, void>({

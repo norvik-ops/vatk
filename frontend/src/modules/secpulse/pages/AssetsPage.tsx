@@ -6,7 +6,8 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { InfoBanner } from '../../../shared/components/InfoBanner'
 import { Pagination } from '../../../shared/components/Pagination'
-import { SortableHeader } from '../../../shared/components/SortableHeader'
+import { ResponsiveTable } from '../../../shared/components/ResponsiveTable'
+import type { Column } from '../../../shared/components/ResponsiveTable'
 import { useSortableTable } from '../../../shared/hooks/useSortableTable'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
@@ -14,7 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../../components/ui/select'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { useAssets, useCreateAsset, useImportAssets } from '../hooks/useAssets'
 import type { Asset } from '../types'
 import type { CreateAssetInput, ImportAssetsResult } from '../hooks/useAssets'
@@ -59,6 +59,63 @@ const emptyForm: CreateAssetInput = {
   tags: [],
 }
 
+function ASSET_COLUMNS(t: (key: string) => string): Column<SortableAsset>[] {
+  return [
+    {
+      key: 'name',
+      label: t('secpulse.assetsPage.colName'),
+      mobileTitle: true,
+      render: (row) => <span className="font-medium">{row.name}</span>,
+    },
+    {
+      key: 'type',
+      label: t('secpulse.assetsPage.colType'),
+      render: (row) => <span>{assetTypeLabels[row.type]}</span>,
+    },
+    {
+      key: 'target',
+      label: t('secpulse.assetsPage.colTarget'),
+      mobileHide: true,
+      render: (row) => <span className="font-mono text-xs text-secondary">{row.target}</span>,
+    },
+    {
+      key: 'criticality',
+      label: t('secpulse.assetsPage.colCriticality'),
+      render: (row) => (
+        <Badge
+          variant={criticalityVariant[row.criticality]}
+          className={criticalityClass[row.criticality]}
+        >
+          {row.criticality}
+        </Badge>
+      ),
+    },
+    {
+      key: 'tags',
+      label: t('secpulse.assetsPage.colTags'),
+      mobileHide: true,
+      render: (row) => (
+        <div className="flex flex-wrap gap-1">
+          {row.tags.map((tag) => (
+            <Badge key={tag} variant="outline" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: 'created_at',
+      label: t('common.date'),
+      render: (row) => (
+        <span className="text-sm text-secondary">
+          {new Date(row.created_at).toLocaleDateString('de-DE')}
+        </span>
+      ),
+    },
+  ]
+}
+
 export default function AssetsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -68,7 +125,7 @@ export default function AssetsPage() {
     ...a,
     criticality_order: CRITICALITY_ORDER[a.criticality] ?? 0,
   }))
-  const { sorted: sortedAssets, sortKey, sortDir, toggleSort } = useSortableTable<SortableAsset>(
+  const { sorted: sortedAssets } = useSortableTable<SortableAsset>(
     assetsWithOrder, { key: 'name', dir: 'asc' },
   )
   const assets = rawAssets // keep for length check
@@ -182,65 +239,24 @@ export default function AssetsPage() {
         {!isLoading && !isError && assets && assets.length === 0 && (
           <EmptyState
             icon={Server}
-            title={t('secpulse.assetsPage.noAssets')}
-            description={t('secpulse.assetsPage.noAssetsDesc')}
+            title="Noch kein Asset angelegt"
+            description="Leg deinen ersten Server, Web-App oder Container an — dann startest du deinen ersten Scan"
             action={
               <Button onClick={handleOpen}>
                 <Plus className="w-4 h-4 mr-1" />
-                {t('secpulse.assetsPage.newAsset')}
+                Asset anlegen
               </Button>
             }
           />
         )}
 
         {!isLoading && !isError && assets && assets.length > 0 && (
-          <div className="rounded-md border border-border bg-surface overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <SortableHeader label={t('secpulse.assetsPage.colName')} sortKey="name" currentSortKey={sortKey} currentDir={sortDir} onSort={toggleSort} className="px-4 py-3 text-left text-sm font-medium text-secondary" />
-                  <SortableHeader label={t('secpulse.assetsPage.colType')} sortKey="type" currentSortKey={sortKey} currentDir={sortDir} onSort={toggleSort} className="px-4 py-3 text-left text-sm font-medium text-secondary" />
-                  <TableHead>{t('secpulse.assetsPage.colTarget')}</TableHead>
-                  <SortableHeader label={t('secpulse.assetsPage.colCriticality')} sortKey="criticality_order" currentSortKey={sortKey} currentDir={sortDir} onSort={toggleSort} className="px-4 py-3 text-left text-sm font-medium text-secondary" />
-                  <TableHead>{t('secpulse.assetsPage.colTags')}</TableHead>
-                  <SortableHeader label={t('common.date')} sortKey="created_at" currentSortKey={sortKey} currentDir={sortDir} onSort={toggleSort} className="px-4 py-3 text-left text-sm font-medium text-secondary" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedAssetsForRender.map((asset) => (
-                  <TableRow
-                    key={asset.id}
-                    className="cursor-pointer hover:bg-surface2"
-                    onClick={() => navigate(`/secpulse/assets/${asset.id}`)}
-                  >
-                    <TableCell className="font-medium">{asset.name}</TableCell>
-                    <TableCell>{assetTypeLabels[asset.type]}</TableCell>
-                    <TableCell className="font-mono text-xs text-secondary">{asset.target}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={criticalityVariant[asset.criticality]}
-                        className={criticalityClass[asset.criticality]}
-                      >
-                        {asset.criticality}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {asset.tags.map((tag) => (
-                          <Badge key={tag} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-secondary">
-                      {new Date(asset.created_at).toLocaleDateString('de-DE')}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <ResponsiveTable<SortableAsset>
+            keyField="id"
+            data={sortedAssetsForRender}
+            onRowClick={(asset) => navigate(`/secpulse/assets/${asset.id}`)}
+            columns={ASSET_COLUMNS(t)}
+          />
         )}
         <Pagination
           page={page}

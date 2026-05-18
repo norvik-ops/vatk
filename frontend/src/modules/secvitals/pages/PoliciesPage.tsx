@@ -266,9 +266,9 @@ export default function PoliciesPage() {
           </div>
         )}
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full rounded-lg" />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
         )}

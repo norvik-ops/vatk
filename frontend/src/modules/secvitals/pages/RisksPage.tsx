@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldAlert, Plus, List, BarChart2, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { ShieldAlert, Plus, List, BarChart2, ChevronsUpDown, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
@@ -14,9 +14,13 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { ExportButton } from '../../../shared/components/ExportButton'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
+import { BulkActionBar } from '../../../shared/components/BulkActionBar'
 import { useSortableTable } from '../../../shared/hooks/useSortableTable'
+import { toast } from '../../../shared/hooks/useToast'
 import { useRisks, useCreateRisk } from '../hooks/useRisks'
+import { apiFetch } from '../../../api/client'
 import RiskHeatmap from '../components/RiskHeatmap'
+import { Skeleton } from '../../../components/ui/skeleton'
 import type { Risk, CreateRiskInput } from '../types'
 
 const SCORE_COLOR = (score: number) => {
@@ -26,7 +30,17 @@ const SCORE_COLOR = (score: number) => {
   return 'bg-green-500/20 text-green-400 border-green-500/30'
 }
 
-function RiskCard({ risk, onClick }: { risk: Risk; onClick: () => void }) {
+function RiskCard({
+  risk,
+  onClick,
+  selected,
+  onToggleSelect,
+}: {
+  risk: Risk
+  onClick: () => void
+  selected: boolean
+  onToggleSelect: (id: string) => void
+}) {
   const { t } = useTranslation()
 
   const STATUS_LABELS: Record<Risk['status'], string> = {
@@ -44,12 +58,25 @@ function RiskCard({ risk, onClick }: { risk: Risk; onClick: () => void }) {
   }
 
   return (
-    <Card className="cursor-pointer hover:border-brand/50 transition-colors" onClick={onClick}>
+    <Card
+      className={`cursor-pointer hover:border-brand/50 transition-colors ${selected ? 'border-brand/60 bg-brand/5' : ''}`}
+      onClick={onClick}
+    >
       <CardContent className="pt-5 space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="font-medium text-sm">{risk.title}</p>
-            {risk.category && <p className="text-xs text-muted-foreground mt-0.5">{risk.category}</p>}
+          <div className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => onToggleSelect(risk.id)}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-0.5 rounded shrink-0"
+              aria-label={`Risiko "${risk.title}" auswählen`}
+            />
+            <div>
+              <p className="font-medium text-sm">{risk.title}</p>
+              {risk.category && <p className="text-xs text-muted-foreground mt-0.5">{risk.category}</p>}
+            </div>
           </div>
           <Badge className={SCORE_COLOR(risk.risk_score)}>Score {risk.risk_score}</Badge>
         </div>
@@ -89,8 +116,54 @@ export default function RisksPage() {
   const [form, setForm] = useState<CreateRiskInput>(emptyForm())
   const [view, setView] = useState<'list' | 'heatmap'>('list')
   const [page, setPage] = useState(1)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkStatusDialogOpen, setBulkStatusDialogOpen] = useState(false)
+  const [pendingBulkStatus, setPendingBulkStatus] = useState<Risk['status']>('open')
+  const [isApplyingBulk, setIsApplyingBulk] = useState(false)
   const { data: risks, isLoading, isError, pagination } = useRisks(page)
   const createRisk = useCreateRisk()
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  async function handleBulkStatusApply() {
+    if (!risks) return
+    setIsApplyingBulk(true)
+    const selectedRisks = risks.filter((r) => selected.has(r.id))
+    const results = await Promise.allSettled(
+      selectedRisks.map((r) =>
+        apiFetch<Risk>(`/secvitals/risks/${r.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            title: r.title,
+            description: r.description ?? '',
+            category: r.category ?? '',
+            likelihood: r.likelihood,
+            impact: r.impact,
+            owner: r.owner ?? '',
+            status: pendingBulkStatus,
+            treatment: r.treatment,
+            treatment_notes: r.treatment_notes ?? '',
+          }),
+        }),
+      ),
+    )
+    const failed = results.filter((res) => res.status === 'rejected').length
+    setIsApplyingBulk(false)
+    setSelected(new Set())
+    setBulkStatusDialogOpen(false)
+    if (failed === 0) {
+      toast('Status aktualisiert', 'success')
+    } else {
+      toast(`${failed} Risiken konnten nicht aktualisiert werden`, 'error')
+    }
+  }
 
   const { sorted: sortedRisks, sortKey, sortDir, toggleSort } = useSortableTable<Risk>(
     risks ?? [], { key: 'risk_score', dir: 'desc' },
@@ -192,8 +265,10 @@ export default function RisksPage() {
         )}
 
         {isLoading && (
-          <div className="flex items-center justify-center h-48">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
+            ))}
           </div>
         )}
         {isError && (
@@ -202,9 +277,9 @@ export default function RisksPage() {
         {!isLoading && !isError && risks?.length === 0 && (
           <EmptyState
             icon={ShieldAlert}
-            title={t('secvitals.risksPage.noRisks')}
-            description={t('secvitals.risksPage.noRisksDesc')}
-            action={<Button onClick={openDialog}><Plus className="w-4 h-4 mr-1" />{t('secvitals.risksPage.addRisk')}</Button>}
+            title="Noch keine Risiken erfasst"
+            description="Erfasse dein erstes Risiko und verknüpfe es mit Controls — das ist der Kern deines ISMS"
+            action={<Button onClick={openDialog}><Plus className="w-4 h-4 mr-1" />Risiko erfassen</Button>}
           />
         )}
         {!isLoading && !isError && risks && risks.length > 0 && view === 'heatmap' && (
@@ -216,7 +291,15 @@ export default function RisksPage() {
               <div className="space-y-3">
                 <h2 className="text-sm font-semibold text-red-400">{t('secvitals.risksPage.highRisk')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {high.map((r) => <RiskCard key={r.id} risk={r} onClick={() => navigate(`/secvitals/risks/${r.id}`)} />)}
+                  {high.map((r) => (
+                    <RiskCard
+                      key={r.id}
+                      risk={r}
+                      onClick={() => navigate(`/secvitals/risks/${r.id}`)}
+                      selected={selected.has(r.id)}
+                      onToggleSelect={toggleSelect}
+                    />
+                  ))}
                 </div>
               </div>
             )}
@@ -224,7 +307,15 @@ export default function RisksPage() {
               <div className="space-y-3">
                 <h2 className="text-sm font-semibold text-amber-400">{t('secvitals.risksPage.mediumRisk')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {medium.map((r) => <RiskCard key={r.id} risk={r} onClick={() => navigate(`/secvitals/risks/${r.id}`)} />)}
+                  {medium.map((r) => (
+                    <RiskCard
+                      key={r.id}
+                      risk={r}
+                      onClick={() => navigate(`/secvitals/risks/${r.id}`)}
+                      selected={selected.has(r.id)}
+                      onToggleSelect={toggleSelect}
+                    />
+                  ))}
                 </div>
               </div>
             )}
@@ -232,7 +323,15 @@ export default function RisksPage() {
               <div className="space-y-3">
                 <h2 className="text-sm font-semibold text-muted-foreground">{t('secvitals.risksPage.lowRisk')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {low.map((r) => <RiskCard key={r.id} risk={r} onClick={() => navigate(`/secvitals/risks/${r.id}`)} />)}
+                  {low.map((r) => (
+                    <RiskCard
+                      key={r.id}
+                      risk={r}
+                      onClick={() => navigate(`/secvitals/risks/${r.id}`)}
+                      selected={selected.has(r.id)}
+                      onToggleSelect={toggleSelect}
+                    />
+                  ))}
                 </div>
               </div>
             )}
@@ -244,6 +343,49 @@ export default function RisksPage() {
           onPageChange={setPage}
         />
       </div>
+
+      {/* Bulk status dialog */}
+      <Dialog open={bulkStatusDialogOpen} onOpenChange={setBulkStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Status setzen</DialogTitle>
+          </DialogHeader>
+          <div className="py-3 space-y-3">
+            <p className="text-sm text-secondary">
+              Neuen Status für {selected.size} ausgewählte{selected.size === 1 ? 's Risiko' : ' Risiken'} setzen:
+            </p>
+            <Select value={pendingBulkStatus} onValueChange={(v) => setPendingBulkStatus(v as Risk['status'])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">{t('secvitals.risksPage.statusOpen')}</SelectItem>
+                <SelectItem value="mitigated">{t('secvitals.risksPage.statusMitigated')}</SelectItem>
+                <SelectItem value="accepted">{t('secvitals.risksPage.statusAccepted')}</SelectItem>
+                <SelectItem value="closed">{t('secvitals.risksPage.statusClosed')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkStatusDialogOpen(false)}>Abbrechen</Button>
+            <Button onClick={() => { void handleBulkStatusApply() }} disabled={isApplyingBulk}>
+              {isApplyingBulk ? 'Wird gespeichert…' : 'Anwenden'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <BulkActionBar
+        selectedCount={selected.size}
+        onClearSelection={() => setSelected(new Set())}
+        actions={[
+          {
+            label: 'Status setzen',
+            icon: RefreshCw,
+            onClick: () => setBulkStatusDialogOpen(true),
+          },
+        ]}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">

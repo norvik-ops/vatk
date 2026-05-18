@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Zap, Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
 import { PageHeader } from '../shared/components/PageHeader'
+import { CopyButton } from '../shared/components/CopyButton'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -153,23 +154,28 @@ function WebhookDialog({ open, onClose, initial }: WebhookDialogProps) {
           {/* Secret */}
           <div className="space-y-1.5">
             <Label htmlFor="wh-secret">Secret (optional)</Label>
-            <div className="relative">
-              <Input
-                id="wh-secret"
-                type={showSecret ? 'text' : 'password'}
-                value={secret}
-                onChange={(e) => setSecret(e.target.value)}
-                placeholder={isEdit ? '(unverändert)' : 'HMAC-Signatur-Secret'}
-                className="pr-9"
-              />
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary hover:text-primary"
-                onClick={() => setShowSecret((s) => !s)}
-                aria-label={showSecret ? 'Secret verbergen' : 'Secret anzeigen'}
-              >
-                {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  id="wh-secret"
+                  type={showSecret ? 'text' : 'password'}
+                  value={secret}
+                  onChange={(e) => setSecret(e.target.value)}
+                  placeholder={isEdit ? '(unverändert)' : 'HMAC-Signatur-Secret'}
+                  className="pr-9"
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary hover:text-primary"
+                  onClick={() => setShowSecret((s) => !s)}
+                  aria-label={showSecret ? 'Secret verbergen' : 'Secret anzeigen'}
+                >
+                  {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {showSecret && secret && (
+                <CopyButton value={secret} className="shrink-0" />
+              )}
             </div>
           </div>
 
