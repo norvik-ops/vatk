@@ -5,9 +5,8 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.27-alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx-prod.conf /etc/nginx/conf.d/default.conf
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:80/ || exit 1
+# One-shot stage: copy built assets to the shared volume at /app/dist and exit.
+# The nginx reverse-proxy service serves them from the frontend_dist volume.
+FROM alpine:3.20
+COPY --from=builder /app/dist /dist
+CMD ["sh", "-c", "cp -r /dist/. /app/dist/ && echo 'frontend assets ready'"]

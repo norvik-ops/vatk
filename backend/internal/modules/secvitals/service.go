@@ -540,7 +540,7 @@ func (s *Service) UpdateControl(ctx context.Context, orgID, controlID string, in
 	if input.MaturityScore != nil && (*input.MaturityScore < 0 || *input.MaturityScore > 3) {
 		return nil, fmt.Errorf("maturity_score must be between 0 and 3")
 	}
-	if err := s.repo.UpdateControl(ctx, orgID, controlID, input.NotApplicable, input.Reason, input.ManualStatus, input.Owner, input.MaturityScore); err != nil {
+	if err := s.repo.UpdateControl(ctx, orgID, controlID, input.NotApplicable, input.Reason, input.ManualStatus, input.Owner, input.MaturityScore, input.DueDate); err != nil {
 		return nil, fmt.Errorf("update control: %w", err)
 	}
 	s.invalidateDashboardCache(ctx, orgID)
@@ -555,8 +555,65 @@ func (s *Service) UpdateControl(ctx context.Context, orgID, controlID string, in
 			"status": ctrl.Status,
 			"org_id": orgID,
 		})
+		// Non-blocking: check if this update pushed the framework past a milestone.
+		go s.checkFrameworkMilestone(ctx, orgID, ctrl.FrameworkID)
 	}
 	return ctrl, nil
+}
+
+// checkFrameworkMilestone computes the current readiness score for a framework
+// and sends a one-time in-app notification when it crosses 60 %, 80 %, or 100 %.
+// Deduplication key stored in user_notifications.module as "<frameworkID>:<threshold>".
+func (s *Service) checkFrameworkMilestone(ctx context.Context, orgID, frameworkID string) {
+	controls, err := s.repo.ListControls(ctx, orgID, frameworkID)
+	if err != nil || len(controls) == 0 {
+		return
+	}
+
+	var covered, partial, total int
+	for _, c := range controls {
+		status := resolveStatus(c)
+		if status == "not_applicable" {
+			continue
+		}
+		total++
+		switch status {
+		case "covered", "implemented":
+			covered++
+		case "partial", "in_progress":
+			partial++
+		}
+	}
+	score := readinessScore(covered, partial, total)
+
+	fw, err := s.repo.GetFramework(ctx, orgID, frameworkID)
+	if err != nil {
+		return
+	}
+
+	for _, threshold := range []int{60, 80, 100} {
+		if int(score) < threshold {
+			continue
+		}
+		dedupeKey := fmt.Sprintf("%s:%d", frameworkID, threshold)
+		var already int
+		_ = s.db.QueryRow(ctx,
+			`SELECT COUNT(*) FROM user_notifications
+			 WHERE org_id = $1::uuid
+			   AND type   = 'framework_milestone'
+			   AND module = $2`,
+			orgID, dedupeKey,
+		).Scan(&already)
+		if already > 0 {
+			continue
+		}
+		notify.Send(ctx, s.db, orgID,
+			fmt.Sprintf("%d %% Compliance-Meilenstein erreicht", threshold),
+			fmt.Sprintf("%s hat %d %% Umsetzungsgrad erreicht.", fw.Name, threshold),
+			"framework_milestone",
+			dedupeKey,
+		)
+	}
 }
 
 // filterTISAXByProtectionLevel filters controls based on protection level.

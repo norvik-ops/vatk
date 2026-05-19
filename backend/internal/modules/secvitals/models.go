@@ -40,6 +40,7 @@ type Control struct {
 	LastReviewedBy     string     `json:"last_reviewed_by"`
 	ReviewNote         string     `json:"review_note"`
 	IsReviewOverdue    bool       `json:"is_review_overdue"` // computed: next_review_due < NOW() AND next_review_due IS NOT NULL
+	DueDate            *time.Time `json:"due_date,omitempty"`
 }
 
 // ControlReview represents a single periodic review event for a control.
@@ -67,6 +68,7 @@ type UpdateControlInput struct {
 	ManualStatus  string `json:"manual_status" validate:"omitempty,oneof=in_progress implemented"`
 	MaturityScore *int   `json:"maturity_score" validate:"omitempty,min=0,max=3"`
 	Owner         string `json:"owner"          validate:"omitempty,max=200"`
+	DueDate       *string `json:"due_date"      validate:"omitempty,datetime=2006-01-02"`
 }
 
 // BulkUpdateControlsInput holds input for PATCH /secvitals/controls/bulk.

@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Download, FileText, ChevronRight, RefreshCw, Info,
   Circle, Clock, CheckCircle2, MinusCircle, Trash2, ListChecks, History,
-  Pencil, X, ShieldAlert,
+  Pencil, X, ShieldAlert, CalendarDays,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '../../../api/client'
@@ -32,7 +32,7 @@ import { Comments } from '../../../shared/components/Comments'
 import { EvidenceFileUpload } from '../components/EvidenceFileUpload'
 import { ControlReviewPanel } from '../components/ControlReviewPanel'
 import { EvidenceExpiryBadge } from '../components/EvidenceExpiryBadge'
-import type { Evidence, Control } from '../types'
+import type { Evidence, Control, UpdateControlInput } from '../types'
 import { maturityLabel, maturityColor } from '../utils/tisax'
 import { ControlMappingsBadge } from '../components/ControlMappingsBadge'
 import { useTranslation } from 'react-i18next'
@@ -348,6 +348,42 @@ export default function ControlDetailPage() {
   // Owner inline edit
   const [ownerEditing, setOwnerEditing] = useState(false)
   const [ownerDraft, setOwnerDraft] = useState('')
+
+  // Due date
+  const [dueDateDraft, setDueDateDraft] = useState<string>(control?.due_date ?? '')
+
+  useEffect(() => {
+    setDueDateDraft(control?.due_date ?? '')
+  }, [control?.due_date])
+
+  function dueDateStatus(): 'overdue' | 'soon' | 'ok' | 'none' {
+    if (!control?.due_date) return 'none'
+    const due = new Date(control.due_date)
+    const now = new Date()
+    const diffDays = (due.getTime() - now.getTime()) / 86_400_000
+    if (diffDays < 0) return 'overdue'
+    if (diffDays <= 7) return 'soon'
+    return 'ok'
+  }
+
+  const statusColors: Record<string, string> = {
+    overdue: 'text-[#ef4444]',
+    soon: 'text-[#f59e0b]',
+    ok: 'text-[#22c55e]',
+    none: 'text-secondary',
+  }
+
+  function saveDueDate() {
+    if (!control) return
+    updateControl.mutate({
+      controlId: control.id,
+      not_applicable: control.not_applicable,
+      reason: control.not_applicable_reason ?? '',
+      manual_status: (control.manual_status as UpdateControlInput['manual_status']) ?? '',
+      owner: control.owner,
+      due_date: dueDateDraft || null,
+    })
+  }
 
   function handleOwnerEditStart() {
     setOwnerDraft(control?.owner ?? '')
@@ -732,6 +768,30 @@ export default function ControlDetailPage() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Due date */}
+            <div className="flex items-center gap-3 py-2 border-t border-border">
+              <CalendarDays className="w-4 h-4 text-secondary shrink-0" aria-hidden="true" />
+              <span className="text-[12px] text-secondary w-28 shrink-0">Fälligkeitsdatum</span>
+              <div className="flex items-center gap-2 flex-1">
+                <input
+                  type="date"
+                  className="text-[12px] bg-surface border border-border rounded px-2 py-1 text-primary focus:outline-none focus:ring-1 focus:ring-brand"
+                  value={dueDateDraft}
+                  onChange={(e) => setDueDateDraft(e.target.value)}
+                  onBlur={saveDueDate}
+                />
+                {(() => {
+                  const s = dueDateStatus()
+                  if (s === 'none') return null
+                  return (
+                    <span className={`text-[11px] font-medium ${statusColors[s]}`}>
+                      {s === 'overdue' ? '● Überfällig' : s === 'soon' ? '● Fällig bald' : '● Fällig'}
+                    </span>
+                  )
+                })()}
+              </div>
             </div>
 
             <ControlMappingsBadge controlId={control.id} />

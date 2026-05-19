@@ -105,7 +105,11 @@ func (h *Handler) Register(c echo.Context) error {
 		})
 	}
 
-	resp, err := h.service.Register(c.Request().Context(), input)
+	deviceHint := c.Request().Header.Get("User-Agent")
+	if len(deviceHint) > 120 {
+		deviceHint = deviceHint[:120]
+	}
+	resp, err := h.service.Register(c.Request().Context(), input, deviceHint)
 	if err != nil {
 		if errors.Is(err, ErrWeakPassword) {
 			return c.JSON(http.StatusUnprocessableEntity, map[string]string{
@@ -153,7 +157,11 @@ func (h *Handler) Login(c echo.Context) error {
 		})
 	}
 
-	resp, err := h.service.Login(c.Request().Context(), body.Email, body.Password)
+	loginDeviceHint := c.Request().Header.Get("User-Agent")
+	if len(loginDeviceHint) > 120 {
+		loginDeviceHint = loginDeviceHint[:120]
+	}
+	resp, err := h.service.Login(c.Request().Context(), body.Email, body.Password, loginDeviceHint)
 	if err != nil {
 		log.Debug().Err(err).Str("email", body.Email).Msg("login failed")
 		// Record failure to enable lockout after repeated bad credentials.
@@ -299,7 +307,11 @@ func (h *Handler) OIDCCallback(c echo.Context) error {
 		})
 	}
 
-	resp, err := h.service.OIDCLogin(c.Request().Context(), h.cfg, input.Provider, input.Code, input.State)
+	oidcDeviceHint := c.Request().Header.Get("User-Agent")
+	if len(oidcDeviceHint) > 120 {
+		oidcDeviceHint = oidcDeviceHint[:120]
+	}
+	resp, err := h.service.OIDCLogin(c.Request().Context(), h.cfg, input.Provider, input.Code, input.State, oidcDeviceHint)
 	if err != nil {
 		if errors.Is(err, ErrCasdoorNotConfigured) {
 			return c.JSON(http.StatusNotImplemented, map[string]string{
@@ -345,7 +357,11 @@ func (h *Handler) SAMLCallback(c echo.Context) error {
 		})
 	}
 
-	resp, err := h.service.SAMLLogin(c.Request().Context(), h.cfg, input.SAMLResponse, input.RelayState)
+	samlDeviceHint := c.Request().Header.Get("User-Agent")
+	if len(samlDeviceHint) > 120 {
+		samlDeviceHint = samlDeviceHint[:120]
+	}
+	resp, err := h.service.SAMLLogin(c.Request().Context(), h.cfg, input.SAMLResponse, input.RelayState, samlDeviceHint)
 	if err != nil {
 		if errors.Is(err, ErrCasdoorNotConfigured) {
 			return c.JSON(http.StatusNotImplemented, map[string]string{

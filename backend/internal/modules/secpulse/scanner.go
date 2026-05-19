@@ -10,7 +10,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -21,6 +23,57 @@ import (
 
 // ErrNotConfigured is returned when a scanner is not configured in the environment.
 var ErrNotConfigured = errors.New("scanner not configured")
+
+// privateRanges holds the RFC-1918 CIDR blocks that are considered private.
+var privateRanges = []net.IPNet{
+	parseCIDR("10.0.0.0/8"),
+	parseCIDR("172.16.0.0/12"),
+	parseCIDR("192.168.0.0/16"),
+}
+
+// parseCIDR is a helper that panics on invalid CIDR — used only for compile-time
+// constants above.
+func parseCIDR(cidr string) net.IPNet {
+	_, network, err := net.ParseCIDR(cidr)
+	if err != nil {
+		panic("secpulse: invalid built-in CIDR " + cidr + ": " + err.Error())
+	}
+	return *network
+}
+
+// isPrivateOrLoopback returns true when target resolves to a loopback address,
+// an IPv6 link-local address, or an RFC-1918 private range.  It also catches
+// the string literals "localhost" and "::1" before any DNS resolution.
+// When VAKT_SCAN_ALLOW_PRIVATE=true the caller bypasses this check entirely.
+func isPrivateOrLoopback(target string) bool {
+	// Strip port if present (e.g. "192.168.1.1:8080" or "[::1]:443").
+	host := target
+	if h, _, err := net.SplitHostPort(target); err == nil {
+		host = h
+	}
+
+	// Fast-path: well-known names that net.ParseIP won't catch.
+	if strings.EqualFold(host, "localhost") || host == "::1" {
+		return true
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		// Not a bare IP — not a private literal, let the scanner handle DNS.
+		return false
+	}
+
+	if ip.IsLoopback() || ip.IsLinkLocalUnicast() {
+		return true
+	}
+
+	for _, network := range privateRanges {
+		if network.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
 
 // trivyOutput matches the top-level structure of trivy JSON output.
 type trivyOutput struct {
@@ -69,6 +122,20 @@ func RunTrivyScan(ctx context.Context, db *pgxpool.Pool, payload ScanPayload) er
 	target := payload.TargetURL
 	if target == "" {
 		target = payload.AssetName
+	}
+
+	// Reject argument-injection patterns in asset name targets.
+	if strings.HasPrefix(target, "-") || strings.ContainsAny(target, `/\`) {
+		return fmt.Errorf("trivy: invalid scan target %q", target)
+	}
+
+	// Block scans against private/loopback addresses to prevent SSRF-style
+	// internal infrastructure scanning unless the operator has explicitly
+	// opted in via VAKT_SCAN_ALLOW_PRIVATE=true.
+	if os.Getenv("VAKT_SCAN_ALLOW_PRIVATE") == "true" {
+		log.Info().Str("scan_id", payload.ScanID).Msg("trivy: VAKT_SCAN_ALLOW_PRIVATE=true — private/loopback targets permitted")
+	} else if isPrivateOrLoopback(target) {
+		return fmt.Errorf("scan target %q is in a private or loopback range — configure VAKT_SCAN_ALLOW_PRIVATE=true to allow internal scans", target)
 	}
 
 	args := []string{"image", "--format", "json", "--quiet", target}
@@ -162,6 +229,20 @@ func RunNucleiScan(ctx context.Context, db *pgxpool.Pool, payload ScanPayload) e
 	}
 	if target == "" {
 		target = payload.AssetName
+	}
+
+	// Reject argument-injection patterns in asset name targets.
+	if strings.HasPrefix(target, "-") || strings.ContainsAny(target, `/\`) {
+		return fmt.Errorf("nuclei: invalid scan target %q", target)
+	}
+
+	// Block scans against private/loopback addresses to prevent SSRF-style
+	// internal infrastructure scanning unless the operator has explicitly
+	// opted in via VAKT_SCAN_ALLOW_PRIVATE=true.
+	if os.Getenv("VAKT_SCAN_ALLOW_PRIVATE") == "true" {
+		log.Info().Str("scan_id", payload.ScanID).Msg("nuclei: VAKT_SCAN_ALLOW_PRIVATE=true — private/loopback targets permitted")
+	} else if isPrivateOrLoopback(target) {
+		return fmt.Errorf("scan target %q is in a private or loopback range — configure VAKT_SCAN_ALLOW_PRIVATE=true to allow internal scans", target)
 	}
 
 	out, runErr := exec.CommandContext(ctx, "nuclei",

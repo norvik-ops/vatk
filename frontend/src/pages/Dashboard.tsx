@@ -30,6 +30,7 @@ import type { RiskSummary, ActivityEntry } from '../hooks/useDashboard'
 import { useOnboardingStatus } from '../hooks/useOnboarding'
 import { OnboardingBanner, OnboardingWizard } from '../components/OnboardingWizard'
 import { GettingStartedChecklist } from '../shared/components/GettingStartedChecklist'
+import { useAuthStore } from '../shared/stores/auth'
 import { Skeleton } from '../components/ui/skeleton'
 import type { FrameworkScore } from '../hooks/useDashboard'
 import { useScoreHistory } from '../modules/secvitals/hooks/useScoreHistory'
@@ -635,10 +636,76 @@ function TodayWidget() {
 }
 
 // ---------------------------------------------------------------------------
+// My Tasks widget
+// ---------------------------------------------------------------------------
+
+interface MyTask {
+  id: string
+  title: string
+  type: 'control' | 'risk'
+  status: string
+  framework_id?: string
+}
+
+function MyTasksWidget() {
+  const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
+  const { data: tasks = [], isLoading } = useQuery<MyTask[]>({
+    queryKey: ['my-tasks'],
+    queryFn: () => apiFetch<MyTask[]>('/secvitals/my-tasks'),
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000,
+  })
+
+  return (
+    <section className="rounded-xl border border-border bg-surface p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <ListTodo className="w-4 h-4 text-brand" aria-hidden="true" />
+        <h2 className="text-[13px] font-semibold text-primary">Meine Aufgaben</h2>
+        {tasks.length > 0 && (
+          <span className="ml-auto text-[11px] font-bold text-brand">{tasks.length}</span>
+        )}
+      </div>
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-full" />
+          <Skeleton className="h-7 w-3/4" />
+        </div>
+      ) : tasks.length === 0 ? (
+        <p className="text-[12px] text-secondary">Keine Aufgaben zugewiesen.</p>
+      ) : (
+        <ol className="space-y-1.5">
+          {tasks.slice(0, 8).map((task) => (
+            <li key={task.id}>
+              <button
+                className="w-full flex items-center gap-2 text-left rounded-md px-2 py-1.5 hover:bg-border/50 transition-colors group"
+                onClick={() => {
+                  if (task.type === 'control' && task.framework_id) {
+                    navigate(`/secvitals/frameworks/${task.framework_id}/controls/${task.id}`)
+                  } else if (task.type === 'risk') {
+                    navigate(`/secvitals/risks/${task.id}`)
+                  }
+                }}
+              >
+                {task.type === 'control'
+                  ? <Shield className="w-3.5 h-3.5 shrink-0 text-brand" aria-hidden="true" />
+                  : <TriangleAlert className="w-3.5 h-3.5 shrink-0 text-[#f59e0b]" aria-hidden="true" />}
+                <span className="text-[12px] text-primary flex-1 truncate group-hover:text-brand">{task.title}</span>
+                <span className="text-[10px] text-secondary shrink-0 capitalize">{task.status || '—'}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Dashboard widget order — drag & drop persistence
 // ---------------------------------------------------------------------------
 
-const DEFAULT_WIDGET_ORDER = ['today', 'score_history', 'quick_wins', 'compliance_progress', 'frameworks', 'risks', 'activity', 'modules']
+const DEFAULT_WIDGET_ORDER = ['today', 'my_tasks', 'score_history', 'quick_wins', 'compliance_progress', 'frameworks', 'risks', 'activity', 'modules']
 
 function useDashboardOrder(defaultOrder: string[]) {
   const [order, setOrder] = useState<string[]>(() => {
@@ -1207,6 +1274,16 @@ export default function Dashboard() {
                     {dragHandle}
                     <div className={widgetOpacity}>
                       <TodayWidget />
+                    </div>
+                  </div>
+                )
+
+              case 'my_tasks':
+                return (
+                  <div key={widgetId} {...wrapperProps}>
+                    {dragHandle}
+                    <div className={widgetOpacity}>
+                      <MyTasksWidget />
                     </div>
                   </div>
                 )

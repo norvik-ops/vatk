@@ -12,7 +12,7 @@
 
 Vakt is a self-hosted, source-available security and compliance platform built for SMEs in the DACH region. It helps IT teams implement and document NIS2, ISO 27001, and BSI-Grundschutz requirements — without sending any data outside your own infrastructure.
 
-It is a free-to-self-host alternative to commercial tools like Vanta or Drata (~€10,000/year), licensed under the Elastic License 2.0. Deploy it with a single `docker compose up` command in under three minutes.
+It is a free-to-self-host alternative to commercial tools like Vanta or Drata (~€10,000/year), licensed under the Elastic License 2.0. Deploy it with a single `docker compose up` command — under 5 minutes on a typical server connection, under 3 minutes with cached images.
 
 ---
 

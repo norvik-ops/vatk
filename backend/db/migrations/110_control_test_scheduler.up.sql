@@ -11,12 +11,11 @@ ALTER TABLE ck_capas
 ALTER TABLE ck_controls
   ADD COLUMN IF NOT EXISTS test_interval_days  INT,
   ADD COLUMN IF NOT EXISTS last_tested_at      TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS next_test_due_at    TIMESTAMPTZ
-    GENERATED ALWAYS AS (
-      CASE WHEN test_interval_days IS NOT NULL AND last_tested_at IS NOT NULL
-        THEN last_tested_at + (test_interval_days || ' days')::interval
-      END
-    ) STORED;
+  ADD COLUMN IF NOT EXISTS next_test_due_at    TIMESTAMPTZ;
+
+-- next_test_due_at is computed by the application as:
+--   last_tested_at + test_interval_days * INTERVAL '1 day'
+-- (GENERATED ALWAYS AS is not possible because timestamptz + interval is STABLE, not IMMUTABLE)
 
 CREATE INDEX IF NOT EXISTS idx_ck_controls_next_test
   ON ck_controls(org_id, next_test_due_at)

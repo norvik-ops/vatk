@@ -94,7 +94,9 @@ func NewService(db *pgxpool.Pool, redisClient *redis.Client, key paseto.V4Symmet
 }
 
 // Register creates a new user account and personal organisation, then issues tokens.
-func (s *Service) Register(ctx context.Context, input RegisterInput) (*AuthResponse, error) {
+// deviceHint is the caller's User-Agent header (truncated to 120 chars) used for
+// per-device session tracking; pass "" when not available.
+func (s *Service) Register(ctx context.Context, input RegisterInput, deviceHint string) (*AuthResponse, error) {
 	// Enforce password complexity before doing any DB work.
 	if err := validatePasswordStrength(input.Password); err != nil {
 		return nil, err
@@ -176,11 +178,12 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (*AuthRespo
 	}
 
 	roles := []string{"Admin"}
-	return s.issueTokenPair(ctx, userID, orgID, roles)
+	return s.issueTokenPair(ctx, userID, orgID, roles, deviceHint)
 }
 
 // Login validates credentials and returns tokens on success.
-func (s *Service) Login(ctx context.Context, email, password string) (*AuthResponse, error) {
+// deviceHint is the caller's User-Agent header (truncated to 120 chars).
+func (s *Service) Login(ctx context.Context, email, password, deviceHint string) (*AuthResponse, error) {
 	var userID, passwordHash string
 	err := s.db.QueryRow(ctx, `
 		SELECT id::text, password_hash
@@ -219,7 +222,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (*AuthRespo
 		log.Warn().Err(updateErr).Str("user_id", userID).Msg("failed to update last_login_at")
 	}
 
-	return s.issueTokenPair(ctx, userID, orgID, []string{roleName})
+	return s.issueTokenPair(ctx, userID, orgID, []string{roleName}, deviceHint)
 }
 
 // Refresh validates the given refresh token, rotates it, and returns a new token pair.
@@ -236,12 +239,21 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 		return nil, fmt.Errorf("corrupt refresh token payload: %w", err)
 	}
 
+	// Look up device hint from the session row so it carries forward to the new token.
+	oldHash := sha256Hex(refreshToken)
+	var deviceHint string
+	_ = s.db.QueryRow(ctx,
+		`SELECT device_hint FROM refresh_sessions WHERE token_hash = $1`, oldHash,
+	).Scan(&deviceHint)
+
 	// Rotate: delete old token before issuing new one.
 	if err := s.redis.Del(ctx, redisKey).Err(); err != nil {
 		log.Warn().Err(err).Msg("failed to delete old refresh token")
 	}
+	// Remove old session row; the new one will be inserted by issueTokenPair.
+	_, _ = s.db.Exec(ctx, `DELETE FROM refresh_sessions WHERE token_hash = $1`, oldHash)
 
-	return s.issueTokenPair(ctx, payload.UserID, payload.OrgID, payload.Roles)
+	return s.issueTokenPair(ctx, payload.UserID, payload.OrgID, payload.Roles, deviceHint)
 }
 
 // pwVersionKey returns the Redis key used to track a user's password version.
@@ -260,9 +272,16 @@ func (s *Service) currentPwVersion(ctx context.Context, userID string) int64 {
 	return val
 }
 
-// issueTokenPair generates an access + refresh token pair and stores the
-// refresh token in Redis.
-func (s *Service) issueTokenPair(ctx context.Context, userID, orgID string, roles []string) (*AuthResponse, error) {
+// sha256Hex returns the hex-encoded SHA-256 hash of s.
+func sha256Hex(s string) string {
+	h := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(h[:])
+}
+
+// issueTokenPair generates an access + refresh token pair, stores the refresh
+// token in Redis, and records the session in refresh_sessions for per-device
+// revocation. deviceHint should be the User-Agent header truncated to 120 chars.
+func (s *Service) issueTokenPair(ctx context.Context, userID, orgID string, roles []string, deviceHint string) (*AuthResponse, error) {
 	pwVersion := s.currentPwVersion(ctx, userID)
 	claims := Claims{UserID: userID, OrgID: orgID, Roles: roles, PwVersion: pwVersion}
 
@@ -285,6 +304,22 @@ func (s *Service) issueTokenPair(ctx context.Context, userID, orgID string, role
 	redisKey := refreshRedisKey(refreshToken)
 	if err := s.redis.Set(ctx, redisKey, payloadJSON, RefreshTokenTTL).Err(); err != nil {
 		return nil, fmt.Errorf("store refresh token: %w", err)
+	}
+
+	// Persist session row for per-device listing and revocation.
+	tokenHash := sha256Hex(refreshToken)
+	expiresAt := time.Now().Add(RefreshTokenTTL)
+	if len(deviceHint) > 120 {
+		deviceHint = deviceHint[:120]
+	}
+	_, dbErr := s.db.Exec(ctx, `
+		INSERT INTO refresh_sessions (user_id, org_id, token_hash, device_hint, expires_at)
+		VALUES ($1::uuid, $2::uuid, $3, $4, $5)
+		ON CONFLICT (token_hash) DO NOTHING`,
+		userID, orgID, tokenHash, deviceHint, expiresAt)
+	if dbErr != nil {
+		// Non-fatal: Redis is the source of truth for token validity.
+		log.Warn().Err(dbErr).Str("user_id", userID).Msg("issueTokenPair: failed to persist refresh session")
 	}
 
 	return &AuthResponse{

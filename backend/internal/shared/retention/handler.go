@@ -81,6 +81,9 @@ func (h *Handler) UpdateConfig(c echo.Context) error {
 	if in.DigestEnabled != nil {
 		current.DigestEnabled = *in.DigestEnabled
 	}
+	if in.DigestDay != nil {
+		current.DigestDay = *in.DigestDay
+	}
 	if in.DigestHour != nil {
 		current.DigestHour = *in.DigestHour
 	}

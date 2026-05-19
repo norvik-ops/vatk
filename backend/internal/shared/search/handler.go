@@ -47,8 +47,11 @@ func (h *Handler) Search(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "query too long"})
 	}
 
-	// Sanitise: strip literal % so the caller cannot manipulate the LIKE pattern.
-	safe := strings.ReplaceAll(q, "%", "")
+	// Escape SQL LIKE wildcards to prevent expensive full-table scans and
+	// unintended pattern matching. Escape \ first so it is not double-escaped.
+	safe := strings.ReplaceAll(q, `\`, `\\`)
+	safe = strings.ReplaceAll(safe, `%`, `\%`)
+	safe = strings.ReplaceAll(safe, `_`, `\_`)
 	pattern := "%" + strings.ToLower(safe) + "%"
 
 	ctx := c.Request().Context()
@@ -140,7 +143,7 @@ func searchControls(ctx context.Context, db *pgxpool.Pool, orgID, pattern string
 		       c.framework_id::text
 		FROM ck_controls c
 		WHERE c.org_id = $1::uuid
-		  AND (lower(c.title) LIKE $2 OR lower(c.control_id) LIKE $2 OR lower(COALESCE(c.description,'')) LIKE $2)
+		  AND (lower(c.title) LIKE $2 ESCAPE '\' OR lower(c.control_id) LIKE $2 ESCAPE '\' OR lower(COALESCE(c.description,'')) LIKE $2 ESCAPE '\')
 		LIMIT $3`,
 		orgID, pattern, limit)
 	if err != nil {
@@ -163,7 +166,7 @@ func searchControls(ctx context.Context, db *pgxpool.Pool, orgID, pattern string
 
 func searchRisks(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, limit int) []SearchResult {
 	rows, err := db.Query(ctx,
-		`SELECT id::text, title, COALESCE(status,'') FROM ck_risks WHERE org_id=$1::uuid AND lower(title) LIKE $2 LIMIT $3`,
+		`SELECT id::text, title, COALESCE(status,'') FROM ck_risks WHERE org_id=$1::uuid AND lower(title) LIKE $2 ESCAPE '\' LIMIT $3`,
 		orgID, pattern, limit)
 	if err != nil {
 		return nil
@@ -184,7 +187,7 @@ func searchRisks(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, l
 
 func searchPolicies(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, limit int) []SearchResult {
 	rows, err := db.Query(ctx,
-		`SELECT id::text, title, COALESCE(status,'') FROM ck_policies WHERE org_id=$1::uuid AND lower(title) LIKE $2 LIMIT $3`,
+		`SELECT id::text, title, COALESCE(status,'') FROM ck_policies WHERE org_id=$1::uuid AND lower(title) LIKE $2 ESCAPE '\' LIMIT $3`,
 		orgID, pattern, limit)
 	if err != nil {
 		return nil
@@ -205,7 +208,7 @@ func searchPolicies(ctx context.Context, db *pgxpool.Pool, orgID, pattern string
 
 func searchIncidents(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, limit int) []SearchResult {
 	rows, err := db.Query(ctx,
-		`SELECT id::text, title, COALESCE(severity,'') FROM ck_incidents WHERE org_id=$1::uuid AND lower(title) LIKE $2 LIMIT $3`,
+		`SELECT id::text, title, COALESCE(severity,'') FROM ck_incidents WHERE org_id=$1::uuid AND lower(title) LIKE $2 ESCAPE '\' LIMIT $3`,
 		orgID, pattern, limit)
 	if err != nil {
 		return nil
@@ -226,7 +229,7 @@ func searchIncidents(ctx context.Context, db *pgxpool.Pool, orgID, pattern strin
 
 func searchCAPAs(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, limit int) []SearchResult {
 	rows, err := db.Query(ctx,
-		`SELECT id::text, title, COALESCE(status,'') FROM ck_capas WHERE org_id=$1::uuid AND lower(title) LIKE $2 LIMIT $3`,
+		`SELECT id::text, title, COALESCE(status,'') FROM ck_capas WHERE org_id=$1::uuid AND lower(title) LIKE $2 ESCAPE '\' LIMIT $3`,
 		orgID, pattern, limit)
 	if err != nil {
 		return nil
@@ -247,7 +250,7 @@ func searchCAPAs(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, l
 
 func searchAssets(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, limit int) []SearchResult {
 	rows, err := db.Query(ctx,
-		`SELECT id::text, name FROM vb_assets WHERE org_id=$1::uuid AND lower(name) LIKE $2 LIMIT $3`,
+		`SELECT id::text, name FROM vb_assets WHERE org_id=$1::uuid AND lower(name) LIKE $2 ESCAPE '\' LIMIT $3`,
 		orgID, pattern, limit)
 	if err != nil {
 		return nil
@@ -269,7 +272,7 @@ func searchAssets(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, 
 
 func searchFindings(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, limit int) []SearchResult {
 	rows, err := db.Query(ctx,
-		`SELECT id::text, title FROM vb_findings WHERE org_id=$1::uuid AND lower(title) LIKE $2 LIMIT $3`,
+		`SELECT id::text, title FROM vb_findings WHERE org_id=$1::uuid AND lower(title) LIKE $2 ESCAPE '\' LIMIT $3`,
 		orgID, pattern, limit)
 	if err != nil {
 		return nil
@@ -291,7 +294,7 @@ func searchFindings(ctx context.Context, db *pgxpool.Pool, orgID, pattern string
 
 func searchDSRs(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, limit int) []SearchResult {
 	rows, err := db.Query(ctx,
-		`SELECT id::text, requester_name FROM po_dsr WHERE org_id=$1::uuid AND lower(requester_name) LIKE $2 LIMIT $3`,
+		`SELECT id::text, requester_name FROM po_dsr WHERE org_id=$1::uuid AND lower(requester_name) LIKE $2 ESCAPE '\' LIMIT $3`,
 		orgID, pattern, limit)
 	if err != nil {
 		return nil
@@ -313,7 +316,7 @@ func searchDSRs(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, li
 
 func searchBreaches(ctx context.Context, db *pgxpool.Pool, orgID, pattern string, limit int) []SearchResult {
 	rows, err := db.Query(ctx,
-		`SELECT id::text, title FROM po_breaches WHERE org_id=$1::uuid AND lower(title) LIKE $2 LIMIT $3`,
+		`SELECT id::text, title FROM po_breaches WHERE org_id=$1::uuid AND lower(title) LIKE $2 ESCAPE '\' LIMIT $3`,
 		orgID, pattern, limit)
 	if err != nil {
 		return nil

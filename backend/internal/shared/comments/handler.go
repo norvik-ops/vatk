@@ -6,6 +6,8 @@ package comments
 import (
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -142,6 +144,56 @@ func (h *Handler) CreateComment(c echo.Context) error {
 		"comment_added",
 		module,
 	)
+
+	// Parse @mentions and send targeted notifications.
+	mentionRe := regexp.MustCompile(`@(\S+)`)
+	matches := mentionRe.FindAllStringSubmatch(in.Content, -1)
+	seen := make(map[string]struct{})
+	trailingPunct := strings.NewReplacer(".", "", ",", "", "!", "", "?", "")
+	for _, m := range matches {
+		fragment := trailingPunct.Replace(m[1])
+		if fragment == "" {
+			continue
+		}
+		rows, queryErr := h.db.Query(
+			c.Request().Context(),
+			`SELECT u.id::text, u.display_name
+			 FROM org_members om
+			 JOIN users u ON u.id = om.user_id
+			 WHERE om.org_id = $1::uuid
+			   AND u.is_active = true
+			   AND u.display_name ILIKE $2 || '%'
+			 LIMIT 10`,
+			orgID, fragment,
+		)
+		if queryErr != nil {
+			log.Error().Err(queryErr).Str("org_id", orgID).Msg("mention lookup failed")
+			continue
+		}
+		func() {
+			defer rows.Close()
+			for rows.Next() {
+				var uid, displayName string
+				if scanErr := rows.Scan(&uid, &displayName); scanErr != nil {
+					continue
+				}
+				if _, alreadySent := seen[uid]; alreadySent {
+					continue
+				}
+				seen[uid] = struct{}{}
+				body := cmt.AuthorName + " hat Sie in einem Kommentar erwähnt"
+				notify.Send(
+					c.Request().Context(),
+					h.db,
+					orgID,
+					"Sie wurden erwähnt",
+					body,
+					"mention",
+					module,
+				)
+			}
+		}()
+	}
 
 	return c.JSON(http.StatusCreated, cmt)
 }

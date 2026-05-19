@@ -39,7 +39,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: ["/migrate"]
+    entrypoint: ["/migrate"]
+    user: "65532:65532"
     env_file: .env
     depends_on:
       postgres:
@@ -51,6 +52,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    user: "65532:65532"
     env_file: .env
     restart: unless-stopped
     depends_on:
@@ -61,7 +63,7 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "/bin/busybox", "wget", "-qO-", "http://localhost:8080/health/ready"]
+      test: ["CMD", "/healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -73,11 +75,12 @@ services:
           cpus: '1.0'
 
   worker:
-    image: ghcr.io/matharnica/vakt-api:latest  # same binary, different entrypoint
+    image: ghcr.io/matharnica/vakt-api:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: ["/worker"]
+    entrypoint: ["/worker"]
+    user: "65532:65532"
     env_file: .env
     restart: unless-stopped
     depends_on:
@@ -86,7 +89,7 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "/bin/busybox", "wget", "-qO-", "http://localhost:9090/health"]
+      test: ["CMD", "/healthcheck", "http://localhost:9090/health"]
       interval: 30s
       timeout: 10s
       retries: 3

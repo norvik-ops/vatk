@@ -92,7 +92,7 @@ func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 	mux.HandleFunc(taskGitHubCISync, handleGitHubCISync(cfg, pool))
 
 	// ── SecPulse EPSS enrichment (daily) ─────────────────────────────────────
-	mux.HandleFunc(secpulse.TaskEPSSEnrich, handleEPSSEnrich(pool))
+	mux.HandleFunc(secpulse.TaskEPSSEnrich, handleEPSSEnrich(cfg, pool))
 
 	// ── SecPulse report generation ────────────────────────────────────────────
 	mux.HandleFunc(secpulse.TaskGenerateReport, handleGenerateReport(cfg, pool))
@@ -1402,8 +1402,9 @@ func buildScheduler(cfg *config.Config) *asynq.Scheduler {
 		log.Error().Err(err).Msg("failed to register retention cron")
 	}
 
-	// Every Monday at 08:00 UTC: send weekly security digest to org admins.
-	if _, err := scheduler.Register("0 8 * * 1",
+	// Hourly: send weekly digest to orgs whose configured weekday+hour matches now.
+	// Each org independently sets its preferred day (0=Sun…6=Sat) and hour (UTC).
+	if _, err := scheduler.Register("0 * * * *",
 		emaildigest.NewWeeklyDigestTask(),
 	); err != nil {
 		log.Error().Err(err).Msg("failed to register digest cron")
@@ -1599,8 +1600,16 @@ func handleQueueHealthCheck(cfg *config.Config) asynq.HandlerFunc {
 // handleEPSSEnrich enriches all open findings across all organisations with
 // EPSS scores fetched from the FIRST.org API. Errors for individual orgs are
 // logged but do not abort processing of remaining orgs.
-func handleEPSSEnrich(pool *pgxpool.Pool) asynq.HandlerFunc {
+// Enrichment is opt-in via VAKT_EPSS_ENABLED=true because it sends CVE IDs to
+// the external api.first.org service, which contradicts the self-hosted
+// data-privacy promise.
+func handleEPSSEnrich(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 	return func(ctx context.Context, _ *asynq.Task) error {
+		if cfg == nil || !cfg.EPSSEnabled {
+			log.Info().Msg("epss_enrich: skipped — set VAKT_EPSS_ENABLED=true to enable (sends CVE IDs to api.first.org)")
+			return nil
+		}
+
 		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations WHERE is_deleted = false`)
 		if err != nil {
 			return fmt.Errorf("epss_enrich: list orgs: %w", err)
@@ -1683,6 +1692,11 @@ func main() {
 		logger.Fatal().Err(err).Msg("failed to connect to database")
 	}
 	defer pool.Close()
+
+	// Log EPSS opt-in status so operators know whether external enrichment is active.
+	if cfg == nil || !cfg.EPSSEnabled {
+		log.Info().Msg("EPSS enrichment disabled — set VAKT_EPSS_ENABLED=true to enable (sends CVE IDs to api.first.org)")
+	}
 
 	srv, mux := buildServer(pool)
 	scheduler := buildScheduler(cfg)

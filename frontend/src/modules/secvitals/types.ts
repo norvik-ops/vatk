@@ -48,6 +48,8 @@ export interface Control {
   last_reviewed_by?: string
   review_note?: string
   is_review_overdue?: boolean
+  due_date?: string | null // ISO date "2026-01-31"
+  manual_status?: '' | 'in_progress' | 'implemented'
 }
 
 export interface UpdateControlInput {
@@ -56,6 +58,7 @@ export interface UpdateControlInput {
   manual_status: '' | 'in_progress' | 'implemented'
   maturity_score?: number
   owner?: string
+  due_date?: string | null
 }
 
 // --- TISAX types (Story 28.1 + 28.3) ---

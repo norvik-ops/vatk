@@ -58,7 +58,8 @@ type casdoorSAMLResponse struct {
 // OIDCLogin exchanges the provider code for a Paseto token pair via Casdoor.
 // When CasdoorURL is not configured the call returns ErrCasdoorNotConfigured
 // so the frontend can display a proper error state.
-func (s *Service) OIDCLogin(ctx context.Context, cfg *config.Config, provider, code, state string) (*AuthResponse, error) {
+// deviceHint is the caller's User-Agent header (truncated to 120 chars).
+func (s *Service) OIDCLogin(ctx context.Context, cfg *config.Config, provider, code, state, deviceHint string) (*AuthResponse, error) {
 	if cfg.CasdoorURL == "" {
 		return nil, ErrCasdoorNotConfigured
 	}
@@ -145,11 +146,12 @@ func (s *Service) OIDCLogin(ctx context.Context, cfg *config.Config, provider, c
 		return nil, fmt.Errorf("OIDC: provision user: %w", err)
 	}
 
-	return s.issueTokenPair(ctx, userID, orgID, roles)
+	return s.issueTokenPair(ctx, userID, orgID, roles, deviceHint)
 }
 
 // SAMLLogin processes a SAML assertion consumer response proxied via Casdoor.
-func (s *Service) SAMLLogin(ctx context.Context, cfg *config.Config, samlResponse, relayState string) (*AuthResponse, error) {
+// deviceHint is the caller's User-Agent header (truncated to 120 chars).
+func (s *Service) SAMLLogin(ctx context.Context, cfg *config.Config, samlResponse, relayState, deviceHint string) (*AuthResponse, error) {
 	if cfg.CasdoorURL == "" {
 		return nil, ErrCasdoorNotConfigured
 	}
@@ -201,7 +203,7 @@ func (s *Service) SAMLLogin(ctx context.Context, cfg *config.Config, samlRespons
 		return nil, fmt.Errorf("SAML: provision user: %w", err)
 	}
 
-	return s.issueTokenPair(ctx, userID, orgID, roles)
+	return s.issueTokenPair(ctx, userID, orgID, roles, deviceHint)
 }
 
 // provisionOIDCUser looks up or creates a user based on their OIDC subject.

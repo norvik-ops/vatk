@@ -24,7 +24,7 @@ func GetConfig(ctx context.Context, db *pgxpool.Pool, orgID string) (*RetentionC
 		SELECT org_id::text,
 		       audit_log_days, findings_resolved_days,
 		       notifications_days, scan_history_days,
-		       digest_enabled, digest_hour, updated_at
+		       digest_enabled, digest_day, digest_hour, updated_at
 		FROM   retention_config
 		WHERE  org_id = $1::uuid`,
 		orgID,
@@ -38,6 +38,7 @@ func GetConfig(ctx context.Context, db *pgxpool.Pool, orgID string) (*RetentionC
 		&cfg.NotificationsDays,
 		&cfg.ScanHistoryDays,
 		&cfg.DigestEnabled,
+		&cfg.DigestDay,
 		&cfg.DigestHour,
 		&cfg.UpdatedAt,
 	)
@@ -50,6 +51,7 @@ func GetConfig(ctx context.Context, db *pgxpool.Pool, orgID string) (*RetentionC
 			NotificationsDays:    90,
 			ScanHistoryDays:      365,
 			DigestEnabled:        false,
+			DigestDay:            1,
 			DigestHour:           8,
 		}, nil
 	}
@@ -62,26 +64,28 @@ func UpsertConfig(ctx context.Context, db *pgxpool.Pool, orgID string, cfg Reten
 		INSERT INTO retention_config
 		    (org_id, audit_log_days, findings_resolved_days,
 		     notifications_days, scan_history_days,
-		     digest_enabled, digest_hour, updated_at)
-		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, now())
+		     digest_enabled, digest_day, digest_hour, updated_at)
+		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, now())
 		ON CONFLICT (org_id) DO UPDATE SET
 		    audit_log_days         = EXCLUDED.audit_log_days,
 		    findings_resolved_days = EXCLUDED.findings_resolved_days,
 		    notifications_days     = EXCLUDED.notifications_days,
 		    scan_history_days      = EXCLUDED.scan_history_days,
 		    digest_enabled         = EXCLUDED.digest_enabled,
+		    digest_day             = EXCLUDED.digest_day,
 		    digest_hour            = EXCLUDED.digest_hour,
 		    updated_at             = now()
 		RETURNING org_id::text,
 		          audit_log_days, findings_resolved_days,
 		          notifications_days, scan_history_days,
-		          digest_enabled, digest_hour, updated_at`,
+		          digest_enabled, digest_day, digest_hour, updated_at`,
 		orgID,
 		cfg.AuditLogDays,
 		cfg.FindingsResolvedDays,
 		cfg.NotificationsDays,
 		cfg.ScanHistoryDays,
 		cfg.DigestEnabled,
+		cfg.DigestDay,
 		cfg.DigestHour,
 	)
 
@@ -93,6 +97,7 @@ func UpsertConfig(ctx context.Context, db *pgxpool.Pool, orgID string, cfg Reten
 		&out.NotificationsDays,
 		&out.ScanHistoryDays,
 		&out.DigestEnabled,
+		&out.DigestDay,
 		&out.DigestHour,
 		&out.UpdatedAt,
 	); err != nil {

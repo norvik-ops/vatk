@@ -66,6 +66,11 @@ type Config struct {
 	// MetricsEnabled controls whether the /metrics endpoint is registered.
 	// Set VAKT_METRICS_ENABLED=true to expose Prometheus metrics (still IP-allowlisted).
 	MetricsEnabled bool
+	// EPSSEnabled controls whether findings are enriched with EPSS scores from
+	// api.first.org. Disabled by default because enrichment sends CVE IDs to an
+	// external third-party service, which contradicts the self-hosted data-privacy
+	// promise. Set VAKT_EPSS_ENABLED=true to opt in.
+	EPSSEnabled bool
 }
 
 // IsModuleEnabled reports whether the named module (e.g. "secpulse") appears in
@@ -126,6 +131,7 @@ func Load() (*Config, error) {
 		PromoteURL:     getEnv("VAKT_PROMOTE_URL", "http://host.docker.internal:9099/promote"),
 		PromoteSecret:  getEnv("VAKT_PROMOTE_SECRET", ""),
 		MetricsEnabled: getEnv("VAKT_METRICS_ENABLED", "false") == "true",
+		EPSSEnabled:    getEnv("VAKT_EPSS_ENABLED", "false") == "true",
 	}
 
 	// CORS origins — default to wildcard to preserve dev behaviour.
@@ -141,7 +147,7 @@ func Load() (*Config, error) {
 		}
 	}
 	if len(cfg.CORSOrigins) == 0 {
-		cfg.CORSOrigins = []string{"*"}
+		cfg.CORSOrigins = []string{"http://localhost", "http://localhost:5173"}
 	}
 
 	if cfg.APIPort == "" {

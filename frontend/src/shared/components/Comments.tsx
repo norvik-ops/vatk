@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -53,6 +53,17 @@ function initials(name: string): string {
   const parts = name.trim().split(/\s+/)
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   return name.slice(0, 2).toUpperCase()
+}
+
+// ── Mention renderer ─────────────────────────────────────────────────────────
+
+function renderWithMentions(text: string): React.ReactNode {
+  const parts = text.split(/(@\S+)/g)
+  return parts.map((part, i) =>
+    /^@\S+/.test(part)
+      ? <span key={i} className="text-brand font-medium">{part}</span>
+      : part
+  )
 }
 
 // ── Team members hook ─────────────────────────────────────────────────────────
@@ -278,7 +289,7 @@ export function Comments({ entityType, entityId }: CommentsProps) {
                     </span>
                   </div>
                   <p className="text-sm text-primary leading-relaxed whitespace-pre-wrap break-words">
-                    {comment.content}
+                    {renderWithMentions(comment.content)}
                   </p>
                 </div>
                 {comment.can_delete && (

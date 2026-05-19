@@ -10,8 +10,8 @@ import { apiFetch } from '../api/client'
 
 type Session = {
   id: string
-  user_agent?: string
-  ip_address?: string
+  device_hint?: string
+  last_used: string
   created_at: string
   expires_at: string
 }
@@ -85,9 +85,8 @@ export default function SessionsPage() {
 
       <Card className="p-0 overflow-hidden">
         {/* Table header */}
-        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-x-4 px-4 py-2.5 border-b border-border bg-muted/30">
+        <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-x-4 px-4 py-2.5 border-b border-border bg-muted/30">
           <span className="text-[11px] font-semibold text-secondary uppercase tracking-wide">{t('settings.sessionsPage.colDevice')}</span>
-          <span className="text-[11px] font-semibold text-secondary uppercase tracking-wide">{t('settings.sessionsPage.colIp')}</span>
           <span className="text-[11px] font-semibold text-secondary uppercase tracking-wide">{t('settings.sessionsPage.colCreated')}</span>
           <span className="text-[11px] font-semibold text-secondary uppercase tracking-wide">{t('settings.sessionsPage.colExpiry')}</span>
           <span className="text-[11px] font-semibold text-secondary uppercase tracking-wide">{t('settings.sessionsPage.colActions')}</span>
@@ -118,17 +117,14 @@ export default function SessionsPage() {
         {sessions?.map((session) => (
           <div
             key={session.id}
-            className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-x-4 items-center px-4 py-3 border-b border-border last:border-0"
+            className="grid grid-cols-[1fr_1fr_1fr_auto] gap-x-4 items-center px-4 py-3 border-b border-border last:border-0"
           >
             <div className="flex items-center gap-2 min-w-0">
               <Monitor className="w-4 h-4 text-secondary shrink-0" />
               <span className="text-sm text-primary truncate">
-                {parseUserAgent(session.user_agent)}
+                {parseUserAgent(session.device_hint)}
               </span>
             </div>
-            <span className="text-sm text-secondary font-mono">
-              {session.ip_address ?? '–'}
-            </span>
             <span className="text-sm text-secondary">
               {formatDate(session.created_at)}
             </span>

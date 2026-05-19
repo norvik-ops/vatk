@@ -20,7 +20,7 @@ func TestOIDCLogin_CasdoorNotConfigured(t *testing.T) {
 	svc := auth.NewService(nil, nil, mustKey(t))
 	cfg := &config.Config{CasdoorURL: ""}
 
-	_, err := svc.OIDCLogin(context.Background(), cfg, "google", "code", "state")
+	_, err := svc.OIDCLogin(context.Background(), cfg, "google", "code", "state", "")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, auth.ErrCasdoorNotConfigured)
 }
@@ -30,7 +30,7 @@ func TestSAMLLogin_CasdoorNotConfigured(t *testing.T) {
 	svc := auth.NewService(nil, nil, mustKey(t))
 	cfg := &config.Config{CasdoorURL: ""}
 
-	_, err := svc.SAMLLogin(context.Background(), cfg, "base64response", "relayState")
+	_, err := svc.SAMLLogin(context.Background(), cfg, "base64response", "relayState", "")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, auth.ErrCasdoorNotConfigured)
 }
@@ -58,7 +58,7 @@ func TestOIDCLogin_CasdoorTokenError(t *testing.T) {
 		FrontendURL:         "http://localhost:5173",
 	}
 
-	_, err := svc.OIDCLogin(context.Background(), cfg, "google", "code123", "state123")
+	_, err := svc.OIDCLogin(context.Background(), cfg, "google", "code123", "state123", "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid_client")
 }
@@ -82,7 +82,7 @@ func TestSAMLLogin_CasdoorError(t *testing.T) {
 		FrontendURL: "http://localhost:5173",
 	}
 
-	_, err := svc.SAMLLogin(context.Background(), cfg, "badresponse", "relay")
+	_, err := svc.SAMLLogin(context.Background(), cfg, "badresponse", "relay", "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid_saml_response")
 }

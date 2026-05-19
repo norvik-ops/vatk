@@ -10,7 +10,8 @@ type RetentionConfig struct {
 	NotificationsDays    int       `json:"notifications_days"`
 	ScanHistoryDays      int       `json:"scan_history_days"`
 	DigestEnabled        bool      `json:"digest_enabled"`
-	DigestHour           int16     `json:"digest_hour"`
+	DigestDay            int16     `json:"digest_day"`  // 0=Sun … 6=Sat
+	DigestHour           int16     `json:"digest_hour"` // 0-23 UTC
 	UpdatedAt            time.Time `json:"updated_at"`
 }
 
@@ -21,5 +22,6 @@ type UpdateRetentionConfigInput struct {
 	NotificationsDays    *int   `json:"notifications_days"       validate:"omitempty,min=0"`
 	ScanHistoryDays      *int   `json:"scan_history_days"       validate:"omitempty,min=0"`
 	DigestEnabled        *bool  `json:"digest_enabled"`
+	DigestDay            *int16 `json:"digest_day"              validate:"omitempty,min=0,max=6"`
 	DigestHour           *int16 `json:"digest_hour"             validate:"omitempty,min=0,max=23"`
 }

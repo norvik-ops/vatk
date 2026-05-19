@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -77,6 +78,16 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	e.HideBanner = true
 	e.HidePort = true
 
+	// Trust X-Forwarded-For from the reverse proxy (nginx in the compose stack).
+	// If VAKT_TRUSTED_PROXIES is empty, fall back to direct IP to prevent header spoofing.
+	if trustedProxies := os.Getenv("VAKT_TRUSTED_PROXIES"); trustedProxies != "" {
+		e.IPExtractor = echo.ExtractIPFromXFFHeader()
+		log.Info().Str("trusted_proxies", trustedProxies).Msg("IPExtractor configured for reverse proxy")
+	} else {
+		e.IPExtractor = echo.ExtractIPDirect()
+		log.Info().Msg("IPExtractor set to direct — admin IP allowlist won't work behind a proxy unless VAKT_TRUSTED_PROXIES is set")
+	}
+
 	// X-Request-ID — applied first so every subsequent log entry can reference it.
 	e.Use(sharedmw.RequestID())
 
@@ -84,12 +95,18 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	// enriched into the zerolog context for structured log correlation.
 	e.Use(auth.TraceMiddleware())
 
+	// style-src-elem 'self': only external stylesheets (<link>, <style> blocks) from same origin.
+	// style-src-attr 'unsafe-inline': inline style= attributes allowed — required by Radix UI
+	// which sets CSS custom properties (--radix-*) via element.style.setProperty() at runtime.
+	// Splitting elem/attr is meaningfully safer than a blanket 'unsafe-inline' on style-src:
+	// inline attributes cannot inject <style> blocks or @import rules, severely limiting CSS
+	// exfiltration attack surface. Nonce-based CSP would be cleaner but requires Vite integration.
 	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
 		XSSProtection:         "0",
 		ContentTypeNosniff:    "nosniff",
 		XFrameOptions:         "DENY",
 		HSTSMaxAge:            31536000,
-		ContentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+		ContentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
 	}))
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -123,6 +140,9 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 		AllowCredentials: true,
 		MaxAge:           86400,
 	}))
+	if len(cfg.CORSOrigins) == 1 && cfg.CORSOrigins[0] == "*" {
+		log.Warn().Msg("CORS is configured to allow all origins (*) with credentials — set VAKT_CORS_ORIGINS for production")
+	}
 	e.Use(middleware.BodyLimit("10MB"))
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
 		Timeout:      30 * time.Second,
@@ -542,7 +562,7 @@ func setupEcho(cfg *config.Config) *echo.Echo {
 	}
 
 	// Session management — list and revoke active sessions
-	auth.RegisterSessions(protected.Group("/auth/sessions"), pool)
+	auth.RegisterSessions(protected.Group("/auth/sessions"), pool, rdb)
 	log.Info().Msg("session routes registered")
 
 	// LDAP/AD sync — available when VAKT_LDAP_URL is configured
@@ -700,6 +720,14 @@ func main() {
 	}
 
 	e := setupEcho(cfg)
+
+	if cfg.DemoSeed {
+		log.Warn().Msg("demo mode active — ephemeral sessions are open to the public, do NOT use in production")
+	}
+
+	if strings.HasPrefix(cfg.FrontendURL, "https://") {
+		log.Info().Msg("HTTPS frontend detected — ensure reverse proxy sets X-Forwarded-Proto: https so session cookies get the Secure flag")
+	}
 
 	go func() {
 		if err := e.Start(":" + cfg.APIPort); err != nil && err != http.ErrServerClosed {

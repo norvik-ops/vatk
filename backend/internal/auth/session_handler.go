@@ -1,32 +1,40 @@
+// Copyright (c) 2026 NorvikOps. All rights reserved.
+// SPDX-License-Identifier: Elastic-2.0
+
 package auth
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
+	"context"
 	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
 )
 
-type SessionInfo struct {
-	ID        string    `json:"id"`
-	UserAgent string    `json:"user_agent,omitempty"`
-	IPAddress string    `json:"ip_address,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	ExpiresAt time.Time `json:"expires_at"`
+// RefreshSessionInfo is returned by GET /auth/sessions.
+type RefreshSessionInfo struct {
+	ID         string    `json:"id"`
+	DeviceHint string    `json:"device_hint,omitempty"`
+	LastUsed   time.Time `json:"last_used"`
+	CreatedAt  time.Time `json:"created_at"`
+	ExpiresAt  time.Time `json:"expires_at"`
 }
 
+// SessionHandler handles per-device session listing and revocation.
 type SessionHandler struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	redis *redis.Client
 }
 
-func NewSessionHandler(db *pgxpool.Pool) *SessionHandler {
-	return &SessionHandler{db: db}
+// NewSessionHandler constructs a SessionHandler.
+func NewSessionHandler(db *pgxpool.Pool, rdb *redis.Client) *SessionHandler {
+	return &SessionHandler{db: db, redis: rdb}
 }
 
-// ListSessions returns all active (non-revoked, non-expired) sessions for the authenticated user.
+// ListSessions returns all active (non-expired) sessions for the authenticated user.
+// GET /api/v1/auth/sessions
 func (h *SessionHandler) ListSessions(c echo.Context) error {
 	userID, ok := c.Get("user_id").(string)
 	if !ok || userID == "" {
@@ -34,12 +42,10 @@ func (h *SessionHandler) ListSessions(c echo.Context) error {
 	}
 
 	rows, err := h.db.Query(c.Request().Context(), `
-        SELECT id, user_agent, ip_address, created_at, expires_at
-        FROM sessions
-        WHERE user_id = $1::uuid
-          AND revoked_at IS NULL
-          AND expires_at > NOW()
-        ORDER BY created_at DESC`,
+		SELECT id::text, device_hint, last_used, created_at, expires_at
+		FROM refresh_sessions
+		WHERE user_id = $1::uuid AND expires_at > NOW()
+		ORDER BY last_used DESC`,
 		userID,
 	)
 	if err != nil {
@@ -47,21 +53,23 @@ func (h *SessionHandler) ListSessions(c echo.Context) error {
 	}
 	defer rows.Close()
 
-	var sessions []SessionInfo
+	var sessions []RefreshSessionInfo
 	for rows.Next() {
-		var s SessionInfo
-		if err := rows.Scan(&s.ID, &s.UserAgent, &s.IPAddress, &s.CreatedAt, &s.ExpiresAt); err != nil {
+		var s RefreshSessionInfo
+		if err := rows.Scan(&s.ID, &s.DeviceHint, &s.LastUsed, &s.CreatedAt, &s.ExpiresAt); err != nil {
 			continue
 		}
 		sessions = append(sessions, s)
 	}
 	if sessions == nil {
-		sessions = []SessionInfo{}
+		sessions = []RefreshSessionInfo{}
 	}
 	return c.JSON(http.StatusOK, sessions)
 }
 
-// RevokeSession sets revoked_at on a session owned by the authenticated user.
+// RevokeSession deletes a specific session owned by the authenticated user and
+// removes the corresponding refresh token from Redis.
+// DELETE /api/v1/auth/sessions/:id
 func (h *SessionHandler) RevokeSession(c echo.Context) error {
 	userID, ok := c.Get("user_id").(string)
 	if !ok || userID == "" {
@@ -69,57 +77,66 @@ func (h *SessionHandler) RevokeSession(c echo.Context) error {
 	}
 	sessionID := c.Param("id")
 
-	tag, err := h.db.Exec(c.Request().Context(), `
-        UPDATE sessions
-        SET revoked_at = NOW()
-        WHERE id = $1::uuid
-          AND user_id = $2::uuid
-          AND revoked_at IS NULL`,
+	// Delete the row and return token_hash so we can remove it from Redis.
+	var tokenHash string
+	err := h.db.QueryRow(c.Request().Context(), `
+		DELETE FROM refresh_sessions
+		WHERE id = $1::uuid AND user_id = $2::uuid
+		RETURNING token_hash`,
 		sessionID, userID,
-	)
+	).Scan(&tokenHash)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
-	}
-	if tag.RowsAffected() == 0 {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "session not found"})
 	}
-	return c.JSON(http.StatusOK, map[string]string{"status": "revoked"})
+
+	// Best-effort Redis removal; the 30-day TTL is a fallback.
+	if h.redis != nil {
+		_ = h.redis.Del(context.Background(), "refresh:"+tokenHash)
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
-// RevokeAllOtherSessions revokes all sessions for the user except the current one.
-// The current session is identified by the raw bearer token stored in context by
-// AuthMiddleware (key "token_raw"), hashed to match the sessions.token_hash column.
+// RevokeAllOtherSessions deletes all refresh sessions for the user except the
+// current one (identified by the token in the Authorization header or cookie).
+// DELETE /api/v1/auth/sessions  (no :id = "all others")
 func (h *SessionHandler) RevokeAllOtherSessions(c echo.Context) error {
 	userID, ok := c.Get("user_id").(string)
 	if !ok || userID == "" {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 	}
 
-	// Exclude the current session's token from revocation.
+	// Collect token hashes to delete from Redis before removing rows.
+	var rows []string
+	var query string
+	var args []any
+
 	tokenRaw, _ := c.Get("token_raw").(string)
-	var err error
 	if tokenRaw != "" {
-		sum := sha256.Sum256([]byte(tokenRaw))
-		tokenHash := hex.EncodeToString(sum[:])
-		_, err = h.db.Exec(c.Request().Context(), `
-            UPDATE sessions
-            SET revoked_at = NOW()
-            WHERE user_id = $1::uuid
-              AND token_hash != $2
-              AND revoked_at IS NULL`,
-			userID, tokenHash,
-		)
+		currentHash := sha256Hex(tokenRaw)
+		query = `DELETE FROM refresh_sessions WHERE user_id = $1::uuid AND token_hash != $2 RETURNING token_hash`
+		args = []any{userID, currentHash}
 	} else {
-		_, err = h.db.Exec(c.Request().Context(), `
-            UPDATE sessions
-            SET revoked_at = NOW()
-            WHERE user_id = $1::uuid
-              AND revoked_at IS NULL`,
-			userID,
-		)
+		query = `DELETE FROM refresh_sessions WHERE user_id = $1::uuid RETURNING token_hash`
+		args = []any{userID}
 	}
+
+	dbRows, err := h.db.Query(c.Request().Context(), query, args...)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
 	}
+	defer dbRows.Close()
+	for dbRows.Next() {
+		var h string
+		if scanErr := dbRows.Scan(&h); scanErr == nil {
+			rows = append(rows, "refresh:"+h)
+		}
+	}
+
+	// Remove from Redis in bulk.
+	if h.redis != nil && len(rows) > 0 {
+		_ = h.redis.Del(context.Background(), rows...)
+	}
+
 	return c.JSON(http.StatusOK, map[string]string{"status": "other sessions revoked"})
 }

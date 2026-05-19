@@ -15,7 +15,8 @@ interface RetentionConfig {
   notifications_days: number
   scan_history_days: number
   digest_enabled: boolean
-  digest_hour: number
+  digest_day: number   // 0=So … 6=Sa
+  digest_hour: number  // 0-23 UTC
 }
 
 const DEFAULT_CONFIG: RetentionConfig = {
@@ -24,8 +25,19 @@ const DEFAULT_CONFIG: RetentionConfig = {
   notifications_days: 90,
   scan_history_days: 365,
   digest_enabled: false,
+  digest_day: 1,
   digest_hour: 8,
 }
+
+const WEEKDAYS = [
+  { value: 1, label: 'Montag' },
+  { value: 2, label: 'Dienstag' },
+  { value: 3, label: 'Mittwoch' },
+  { value: 4, label: 'Donnerstag' },
+  { value: 5, label: 'Freitag' },
+  { value: 6, label: 'Samstag' },
+  { value: 0, label: 'Sonntag' },
+]
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -79,6 +91,7 @@ export default function RetentionConfigPage() {
 
   const [digestForm, setDigestForm] = useState({
     digest_enabled: DEFAULT_CONFIG.digest_enabled,
+    digest_day: DEFAULT_CONFIG.digest_day,
     digest_hour: DEFAULT_CONFIG.digest_hour,
   })
 
@@ -92,6 +105,7 @@ export default function RetentionConfigPage() {
       })
       setDigestForm({
         digest_enabled: data.digest_enabled,
+        digest_day: data.digest_day,
         digest_hour: data.digest_hour,
       })
     }
@@ -212,7 +226,7 @@ export default function RetentionConfigPage() {
             <CardHeader>
               <CardTitle className="text-sm">Wöchentlicher E-Mail-Digest</CardTitle>
               <CardDescription>
-                Automatische Status-Zusammenfassung jeden Montag an alle Admins.
+                Automatische Status-Zusammenfassung an alle Admins — Wochentag und Uhrzeit frei wählbar.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -235,24 +249,43 @@ export default function RetentionConfigPage() {
                   </label>
 
                   {digestForm.digest_enabled && (
-                    <div className="space-y-1.5 ml-7">
-                      <Label className="text-xs text-secondary">Versandzeit (UTC Stunde)</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={23}
-                        value={digestForm.digest_hour}
-                        onChange={(e) =>
-                          setDigestForm((f) => ({ ...f, digest_hour: Number(e.target.value) }))
-                        }
-                        className="h-8 text-sm w-24"
-                      />
+                    <div className="ml-7 space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-secondary">Wochentag</Label>
+                        <select
+                          value={digestForm.digest_day}
+                          onChange={(e) =>
+                            setDigestForm((f) => ({ ...f, digest_day: Number(e.target.value) }))
+                          }
+                          className="h-8 text-sm rounded-md border border-input bg-background px-2 focus:outline-none focus:ring-1 focus:ring-brand"
+                        >
+                          {WEEKDAYS.map((d) => (
+                            <option key={d.value} value={d.value}>{d.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-secondary">Uhrzeit (UTC)</Label>
+                        <select
+                          value={digestForm.digest_hour}
+                          onChange={(e) =>
+                            setDigestForm((f) => ({ ...f, digest_hour: Number(e.target.value) }))
+                          }
+                          className="h-8 text-sm rounded-md border border-input bg-background px-2 focus:outline-none focus:ring-1 focus:ring-brand"
+                        >
+                          {Array.from({ length: 24 }, (_, h) => (
+                            <option key={h} value={h}>
+                              {String(h).padStart(2, '0')}:00 Uhr
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   )}
 
                   <p className="text-[11px] text-secondary leading-relaxed">
-                    Der Digest wird jeden Montag an alle Admins der Organisation versendet und enthält
-                    eine Zusammenfassung offener Findings, DSR-Fristen und den aktuellen Security Score.
+                    Der Digest enthält offene Findings, DSR-Fristen und den aktuellen Security Score.
+                    Alle Zeitangaben in UTC.
                   </p>
                 </div>
               )}

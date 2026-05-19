@@ -178,17 +178,18 @@ func (r *Repository) BulkInsertControls(ctx context.Context, controls []Control)
 	return tx.Commit(ctx)
 }
 
-// UpdateControl sets not_applicable, reason, manual_status, and optionally maturity_score on a control.
-func (r *Repository) UpdateControl(ctx context.Context, orgID, controlID string, notApplicable bool, reason, manualStatus, owner string, maturityScore *int) error {
+// UpdateControl sets not_applicable, reason, manual_status, optionally maturity_score, and due_date on a control.
+func (r *Repository) UpdateControl(ctx context.Context, orgID, controlID string, notApplicable bool, reason, manualStatus, owner string, maturityScore *int, dueDate *string) error {
 	tag, err := r.db.Exec(ctx, `
 		UPDATE ck_controls
 		SET not_applicable        = $3,
 		    not_applicable_reason = NULLIF($4, ''),
 		    manual_status         = NULLIF($5, ''),
 		    owner                 = NULLIF($6, ''),
-		    maturity_score        = COALESCE($7, maturity_score)
+		    maturity_score        = COALESCE($7, maturity_score),
+		    due_date              = CASE WHEN $8::text IS NULL THEN due_date ELSE $8::date END
 		WHERE id = $1::uuid AND org_id = $2::uuid`,
-		controlID, orgID, notApplicable, reason, manualStatus, owner, maturityScore,
+		controlID, orgID, notApplicable, reason, manualStatus, owner, maturityScore, dueDate,
 	)
 	if err != nil {
 		return fmt.Errorf("update control: %w", err)
@@ -207,7 +208,7 @@ func (r *Repository) ListControls(ctx context.Context, orgID, frameworkID string
 		       not_applicable, COALESCE(not_applicable_reason, ''),
 		       COALESCE(manual_status, ''), maturity_score, COALESCE(owner, ''),
 		       last_reviewed_at, review_interval_days, next_review_due,
-		       last_reviewed_by, review_note
+		       last_reviewed_by, review_note, due_date
 		FROM ck_controls
 		WHERE framework_id = $1::uuid AND org_id = $2::uuid
 		ORDER BY control_id ASC LIMIT 1000`,
@@ -222,15 +223,17 @@ func (r *Repository) ListControls(ctx context.Context, orgID, frameworkID string
 	for rows.Next() {
 		var c Control
 		var nextReviewDue *time.Time
+		var dueDate *time.Time
 		if err := rows.Scan(&c.ID, &c.FrameworkID, &c.OrgID, &c.ControlID, &c.Title,
 			&c.Description, &c.Domain, &c.EvidenceType, &c.Weight,
 			&c.NotApplicable, &c.NotApplicableReason, &c.ManualStatus, &c.MaturityScore, &c.Owner,
 			&c.LastReviewedAt, &c.ReviewIntervalDays, &nextReviewDue,
-			&c.LastReviewedBy, &c.ReviewNote); err != nil {
+			&c.LastReviewedBy, &c.ReviewNote, &dueDate); err != nil {
 			return nil, fmt.Errorf("scan control: %w", err)
 		}
 		c.NextReviewDue = nextReviewDue
 		c.IsReviewOverdue = nextReviewDue != nil && nextReviewDue.Before(time.Now())
+		c.DueDate = dueDate
 		controls = append(controls, c)
 	}
 	return controls, rows.Err()
@@ -240,13 +243,14 @@ func (r *Repository) ListControls(ctx context.Context, orgID, frameworkID string
 func (r *Repository) GetControl(ctx context.Context, orgID, controlID string) (*Control, error) {
 	var c Control
 	var nextReviewDue *time.Time
+	var dueDate *time.Time
 	err := r.db.QueryRow(ctx, `
 		SELECT id::text, framework_id::text, org_id::text, control_id, title,
 		       COALESCE(description, ''), domain, evidence_type, weight,
 		       not_applicable, COALESCE(not_applicable_reason, ''),
 		       COALESCE(manual_status, ''), maturity_score, COALESCE(owner, ''),
 		       last_reviewed_at, review_interval_days, next_review_due,
-		       last_reviewed_by, review_note
+		       last_reviewed_by, review_note, due_date
 		FROM ck_controls
 		WHERE id = $1::uuid AND org_id = $2::uuid`,
 		controlID, orgID,
@@ -254,12 +258,13 @@ func (r *Repository) GetControl(ctx context.Context, orgID, controlID string) (*
 		&c.Description, &c.Domain, &c.EvidenceType, &c.Weight,
 		&c.NotApplicable, &c.NotApplicableReason, &c.ManualStatus, &c.MaturityScore, &c.Owner,
 		&c.LastReviewedAt, &c.ReviewIntervalDays, &nextReviewDue,
-		&c.LastReviewedBy, &c.ReviewNote)
+		&c.LastReviewedBy, &c.ReviewNote, &dueDate)
 	if err != nil {
 		return nil, fmt.Errorf("get control: %w", err)
 	}
 	c.NextReviewDue = nextReviewDue
 	c.IsReviewOverdue = nextReviewDue != nil && nextReviewDue.Before(time.Now())
+	c.DueDate = dueDate
 	return &c, nil
 }
 
@@ -4031,9 +4036,18 @@ func (r *Repository) RecordControlReview(ctx context.Context, orgID, controlID s
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Determine interval: use provided value or keep existing.
-	intervalExpr := "review_interval_days"
+	// Use a parameterised placeholder ($5) when a new interval is given to avoid SQL injection
+	// via integer interpolation, even though in.ReviewInterval is typed as int.
+	var (
+		intervalExpr string
+		queryArgs    []any
+	)
 	if in.ReviewInterval > 0 {
-		intervalExpr = fmt.Sprintf("%d", in.ReviewInterval)
+		intervalExpr = "$5"
+		queryArgs = []any{controlID, orgID, in.ReviewedBy, in.ReviewNote, in.ReviewInterval}
+	} else {
+		intervalExpr = "review_interval_days"
+		queryArgs = []any{controlID, orgID, in.ReviewedBy, in.ReviewNote}
 	}
 
 	q := fmt.Sprintf(`
@@ -4050,7 +4064,7 @@ func (r *Repository) RecordControlReview(ctx context.Context, orgID, controlID s
 		          last_reviewed_at, review_interval_days, next_review_due,
 		          last_reviewed_by, review_note`, intervalExpr)
 
-	c, err := scanControl(tx.QueryRow(ctx, q, controlID, orgID, in.ReviewedBy, in.ReviewNote))
+	c, err := scanControl(tx.QueryRow(ctx, q, queryArgs...))
 	if err != nil {
 		return Control{}, fmt.Errorf("update control for review: %w", err)
 	}

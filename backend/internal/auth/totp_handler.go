@@ -519,7 +519,7 @@ func (h *TotpHandler) RecoveryLogin(c echo.Context) error {
 		})
 	}
 
-	resp, err := h.svc.issueTokenPair(ctx, userID, orgID, []string{roleName})
+	resp, err := h.svc.issueTokenPair(ctx, userID, orgID, []string{roleName}, "")
 	if err != nil {
 		log.Error().Err(err).Str("user_id", userID).Msg("recovery login: token issuance failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{

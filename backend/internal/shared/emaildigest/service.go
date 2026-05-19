@@ -120,15 +120,24 @@ func NewDigestService(db *pgxpool.Pool, smtpCfg SMTPConfig) *DigestService {
 }
 
 // SendDigest composes and sends the weekly security digest to all Admin users
-// of the given organisation.
+// of the given organisation.  It is called every hour for all orgs; it checks
+// internally whether the current UTC weekday+hour matches the org's schedule.
 func (s *DigestService) SendDigest(ctx context.Context, orgID string) error {
-	// 1. Check digest is enabled for this org.
+	// 1. Check digest is enabled and the current UTC time matches the org's schedule.
 	var digestEnabled bool
+	var digestDay, digestHour int16
 	err := s.db.QueryRow(ctx,
-		`SELECT digest_enabled FROM retention_config WHERE org_id = $1::uuid`, orgID,
-	).Scan(&digestEnabled)
+		`SELECT digest_enabled, digest_day, digest_hour
+		 FROM   retention_config
+		 WHERE  org_id = $1::uuid`, orgID,
+	).Scan(&digestEnabled, &digestDay, &digestHour)
 	if err != nil || !digestEnabled {
 		// No config row or digest disabled — skip silently.
+		return nil
+	}
+	now := time.Now().UTC()
+	// time.Weekday(): 0=Sunday … 6=Saturday — same as our digest_day convention.
+	if int16(now.Weekday()) != digestDay || int16(now.Hour()) != digestHour {
 		return nil
 	}
 
