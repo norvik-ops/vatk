@@ -128,46 +128,53 @@ VAKT_AI_PROVIDER=disabled
 
 ---
 
-## HTTPS mit eigenem Zertifikat
+## HTTPS
 
-Vakt liefert eine Nginx-Konfiguration mit. Für HTTPS gibt es zwei Varianten.
+Vakt läuft standardmäßig auf HTTP (Port 80). Für die meisten internen Installationen ist das ausreichend — die VM ist typischerweise nicht direkt aus dem Internet erreichbar, und TLS wird durch einen vorgelagerten Load-Balancer oder Reverse-Proxy der eigenen Infrastruktur terminiert.
 
-### Variante A: Let's Encrypt (öffentlich erreichbarer Server)
+### Variante A: Eigenes Zertifikat (empfohlen für interne Installationen)
 
-In `docker-compose.yml` den Certbot-Service aktivieren (oder Certbot auf dem Host laufen lassen) und in `nginx/nginx.conf` den HTTPS-Block einkommentieren:
+Das Repository enthält ein HTTPS-Overlay und ein Skript zur Zertifikatserstellung:
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name deine-domain.de;
+```bash
+# Zertifikat erzeugen (nutzt mkcert wenn vorhanden, sonst openssl)
+./scripts/gen-local-cert.sh
 
-    ssl_certificate     /etc/letsencrypt/live/deine-domain.de/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/deine-domain.de/privkey.pem;
-
-    location / {
-        proxy_pass http://frontend:5173;
-    }
-
-    location /api/ {
-        proxy_pass http://api:8080;
-    }
-}
+# Stack mit HTTPS starten
+docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d
 ```
 
-### Variante B: Eigenes Zertifikat (internes Netz / Self-signed)
-
-Zertifikat und Key in `nginx/certs/` ablegen und in `nginx.conf` referenzieren:
-
-```nginx
-ssl_certificate     /etc/nginx/certs/cert.pem;
-ssl_certificate_key /etc/nginx/certs/key.pem;
-```
+Das Skript legt `nginx/certs/localhost.crt` und `nginx/certs/localhost.key` an. Mit einem Zertifikat des eigenen internen CA einfach die Dateien direkt dort ablegen — das Skript überschreibt nichts, wenn die Dateien bereits existieren.
 
 Anschließend `VAKT_FRONTEND_URL` auf die HTTPS-URL setzen:
 
 ```env
 VAKT_FRONTEND_URL=https://vakt.intranet.meine-firma.de
 ```
+
+### Variante B: Caddy als Reverse-Proxy (für öffentlich erreichbare Server)
+
+Wenn Vakt auf einem Server mit öffentlichem DNS läuft, übernimmt [Caddy](https://caddyserver.com) TLS-Zertifikate vollautomatisch via Let's Encrypt — kein Certbot, keine Cronjobs, keine manuelle Erneuerung.
+
+```bash
+# Caddy auf dem Host installieren (Ubuntu/Debian)
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | \
+    sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | \
+    sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update && sudo apt install caddy
+```
+
+`/etc/caddy/Caddyfile`:
+
+```caddyfile
+deine-domain.de {
+    reverse_proxy localhost:80
+}
+```
+
+Der Docker-Stack bleibt unverändert auf Port 80. Caddy übernimmt Port 80/443, holt das Zertifikat automatisch und erneuert es ohne Eingriff.
 
 ---
 
