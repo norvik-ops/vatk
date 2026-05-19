@@ -1,6 +1,6 @@
 CREATE TABLE scheduled_reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   report_type TEXT NOT NULL CHECK (report_type IN ('compliance','findings','risk')),
   schedule TEXT NOT NULL CHECK (schedule IN ('weekly','monthly','quarterly')),

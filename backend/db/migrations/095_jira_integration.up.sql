@@ -1,7 +1,7 @@
 -- Migration 095: Jira integration
--- Adds Jira config columns to organisations and a tracking table for created issues.
+-- Adds Jira config columns to organizations and a tracking table for created issues.
 
-ALTER TABLE organisations
+ALTER TABLE organizations
   ADD COLUMN IF NOT EXISTS jira_url          TEXT,
   ADD COLUMN IF NOT EXISTS jira_project_key  TEXT,
   ADD COLUMN IF NOT EXISTS jira_user_email   TEXT,
@@ -9,7 +9,7 @@ ALTER TABLE organisations
 
 CREATE TABLE IF NOT EXISTS jira_issues (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id          UUID        NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+  org_id          UUID        NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   finding_id      UUID        NOT NULL,
   jira_issue_key  TEXT        NOT NULL,
   jira_issue_url  TEXT        NOT NULL,

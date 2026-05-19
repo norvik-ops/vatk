@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS jira_issues;
 
-ALTER TABLE organisations
+ALTER TABLE organizations
   DROP COLUMN IF EXISTS jira_url,
   DROP COLUMN IF EXISTS jira_project_key,
   DROP COLUMN IF EXISTS jira_user_email,

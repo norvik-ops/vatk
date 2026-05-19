@@ -3,7 +3,7 @@
 
 CREATE TABLE webhooks (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id           UUID        NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+  org_id           UUID        NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   name             TEXT        NOT NULL,
   url              TEXT        NOT NULL,
   secret           TEXT,

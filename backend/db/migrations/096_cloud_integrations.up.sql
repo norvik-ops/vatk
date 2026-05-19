@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS cloud_integrations (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id           UUID        NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+  org_id           UUID        NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   provider         TEXT        NOT NULL CHECK (provider IN ('aws', 'azure')),
   config           JSONB       NOT NULL DEFAULT '{}',  -- encrypted fields stored inside
   enabled          BOOLEAN     NOT NULL DEFAULT true,
