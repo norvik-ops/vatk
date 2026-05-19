@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Download, AlertTriangle, Upload, Trash2, RefreshCw, FileDown, ExternalLink } from 'lucide-react'
+import { Download, AlertTriangle, Upload, Trash2, RefreshCw, FileDown } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
@@ -34,8 +34,6 @@ import { toast } from '../../../shared/hooks/useToast'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { exportToCSV } from '../../../lib/csv'
 import { ErrorState } from '../../../shared/components/ErrorState'
-import { useJiraConfig, useCreateJiraIssue } from '../../../hooks/useJira'
-import type { JiraIssue } from '../../../hooks/useJira'
 
 // ── Inline editable status cell ──────────────────────────────────────────────
 
@@ -194,54 +192,6 @@ const SEVERITY_ORDER: Record<Finding['severity'], number> = {
 // Augment Finding with a numeric severity_order field for sorting
 type SortableFinding = Finding & { severity_order: number }
 
-// --- Jira issue cell ---
-
-function JiraCell({ findingId, issue, isConfigured }: { findingId: string; issue: JiraIssue | undefined; isConfigured: boolean }) {
-  const { t } = useTranslation()
-  const createIssue = useCreateJiraIssue()
-
-  if (!isConfigured) return null
-
-  if (issue) {
-    return (
-      <a
-        href={issue.issue_url}
-        target="_blank"
-        rel="noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1 text-xs font-mono text-brand hover:underline"
-        aria-label={`Jira-Ticket ${issue.issue_key} öffnen (neues Fenster)`}
-      >
-        {issue.issue_key}
-        {/* WCAG 1.1.1: icon is decorative, link is named by aria-label */}
-        <ExternalLink className="w-3 h-3" aria-hidden="true" />
-      </a>
-    )
-  }
-
-  return (
-    <button
-      onClick={(e) => {
-        e.stopPropagation()
-        createIssue.mutate(findingId, {
-          onSuccess: (data) => {
-            toast(t('secpulse.findingsPage.ticketCreated', { key: data.issue_key }), 'success')
-          },
-          onError: (err) => {
-            toast(err.message, 'error')
-          },
-        })
-      }}
-      disabled={createIssue.isPending}
-      title={t('secpulse.findingsPage.createJiraTicket')}
-      className="inline-flex items-center gap-1 text-xs text-secondary hover:text-brand transition-colors disabled:opacity-50"
-    >
-      <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-      Ticket
-    </button>
-  )
-}
-
 export default function FindingsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -259,7 +209,6 @@ export default function FindingsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const [page, setPage] = useState(1)
-  const [jiraIssueMap, setJiraIssueMap] = useState<Map<string, JiraIssue>>(new Map())
   const searchRef = useRef<HTMLInputElement>(null)
 
   const { data, isLoading, isError, error, refetch } = useFindings({
@@ -269,8 +218,6 @@ export default function FindingsPage() {
   }, page)
   const bulkUpdate = useBulkUpdateFindings()
   const deleteFinding = useDeleteFinding()
-  const createJiraIssue = useCreateJiraIssue()
-  const { data: jiraConfig } = useJiraConfig()
 
   const rawFindings = data?.data ?? []
   // Augment with numeric severity order for sorting
@@ -285,7 +232,6 @@ export default function FindingsPage() {
     toggleSort,
   } = useSortableTable<SortableFinding>(findingsWithOrder, { key: 'created_at', dir: 'desc' })
   const findings = sortedFindings
-  const jiraConfigured = jiraConfig?.is_configured ?? false
 
   useKeyboardNav(focusedIndex, setFocusedIndex, {
     itemCount: findings.length,
@@ -359,31 +305,6 @@ export default function FindingsPage() {
       updated_at: f.updated_at,
     }))
     exportToCSV('findings-export', rows)
-  }
-
-  async function handleBulkCreateJiraIssues() {
-    if (selected.size === 0) return
-    const ids = Array.from(selected)
-    let created = 0
-    let failed = 0
-    for (const id of ids) {
-      try {
-        const result = await createJiraIssue.mutateAsync(id)
-        setJiraIssueMap((prev) => new Map(prev).set(id, {
-          id: '',
-          org_id: '',
-          finding_id: id,
-          issue_key: result.issue_key,
-          issue_url: result.issue_url,
-          created_at: new Date().toISOString(),
-        }))
-        created++
-      } catch {
-        failed++
-      }
-    }
-    if (created > 0) toast(t('secpulse.findingsPage.jiraTicketsCreated', { count: created }), 'success')
-    if (failed > 0) toast(t('secpulse.findingsPage.jiraTicketsFailed', { count: failed }), 'error')
   }
 
   return (
@@ -631,7 +552,6 @@ export default function FindingsPage() {
                     onSort={toggleSort}
                     className="px-4 py-3 text-left text-sm font-medium text-secondary"
                   />
-                  {jiraConfigured && <TableHead>{t('secpulse.findingsPage.colJira')}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -691,15 +611,6 @@ export default function FindingsPage() {
                     <TableCell className="text-sm text-secondary" onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
                       {new Date(f.created_at).toLocaleDateString('de-DE')}
                     </TableCell>
-                    {jiraConfigured && (
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <JiraCell
-                          findingId={f.id}
-                          issue={jiraIssueMap.get(f.id)}
-                          isConfigured={jiraConfigured}
-                        />
-                      </TableCell>
-                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -728,12 +639,6 @@ export default function FindingsPage() {
             icon: FileDown,
             onClick: handleExportSelected,
           },
-          ...(jiraConfigured ? [{
-            label: t('secpulse.bulk.createJiraIssues'),
-            icon: ExternalLink,
-            onClick: () => { void handleBulkCreateJiraIssues() },
-            disabled: createJiraIssue.isPending,
-          }] : []),
           {
             label: t('secpulse.bulk.delete'),
             icon: Trash2,

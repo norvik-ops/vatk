@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Key, Plus, Trash2, Copy, Check, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../shared/components/PageHeader'
-import { CopyButton } from '../shared/components/CopyButton'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -367,7 +366,7 @@ function ApiKeysContent() {
                 <div className="text-sm font-medium text-primary truncate">{key.name}</div>
                 <div className="flex items-center gap-1 text-xs font-mono text-secondary mt-0.5">
                   <span>{key.key_prefix}…</span>
-                  <CopyButton value={key.key_prefix} />
+                  <CopyButton text={key.key_prefix} />
                 </div>
               </div>
               <span className="text-sm text-secondary">{formatDate(key.created_at)}</span>

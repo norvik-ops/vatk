@@ -31,7 +31,7 @@ function statusIcon(status: ControlException['status']) {
 export default function ExceptionsPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const isAdmin = user?.role === 'Admin'
+  const isAdmin = user?.roles?.includes('Admin') ?? false
   const [confirmDelete, setConfirmDelete] = useState<ControlException | null>(null)
   // Optimistically hidden items — ids of items removed from view while timer is running
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set())
@@ -86,7 +86,6 @@ export default function ExceptionsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        icon={<ShieldAlert className="w-5 h-5" />}
         title="Ausnahmegenehmigungen"
         description="Formale Ausnahmen und Waivers für Compliance-Kontrollen"
       />

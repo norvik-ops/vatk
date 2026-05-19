@@ -43,7 +43,7 @@ function ScoreTrendChart({ data }: { data: Array<{ date: string; score: number }
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="label" tick={{ fontSize: 11 }} />
           <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
-          <Tooltip formatter={(v: number) => [`${v}%`, 'Score']} />
+          <Tooltip formatter={(v) => [`${v}%`, 'Score']} />
           <Line
             type="monotone"
             dataKey="score"

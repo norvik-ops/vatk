@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '../../api/client'
 import { useFrameworks } from '../../modules/secvitals/hooks/useFrameworks'
-import { useAssets } from '../../modules/secpulse/hooks/useAssets'
 import { useTeamMembers } from '../../hooks/useTeam'
 
 const DISMISS_KEY = 'vakt_onboarding_dismissed'

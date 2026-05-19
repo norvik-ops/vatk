@@ -18,7 +18,6 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { SkeletonCardGrid } from '../../../shared/components/SkeletonLoaders'
 import { apiFetch } from '../../../api/client'
 import { toast } from '../../../shared/hooks/useToast'
-import { handleApiError } from '../../../shared/utils/errorMessages'
 
 interface DBTemplate {
   id: string

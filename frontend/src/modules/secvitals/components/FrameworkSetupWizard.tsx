@@ -9,7 +9,6 @@ import {
   DialogFooter,
 } from '../../../components/ui/dialog'
 import { Button } from '../../../components/ui/button'
-import type { Framework } from '../types'
 
 interface FrameworkSetupWizardProps {
   framework: { id: string; name: string; description?: string; controlCount?: number }
