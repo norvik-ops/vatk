@@ -1,8 +1,14 @@
-.PHONY: dev api-local frontend-local stop stop-local test lint build migrate seed seed-local backup
+.PHONY: dev api-local frontend-local stop stop-local test lint build migrate seed seed-local backup public-mirror
 
 # ── Docker-based dev (requires Docker) ─────────────────────────────────────
 dev:
 	docker compose -f docker-compose.dev.yml up --build
+
+# ── Public Mirror — materialisiert lokal das, was nach norvik-ops/vatk synct
+# Verifiziert mit `go build ./...` dass das Mirror kompiliert.
+# Output: ./public-mirror/ (gitignored)
+public-mirror:
+	@./scripts/build-public-mirror.sh
 
 stop:
 	docker compose -f docker-compose.dev.yml down

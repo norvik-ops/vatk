@@ -49,10 +49,3 @@ func Register(g *echo.Group, h *Handler, health *HealthHandler, db *pgxpool.Pool
 	admin.DELETE("/accounts/:email/unlock", sec.UnlockAccount)
 
 }
-
-// RegisterStaging mounts staging-only routes. Call only when VAKT_STAGING=true.
-func RegisterStaging(g *echo.Group, h *StagingHandler) {
-	staging := g.Group("/admin/staging", auth.RequireRole("Admin"))
-	staging.GET("/info", h.GetStagingInfo)
-	staging.POST("/promote", h.Promote)
-}
