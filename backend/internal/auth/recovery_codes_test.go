@@ -19,6 +19,7 @@ import (
 // nicht vom Cost ab.
 func TestMain(m *testing.M) {
 	recoveryCodeBcryptCost = bcrypt.MinCost
+	backupCodeBcryptCost = bcrypt.MinCost
 	m.Run()
 }
 

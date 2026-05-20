@@ -15,6 +15,10 @@ const (
 	backupCodeCount = 8
 )
 
+// backupCodeBcryptCost — siehe recovery_codes.go: var, damit Tests den
+// Cost auf bcrypt.MinCost senken können.
+var backupCodeBcryptCost = 12
+
 // GenerateTOTPSecret creates a new TOTP secret for a user.
 // Returns the base32-encoded secret, the otpauth provisioning URI (for QR-code), and any error.
 func GenerateTOTPSecret(email, issuer string) (secret, uri string, err error) {
@@ -50,7 +54,7 @@ func GenerateBackupCodes() (plainCodes []string, hashedCodes []string, err error
 		plain := hex1 + "-" + hex2
 		plainCodes[i] = plain
 
-		hash, e := bcrypt.GenerateFromPassword([]byte(plain), 12)
+		hash, e := bcrypt.GenerateFromPassword([]byte(plain), backupCodeBcryptCost)
 		if e != nil {
 			return nil, nil, fmt.Errorf("hash backup code: %w", e)
 		}
