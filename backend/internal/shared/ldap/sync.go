@@ -112,7 +112,7 @@ func (s *Syncer) dial() (*ldaplib.Conn, error) {
 	}
 	if s.cfg.TLS {
 		if err := conn.StartTLS(&tls.Config{MinVersion: tls.VersionTLS12}); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, fmt.Errorf("starttls: %w", err)
 		}
 	}

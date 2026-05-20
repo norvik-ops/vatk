@@ -135,16 +135,16 @@ func (c *AWSCollector) collectPasswordPolicy(ctx context.Context, orgID string, 
 
 	p := out.PasswordPolicy
 	details := map[string]any{
-		"collected_at":             time.Now().UTC().Format(time.RFC3339),
-		"min_password_length":      aws.ToInt32(p.MinimumPasswordLength),
-		"require_uppercase":        p.RequireUppercaseCharacters,
-		"require_lowercase":        p.RequireLowercaseCharacters,
-		"require_numbers":          p.RequireNumbers,
-		"require_symbols":          p.RequireSymbols,
-		"allow_users_to_change":    p.AllowUsersToChangePassword,
-		"max_password_age":         aws.ToInt32(p.MaxPasswordAge),
+		"collected_at":              time.Now().UTC().Format(time.RFC3339),
+		"min_password_length":       aws.ToInt32(p.MinimumPasswordLength),
+		"require_uppercase":         p.RequireUppercaseCharacters,
+		"require_lowercase":         p.RequireLowercaseCharacters,
+		"require_numbers":           p.RequireNumbers,
+		"require_symbols":           p.RequireSymbols,
+		"allow_users_to_change":     p.AllowUsersToChangePassword,
+		"max_password_age":          aws.ToInt32(p.MaxPasswordAge),
 		"password_reuse_prevention": aws.ToInt32(p.PasswordReusePrevention),
-		"hard_expiry":              aws.ToBool(p.HardExpiry),
+		"hard_expiry":               aws.ToBool(p.HardExpiry),
 	}
 
 	controlID := firstControlID(controls)
@@ -188,11 +188,11 @@ func (c *AWSCollector) collectMFAStatus(ctx context.Context, orgID string, awsCf
 	}
 
 	details := map[string]any{
-		"collected_at": time.Now().UTC().Format(time.RFC3339),
-		"total_users":  total,
-		"users_with_mfa": withMFA,
+		"collected_at":         time.Now().UTC().Format(time.RFC3339),
+		"total_users":          total,
+		"users_with_mfa":       withMFA,
 		"mfa_coverage_percent": fmt.Sprintf("%.1f%%", mfaPercent),
-		"users": userSummaries,
+		"users":                userSummaries,
 	}
 
 	controlID := firstControlID(controls)
@@ -236,9 +236,9 @@ func (c *AWSCollector) collectCredentialReport(ctx context.Context, orgID string
 	}
 
 	details := map[string]any{
-		"collected_at":       time.Now().UTC().Format(time.RFC3339),
-		"generated_time":     aws.ToTime(reportOut.GeneratedTime).Format(time.RFC3339),
-		"report_format":      string(reportOut.ReportFormat),
+		"collected_at":         time.Now().UTC().Format(time.RFC3339),
+		"generated_time":       aws.ToTime(reportOut.GeneratedTime).Format(time.RFC3339),
+		"report_format":        string(reportOut.ReportFormat),
 		"user_count_in_report": userCount,
 	}
 
@@ -263,12 +263,12 @@ func (c *AWSCollector) collectCloudTrail(ctx context.Context, orgID string, awsC
 	trails := make([]map[string]any, 0, len(out.TrailList))
 	for _, t := range out.TrailList {
 		trails = append(trails, map[string]any{
-			"name":              aws.ToString(t.Name),
-			"s3_bucket":         aws.ToString(t.S3BucketName),
-			"is_multi_region":   aws.ToBool(t.IsMultiRegionTrail),
-			"log_file_validation": aws.ToBool(t.LogFileValidationEnabled),
+			"name":                          aws.ToString(t.Name),
+			"s3_bucket":                     aws.ToString(t.S3BucketName),
+			"is_multi_region":               aws.ToBool(t.IsMultiRegionTrail),
+			"log_file_validation":           aws.ToBool(t.LogFileValidationEnabled),
 			"include_global_service_events": aws.ToBool(t.IncludeGlobalServiceEvents),
-			"home_region":       aws.ToString(t.HomeRegion),
+			"home_region":                   aws.ToString(t.HomeRegion),
 		})
 	}
 
@@ -329,9 +329,9 @@ func (c *AWSCollector) collectS3(ctx context.Context, orgID string, awsCfg aws.C
 	}
 
 	details := map[string]any{
-		"collected_at":  time.Now().UTC().Format(time.RFC3339),
-		"bucket_count":  len(bucketsOut.Buckets),
-		"buckets":       bucketSummaries,
+		"collected_at": time.Now().UTC().Format(time.RFC3339),
+		"bucket_count": len(bucketsOut.Buckets),
+		"buckets":      bucketSummaries,
 	}
 
 	controlID := firstControlID(controls)
@@ -340,4 +340,3 @@ func (c *AWSCollector) collectS3(ctx context.Context, orgID string, awsCfg aws.C
 	}
 	return 1, nil
 }
-

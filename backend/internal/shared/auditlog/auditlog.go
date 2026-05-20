@@ -14,10 +14,10 @@ import (
 // Entry describes a single compliance audit event.
 type Entry struct {
 	OrgID        string
-	UserID       string            // empty string = system / anonymous
+	UserID       string // empty string = system / anonymous
 	UserEmail    string
-	Action       string            // create | update | delete | approve | export
-	ResourceType string            // vvt | dpia | avv | breach | dsr | control | policy | risk | incident
+	Action       string // create | update | delete | approve | export
+	ResourceType string // vvt | dpia | avv | breach | dsr | control | policy | risk | incident
 	ResourceID   string
 	ResourceName string
 	Details      map[string]string // optional extra info (changed fields, event markers, …)

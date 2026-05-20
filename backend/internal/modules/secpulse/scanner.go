@@ -386,7 +386,7 @@ func (c *gvmClient) startTask(ctx context.Context, taskID string) error {
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	return nil
 }
 

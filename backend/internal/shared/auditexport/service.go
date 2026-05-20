@@ -82,7 +82,9 @@ func GeneratePackage(ctx context.Context, db *pgxpool.Pool, orgID string) (*Audi
 	fmt.Fprintf(f, "  gap_analysis.html — Gap-Analyse-Bericht (im Browser öffnen)\n\n")
 	fmt.Fprintf(f, "Für Audits: Bitte gap_analysis.html im Browser öffnen und als PDF drucken.\n")
 
-	zw.Close()
+	if err := zw.Close(); err != nil {
+		return nil, fmt.Errorf("close zip writer: %w", err)
+	}
 
 	return &AuditPackage{
 		GeneratedAt: now,

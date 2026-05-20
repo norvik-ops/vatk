@@ -11,14 +11,14 @@ import (
 
 // AutoEvidence is the response shape for a single auto-collected evidence item.
 type AutoEvidence struct {
-	ID             string     `json:"id"`
-	OrgID          string     `json:"org_id"`
-	Title          string     `json:"title"`
-	Description    string     `json:"description,omitempty"`
-	AutoSourceType string     `json:"auto_source_type"`
-	AutoSourceRef  string     `json:"auto_source_ref,omitempty"`
+	ID              string     `json:"id"`
+	OrgID           string     `json:"org_id"`
+	Title           string     `json:"title"`
+	Description     string     `json:"description,omitempty"`
+	AutoSourceType  string     `json:"auto_source_type"`
+	AutoSourceRef   string     `json:"auto_source_ref,omitempty"`
 	AutoCollectedAt *time.Time `json:"auto_collected_at,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
+	CreatedAt       time.Time  `json:"created_at"`
 }
 
 // Handler handles HTTP requests for auto-evidence endpoints.

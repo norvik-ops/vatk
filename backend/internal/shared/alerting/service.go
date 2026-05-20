@@ -301,7 +301,7 @@ func (s *Service) Fire(ctx context.Context, orgID, event string, payload map[str
 						continue
 					}
 					code := resp.StatusCode
-					resp.Body.Close()
+					_ = resp.Body.Close()
 					if code >= 200 && code < 300 {
 						responseCode = &code
 						lastErr = nil
