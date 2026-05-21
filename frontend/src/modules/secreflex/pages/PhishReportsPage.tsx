@@ -6,6 +6,7 @@ import { Badge } from '../../../components/ui/badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { usePhishReports, usePhishReportStats, useRegeneratePhishToken } from '../hooks/usePhishReports'
+import { formatLocale } from '../../../shared/utils/locale'
 
 function StatCard({ label, value, icon: Icon, accent }: { label: string; value: number; icon: React.ElementType; accent?: string }) {
   return (
@@ -114,7 +115,7 @@ export default function PhishReportsPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-secondary">
-                        {new Date(r.reported_at).toLocaleString('de-DE')}
+                        {new Date(r.reported_at).toLocaleString(formatLocale())}
                       </TableCell>
                     </TableRow>
                   ))}

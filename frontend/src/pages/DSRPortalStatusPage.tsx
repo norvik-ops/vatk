@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { formatLocale } from '../shared/utils/locale'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,7 +55,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('de-DE', {
+  return new Date(iso).toLocaleDateString(formatLocale(), {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

@@ -30,6 +30,7 @@ Diese ADRs dokumentieren wichtige Architekturentscheidungen der Vakt-Plattform. 
 | [0016](0016-public-mirror-via-script.md) | Public Mirror per Script statt inline rsync im CI; Compile-Check als Gate | Accepted |
 | [0017](0017-api-contract-tests.md) | API-Contract-Tests gegen Backend ↔ Frontend Drift (OpenAPI durchsetzen) | Accepted |
 | [0018](0018-goroutine-lifecycle-und-panic-eskalation.md) | Goroutine-Lifecycle (Parent-Context-Pflicht) und Panic-Eskalation via `safego.Run` | Accepted |
+| [0019](0019-sse-statt-websocket-fuer-realtime.md) | Server-Sent Events statt WebSockets für alle Realtime-Pfade (Notifications, Scan-Progress, AI-Streaming) | Accepted |
 
 ## Wann eine neue ADR schreiben?
 

@@ -28,6 +28,7 @@ import {
 import { Skeleton } from '../components/ui/skeleton'
 import { useToast } from '../shared/hooks/useToast'
 import { setAuthToken } from '../api/client'
+import { formatLocale } from '../shared/utils/locale'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -72,7 +73,7 @@ function PlanBadge({ plan }: { plan: string }) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('de-DE', {
+  return new Date(iso).toLocaleDateString(formatLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

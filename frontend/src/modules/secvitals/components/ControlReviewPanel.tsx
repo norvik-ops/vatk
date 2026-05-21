@@ -7,6 +7,7 @@ import { Label } from '../../../components/ui/label'
 import { Textarea } from '../../../components/ui/textarea'
 import { Badge } from '../../../components/ui/badge'
 import { useControlReviews, useRecordControlReview } from '../hooks/useControlReviews'
+import { formatLocale } from '../../../shared/utils/locale'
 
 interface ControlReviewPanelProps {
   controlId: string
@@ -19,7 +20,7 @@ interface ControlReviewPanelProps {
 
 function formatDate(iso?: string): string {
   if (!iso) return '–'
-  return new Date(iso).toLocaleDateString('de-DE', {
+  return new Date(iso).toLocaleDateString(formatLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

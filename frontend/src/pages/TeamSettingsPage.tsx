@@ -26,6 +26,7 @@ import {
 import { UserPermissionsEditor } from '../components/UserPermissionsEditor'
 import { toast } from '../shared/hooks/useToast'
 import { ErrorState } from '../shared/components/ErrorState'
+import { formatLocale } from '../shared/utils/locale'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,7 +58,7 @@ function daysUntil(iso: string) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('de-DE', {
+  return new Date(iso).toLocaleDateString(formatLocale(), {
     day: '2-digit', month: '2-digit', year: 'numeric',
   })
 }

@@ -18,6 +18,7 @@ import { useAVVs, useCreateAVV, useUpdateAVV, useDeleteAVV } from '../hooks/useA
 import { useDownloadAVVPDF } from '../hooks/useAVVTemplates'
 import { AVVTemplatePickerDialog } from '../components/AVVTemplatePickerDialog'
 import type { AVV, CreateAVVInput, UpdateAVVInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 const STATUS_CLASS: Record<AVV['status'], string> = {
   active: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -74,10 +75,10 @@ function AVVCard({
     terminated: t('secprivacy.avvPage.statusTerminated'),
   }
   const contractDate = avv.contract_date
-    ? new Date(avv.contract_date).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' })
+    ? new Date(avv.contract_date).toLocaleDateString(formatLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
     : null
   const reviewDate = avv.review_date
-    ? new Date(avv.review_date).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' })
+    ? new Date(avv.review_date).toLocaleDateString(formatLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
     : null
 
   return (

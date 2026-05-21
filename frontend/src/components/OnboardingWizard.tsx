@@ -140,7 +140,7 @@ export function OnboardingWizard({ open, onClose, status }: OnboardingWizardProp
             return (
               <div
                 key={step.key}
-                className={`rounded-lg border transition-colors ${done ? 'border-[#22c55e]/40 bg-[#22c55e]/5' : 'border-border bg-surface2'}`}
+                className={`rounded-lg border transition-colors ${done ? 'border-[#22c55e]/40 bg-severity-low/5' : 'border-border bg-surface2'}`}
               >
                 {/* Step row */}
                 <button
@@ -151,19 +151,19 @@ export function OnboardingWizard({ open, onClose, status }: OnboardingWizardProp
                   {/* Circle indicator */}
                   <span className="shrink-0">
                     {done ? (
-                      <CheckCircle className="w-5 h-5 text-[#22c55e]" />
+                      <CheckCircle className="w-5 h-5 text-severity-low" />
                     ) : (
                       <Circle className="w-5 h-5 text-secondary/50" />
                     )}
                   </span>
-                  <Icon className={`w-4 h-4 shrink-0 ${done ? 'text-[#22c55e]' : 'text-secondary'}`} />
+                  <Icon className={`w-4 h-4 shrink-0 ${done ? 'text-severity-low' : 'text-secondary'}`} />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[13px] font-medium ${done ? 'text-[#22c55e]' : 'text-primary'}`}>
+                    <p className={`text-[13px] font-medium ${done ? 'text-severity-low' : 'text-primary'}`}>
                       {idx + 1}. {step.title}
                     </p>
                     <p className="text-[11px] text-secondary mt-0.5 truncate">{step.description}</p>
                   </div>
-                  <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${done ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'bg-surface text-secondary'}`}>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${done ? 'bg-severity-low/20 text-severity-low' : 'bg-surface text-secondary'}`}>
                     {done ? 'Fertig' : 'Offen'}
                   </span>
                 </button>
@@ -254,7 +254,7 @@ export function OnboardingBanner({ status, onOpen }: OnboardingBannerProps) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-lg border border-[#f59e0b]/40 bg-[#f59e0b]/8 mb-4">
+    <div className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-lg border border-[#f59e0b]/40 bg-severity-medium/8 mb-4">
       <div className="flex items-center gap-2.5 min-w-0">
         <span className="text-[15px] shrink-0">🎯</span>
         <p className="text-[12px] text-primary font-medium truncate">

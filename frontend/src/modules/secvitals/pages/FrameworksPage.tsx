@@ -12,6 +12,7 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { useFrameworks, useEnableFramework, useDeleteFramework } from '../hooks/useFrameworks'
 import { FrameworkSetupWizard } from '../components/FrameworkSetupWizard'
 import type { Framework } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // Pre-defined compliance frameworks users can enable with one click
 const FRAMEWORK_CATALOGUE = [
@@ -114,7 +115,7 @@ function ScoreCircle({ score }: { score: number }) {
 function EnabledFrameworkCard({ framework, onDelete }: { framework: Framework; onDelete: (fw: Framework) => void }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const enabledDate = new Date(framework.created_at).toLocaleDateString('de-DE', {
+  const enabledDate = new Date(framework.created_at).toLocaleDateString(formatLocale(), {
     year: 'numeric', month: 'short', day: 'numeric',
   })
 

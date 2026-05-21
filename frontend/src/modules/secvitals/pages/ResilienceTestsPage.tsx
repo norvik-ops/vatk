@@ -31,6 +31,7 @@ import {
   useUploadResilienceTestAttachment,
 } from '../hooks/useResilienceTests'
 import type { ResilienceTest, CreateResilienceTestInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // ─── Type helpers ─────────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ function ResilienceTestRow({
               </Badge>
             </div>
             <p className="text-sm font-medium">
-              {new Date(test.test_date).toLocaleDateString('de-DE')}
+              {new Date(test.test_date).toLocaleDateString(formatLocale())}
               {test.provider ? ` · ${test.provider}` : ''}
             </p>
             {test.scope && (

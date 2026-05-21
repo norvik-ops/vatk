@@ -50,6 +50,7 @@ import {
 import type { ControlException, CreateControlExceptionInput } from '../hooks/useExceptions'
 import { useEvidenceHistory } from '../hooks/useEvidenceHistory'
 import type { EvidenceHistoryEntry } from '../hooks/useEvidenceHistory'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // ── Status config ────────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ function fieldLabel(field: string): string {
 }
 
 function formatDate(isoString: string): string {
-  return new Date(isoString).toLocaleString('de-DE', {
+  return new Date(isoString).toLocaleString(formatLocale(), {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
   })
@@ -171,7 +172,7 @@ function EvidenceHistoryDialog({
   const { data: history, isLoading } = useEvidenceHistory(evidenceId)
 
   function formatDateTime(iso: string): string {
-    return new Date(iso).toLocaleString('de-DE', {
+    return new Date(iso).toLocaleString(formatLocale(), {
       year: 'numeric', month: '2-digit', day: '2-digit',
       hour: '2-digit', minute: '2-digit',
     })
@@ -368,9 +369,9 @@ export default function ControlDetailPage() {
   }
 
   const statusColors: Record<string, string> = {
-    overdue: 'text-[#ef4444]',
-    soon: 'text-[#f59e0b]',
-    ok: 'text-[#22c55e]',
+    overdue: 'text-severity-critical',
+    soon: 'text-severity-medium',
+    ok: 'text-severity-low',
     none: 'text-secondary',
   }
 
@@ -979,7 +980,7 @@ export default function ControlDetailPage() {
                         <span>Genehmigt von: <span className="text-primary">{ex.approved_by}</span></span>
                       )}
                       {ex.expires_at && (
-                        <span>Gültig bis: <span className="text-primary">{new Date(ex.expires_at).toLocaleDateString('de-DE')}</span></span>
+                        <span>Gültig bis: <span className="text-primary">{new Date(ex.expires_at).toLocaleDateString(formatLocale())}</span></span>
                       )}
                     </div>
                   </div>
@@ -1032,7 +1033,7 @@ export default function ControlDetailPage() {
                         <EvidenceExpiryBadge expiresAt={ev.expires_at} />
                       </TableCell>
                       <TableCell className="text-sm text-secondary">
-                        {new Date(ev.created_at).toLocaleDateString('de-DE')}
+                        {new Date(ev.created_at).toLocaleDateString(formatLocale())}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

@@ -18,6 +18,7 @@ import { Skeleton } from '../components/ui/skeleton'
 import { useAuthStore } from '../shared/stores/auth'
 import { ErrorState } from '../shared/components/ErrorState'
 import { useAuditLog, type AuditLogEntry } from '../hooks/useAuditLog'
+import { formatLocale } from '../shared/utils/locale'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -37,7 +38,7 @@ function dateToRFC3339End(date: string): string {
 }
 
 function formatTimestamp(iso: string): string {
-  return new Date(iso).toLocaleString('de-DE', {
+  return new Date(iso).toLocaleString(formatLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

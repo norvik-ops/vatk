@@ -55,6 +55,7 @@ import { ErrorState } from '../../../shared/components/ErrorState'
 import { exportAsRTF } from '../../../shared/utils/exportRtf'
 import { useMilestoneToast } from '../../../shared/components/MilestoneToast'
 import { ComplianceTooltip } from '../../../shared/components/ComplianceTooltip'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // ── DORA → ISO 27001 mapping info block ──────────────────────────────────────
 
@@ -216,7 +217,7 @@ function AuditorLinksTab({ frameworkId }: { frameworkId: string }) {
                 <TableRow key={link.id}>
                   <TableCell className="font-medium">{link.label ?? '—'}</TableCell>
                   <TableCell>
-                    {new Date(link.expires_at).toLocaleDateString('de-DE')}
+                    {new Date(link.expires_at).toLocaleDateString(formatLocale())}
                   </TableCell>
                   <TableCell>{link.access_count}</TableCell>
                   <TableCell>
@@ -995,7 +996,7 @@ export default function FrameworkDetailPage() {
                         <Badge variant={gapSeverityVariant(gap.reason)}>{gapSeverityLabel(gap.reason)}</Badge>
                         {gap.expires_at && (
                           <span className="text-xs text-secondary">
-                            Läuft ab: {new Date(gap.expires_at).toLocaleDateString('de-DE')}
+                            Läuft ab: {new Date(gap.expires_at).toLocaleDateString(formatLocale())}
                           </span>
                         )}
                       </div>

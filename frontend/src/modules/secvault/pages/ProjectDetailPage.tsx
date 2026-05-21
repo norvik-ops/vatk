@@ -13,6 +13,7 @@ import { Label } from '../../../components/ui/label'
 import { useProject, useProjectHealth } from '../hooks/useProjects'
 import { useEnvironments, useCreateEnvironment, useSecretKeys, useUpsertSecret, useDeleteSecret, useSecretValue, useProjectAccessLog } from '../hooks/useSecrets'
 import type { Environment } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 function healthScoreColor(score: number) {
   if (score >= 80) return 'text-green-600'
@@ -336,7 +337,7 @@ export default function ProjectDetailPage() {
                           <Badge variant="outline" className="text-xs">{entry.access_via}</Badge>
                         </TableCell>
                         <TableCell className="text-sm text-secondary">
-                          {new Date(entry.accessed_at).toLocaleString('de-DE', {
+                          {new Date(entry.accessed_at).toLocaleString(formatLocale(), {
                             dateStyle: 'short',
                             timeStyle: 'short',
                           })}

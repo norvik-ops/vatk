@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
 import { Button } from '../../../components/ui/button'
+import { formatLocale } from '../../../shared/utils/locale'
 
 interface EvidenceItem {
   id: string
@@ -43,7 +44,7 @@ export function ExpiringEvidenceWidget() {
             <div key={item.id} className="flex items-center justify-between text-sm">
               <span className="text-gray-700 dark:text-gray-300 truncate">{item.title}</span>
               <Badge variant="outline" className="ml-2 text-amber-700 border-amber-300 shrink-0">
-                {new Date(item.expires_at).toLocaleDateString('de-DE')}
+                {new Date(item.expires_at).toLocaleDateString(formatLocale())}
               </Badge>
             </div>
           ))}

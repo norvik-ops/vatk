@@ -34,6 +34,7 @@ import { toast } from '../../../shared/hooks/useToast'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { exportToCSV } from '../../../lib/csv'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // ── Inline editable status cell ──────────────────────────────────────────────
 
@@ -177,11 +178,11 @@ function InlineSeverityCell({ finding }: { finding: Finding }) {
 }
 
 const severityClass: Record<Finding['severity'], string> = {
-  info:     'bg-[#374151] text-[#94a3b8] border-transparent',
-  low:      'bg-[#1e3a5f] text-[#93c5fd] border-transparent',
-  medium:   'bg-[#78350f] text-[#f59e0b] border-transparent',
-  high:     'bg-[#7c2d12] text-[#f97316] border-transparent',
-  critical: 'bg-[#7f1d1d] text-[#ef4444] border-transparent',
+  info:     'bg-surface2 text-muted border-transparent',
+  low:      'bg-severity-info-bg text-severity-info border-transparent',
+  medium:   'bg-severity-medium-bg text-severity-medium border-transparent',
+  high:     'bg-severity-high-bg text-severity-high border-transparent',
+  critical: 'bg-severity-critical-bg text-severity-critical border-transparent',
 }
 
 // Custom sort key: maps severity to a numeric weight for sorting
@@ -489,7 +490,7 @@ export default function FindingsPage() {
                 }}
                 meta={[
                   { label: 'Status', value: f.status.replace(/_/g, ' ') },
-                  { label: 'Erstellt', value: new Date(f.created_at).toLocaleDateString('de-DE') },
+                  { label: 'Erstellt', value: new Date(f.created_at).toLocaleDateString(formatLocale()) },
                   ...(f.cve_id ? [{ label: 'CVE', value: f.cve_id }] : []),
                   ...(f.cvss_score != null ? [{ label: 'CVSS', value: f.cvss_score.toFixed(1) }] : []),
                 ]}
@@ -609,7 +610,7 @@ export default function FindingsPage() {
                       {f.cvss_score != null ? f.cvss_score.toFixed(1) : '—'}
                     </TableCell>
                     <TableCell className="text-sm text-secondary" onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
-                      {new Date(f.created_at).toLocaleDateString('de-DE')}
+                      {new Date(f.created_at).toLocaleDateString(formatLocale())}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -143,7 +143,7 @@ function moduleBadgeClass(module: ModuleKey): string {
   if (module === 'secvitals')  return 'bg-green-900/40 text-green-300 border-green-800'
   if (module === 'secprivacy') return 'bg-orange-900/40 text-orange-300 border-orange-800'
   if (module === 'secreflex')  return 'bg-yellow-900/40 text-yellow-300 border-yellow-800'
-  return 'bg-[#374151] text-[#94a3b8] border-transparent'
+  return 'bg-surface2 text-muted border-transparent'
 }
 
 // ─── Category Card ────────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ function CategoryCard({ cat, expanded, onToggle }: {
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors text-left"
       >
         <div className="flex items-center gap-3">
-          <Badge className="bg-[#1e3a5f] text-[#93c5fd] border-transparent text-xs font-mono shrink-0">
+          <Badge className="bg-severity-info-bg text-severity-info border-transparent text-xs font-mono shrink-0">
             {cat.category}
           </Badge>
           <span className="text-sm font-semibold text-primary">{cat.title}</span>
@@ -182,7 +182,7 @@ function CategoryCard({ cat, expanded, onToggle }: {
               className="flex items-center justify-between gap-3 px-4 py-2.5"
             >
               <div className="flex items-start gap-2.5 min-w-0">
-                <Badge className="bg-[#1e3a5f]/60 text-[#93c5fd] border-transparent text-[11px] font-mono shrink-0 mt-0.5">
+                <Badge className="bg-severity-info-bg/60 text-severity-info border-transparent text-[11px] font-mono shrink-0 mt-0.5">
                   {b.id}
                 </Badge>
                 <div className="min-w-0">
@@ -227,13 +227,13 @@ export default function BSIGrundschutzPage() {
       <div className="p-6 space-y-4">
         {/* Summary badges */}
         <div className="flex flex-wrap gap-2 items-center">
-          <Badge className="bg-[#1e3a5f] text-[#93c5fd] border-transparent text-xs">
+          <Badge className="bg-severity-info-bg text-severity-info border-transparent text-xs">
             BSI IT-Grundschutz-Kompendium
           </Badge>
-          <Badge className="bg-[#374151] text-[#94a3b8] border-transparent text-xs">
+          <Badge className="bg-surface2 text-muted border-transparent text-xs">
             {totalBausteins} Bausteine abgedeckt
           </Badge>
-          <Badge className="bg-[#374151] text-[#94a3b8] border-transparent text-xs">
+          <Badge className="bg-surface2 text-muted border-transparent text-xs">
             {BAUSTEINE.length} Kategorien
           </Badge>
         </div>

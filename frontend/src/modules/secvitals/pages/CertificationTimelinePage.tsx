@@ -19,6 +19,7 @@ import {
 } from '../hooks/useMilestones'
 import { useFrameworks } from '../hooks/useFrameworks'
 import type { AuditMilestone, MilestoneStatus, MilestoneType, CreateMilestoneInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // ---- constants ----
 
@@ -282,7 +283,7 @@ function GanttChart({ milestones }: { milestones: AuditMilestone[] }) {
                 x={`${x}%`} y={headerH - 4}
                 fontSize="10" fill="#9ca3af" textAnchor="middle"
               >
-                {d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })}
+                {d.toLocaleDateString(formatLocale(), { month: 'short', year: '2-digit' })}
               </text>
             </g>
           )

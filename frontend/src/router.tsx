@@ -1,44 +1,50 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { apiFetch } from './api/client'
 import { useAuthStore } from './shared/stores/auth'
 import Layout from './shared/components/Layout'
+import { ErrorBoundary } from './shared/components/ErrorBoundary'
+
+// Eager-loaded: Auth-Flows (Login/Setup), Dashboard (initial Landing),
+// öffentliche Pages mit Magic-Link-Tokens (auditor/policy/invite/dsr —
+// die Token-Validierung soll ohne Code-Split-Wartezeit laufen),
+// NotFound (Fallback ohne Suspense-Spinner).
 import Setup from './pages/Setup'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import Settings from './pages/Settings'
-import ScoreConfigPage from './pages/ScoreConfigPage'
-import AlertingSettingsPage from './pages/AlertingSettingsPage'
-import AccountSettingsPage from './pages/AccountSettingsPage'
-import RetentionConfigPage from './pages/RetentionConfigPage'
-import SessionsPage from './pages/SessionsPage'
-import OrgBrandingPage from './pages/OrgBrandingPage'
 import TrustPage from './pages/TrustPage'
-import TrustCenterSettingsPage from './pages/TrustCenterSettingsPage'
-import SupplierPortalPage from './pages/SupplierPortalPage'
-import DSRPortalPage from './pages/DSRPortalPage'
-import DSRPortalStatusPage from './pages/DSRPortalStatusPage'
-import IntegrationsPage from './pages/IntegrationsPage'
-import AuditorSettingsPage from './pages/AuditorSettingsPage'
 import AuditorAcceptPage from './pages/AuditorAcceptPage'
 import PolicyAcceptPage from './pages/PolicyAcceptPage'
 import InviteAcceptPage from './pages/InviteAcceptPage'
-import TeamSettingsPage from './pages/TeamSettingsPage'
-import AuditLogPage from './pages/AuditLogPage'
+import DSRPortalPage from './pages/DSRPortalPage'
+import DSRPortalStatusPage from './pages/DSRPortalStatusPage'
+import SupplierPortalPage from './pages/SupplierPortalPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
-import ApiKeysPage from './pages/ApiKeysPage'
-import AdminHealthPage from './pages/AdminHealthPage'
-import AdminTenantsPage from './pages/AdminTenantsPage'
-import AdminSecurityPage from './pages/AdminSecurityPage'
-import WebhooksPage from './pages/WebhooksPage'
-import ScheduledReportsPage from './pages/ScheduledReportsPage'
-import NotificationPreferencesPage from './pages/NotificationPreferencesPage'
 import NotFoundPage from './pages/NotFoundPage'
 
-// Lazy module pages — filled in by module agents
-import { lazy, Suspense } from 'react'
-import { ErrorBoundary } from './shared/components/ErrorBoundary'
+// Sprint 16 S16-3: alle anderen Page-Imports lazy. Reduziert das Initial-
+// Bundle um die Settings-/Admin-/Audit-Sektionen, die nach Login selten
+// auf den ersten Klick gebraucht werden.
+const Settings                   = lazy(() => import('./pages/Settings'))
+const ScoreConfigPage            = lazy(() => import('./pages/ScoreConfigPage'))
+const AlertingSettingsPage       = lazy(() => import('./pages/AlertingSettingsPage'))
+const AccountSettingsPage        = lazy(() => import('./pages/AccountSettingsPage'))
+const RetentionConfigPage        = lazy(() => import('./pages/RetentionConfigPage'))
+const SessionsPage               = lazy(() => import('./pages/SessionsPage'))
+const OrgBrandingPage            = lazy(() => import('./pages/OrgBrandingPage'))
+const TrustCenterSettingsPage    = lazy(() => import('./pages/TrustCenterSettingsPage'))
+const IntegrationsPage           = lazy(() => import('./pages/IntegrationsPage'))
+const AuditorSettingsPage        = lazy(() => import('./pages/AuditorSettingsPage'))
+const TeamSettingsPage           = lazy(() => import('./pages/TeamSettingsPage'))
+const AuditLogPage               = lazy(() => import('./pages/AuditLogPage'))
+const ApiKeysPage                = lazy(() => import('./pages/ApiKeysPage'))
+const AdminHealthPage            = lazy(() => import('./pages/AdminHealthPage'))
+const AdminTenantsPage           = lazy(() => import('./pages/AdminTenantsPage'))
+const AdminSecurityPage          = lazy(() => import('./pages/AdminSecurityPage'))
+const WebhooksPage               = lazy(() => import('./pages/WebhooksPage'))
+const ScheduledReportsPage       = lazy(() => import('./pages/ScheduledReportsPage'))
+const NotificationPreferencesPage = lazy(() => import('./pages/NotificationPreferencesPage'))
 
 const SecPulse    = lazy(() => import('./modules/secpulse/SecPulseRoutes'))
 const SecVitals   = lazy(() => import('./modules/secvitals/SecVitalsRoutes'))

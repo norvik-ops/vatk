@@ -48,23 +48,23 @@ function fmt(n: number | null | undefined): string {
 
 function scoreColor(score: number | undefined): string {
   if (score == null) return 'text-secondary'
-  if (score >= 70) return 'text-[#22c55e]'
-  if (score >= 40) return 'text-[#f59e0b]'
-  return 'text-[#ef4444]'
+  if (score >= 70) return 'text-severity-low'
+  if (score >= 40) return 'text-severity-medium'
+  return 'text-severity-critical'
 }
 
 /** Color the progress bar based on compliance percentage. */
 function barColor(pct: number): string {
-  if (pct >= 80) return 'bg-[#22c55e]'
-  if (pct >= 50) return 'bg-[#f59e0b]'
-  return 'bg-[#ef4444]'
+  if (pct >= 80) return 'bg-severity-low'
+  if (pct >= 50) return 'bg-severity-medium'
+  return 'bg-severity-critical'
 }
 
 /** Color the risk score badge. */
 function riskBadgeColor(score: number): string {
-  if (score >= 15) return 'bg-[#ef4444]/15 text-[#ef4444]'
-  if (score >= 9) return 'bg-[#f59e0b]/15 text-[#f59e0b]'
-  return 'bg-[#22c55e]/15 text-[#22c55e]'
+  if (score >= 15) return 'bg-severity-critical/15 text-severity-critical'
+  if (score >= 9) return 'bg-severity-medium/15 text-severity-medium'
+  return 'bg-severity-low/15 text-severity-low'
 }
 
 /** Pick a lucide icon for audit-log resource_type. */
@@ -152,13 +152,13 @@ function KPICard({
     >
       <div className="flex items-center gap-2 mb-1">
         {/* WCAG 1.1.1: icon is decorative, label text conveys meaning */}
-        <Icon className={`w-4 h-4 ${isAlert ? 'text-[#ef4444]' : 'text-secondary'}`} aria-hidden="true" />
+        <Icon className={`w-4 h-4 ${isAlert ? 'text-severity-critical' : 'text-secondary'}`} aria-hidden="true" />
         <span className="text-[11px] text-secondary uppercase tracking-wider font-semibold">{label}</span>
       </div>
       {isLoading ? (
         <Skeleton className="h-8 w-16 mt-1" aria-label={`${label} wird geladen`} />
       ) : (
-        <p className={`text-[32px] font-black leading-none ${isAlert ? 'text-[#ef4444]' : 'text-primary'}`} aria-hidden="true">
+        <p className={`text-[32px] font-black leading-none ${isAlert ? 'text-severity-critical' : 'text-primary'}`} aria-hidden="true">
           {value ?? '—'}
         </p>
       )}
@@ -322,7 +322,7 @@ function ComplianceProgressCard({
               <span className="font-semibold">{totals.implemented}</span>
               <span className="text-secondary"> von {totals.total} Controls umgesetzt</span>
             </span>
-            <span className={`text-[11px] font-medium ${pct >= 80 ? 'text-[#22c55e]' : pct >= 50 ? 'text-[#f59e0b]' : 'text-[#ef4444]'}`}>
+            <span className={`text-[11px] font-medium ${pct >= 80 ? 'text-severity-low' : pct >= 50 ? 'text-severity-medium' : 'text-severity-critical'}`}>
               {totals.total - totals.implemented} offen
             </span>
           </div>
@@ -390,7 +390,7 @@ function ScoreForecastHint({ entries }: { entries: ScoreHistoryEntry[] }) {
     return (
       <p className="text-[11px] text-secondary mt-2">
         Bei aktuellem Tempo erreichst du voraussichtlich{' '}
-        <span className="font-semibold text-[#22c55e]">{forecastClamped}%</span> in ~6 Wochen
+        <span className="font-semibold text-severity-low">{forecastClamped}%</span> in ~6 Wochen
         {forecastClamped <= currentScore ? ' (Score bereits stabil)' : ''}.
       </p>
     )
@@ -399,7 +399,7 @@ function ScoreForecastHint({ entries }: { entries: ScoreHistoryEntry[] }) {
   return (
     <p className="text-[11px] text-secondary mt-2">
       Abwärtstrend — ohne Maßnahmen könnte der Score auf{' '}
-      <span className="font-semibold text-[#ef4444]">{forecastClamped}%</span> in ~6 Wochen fallen.
+      <span className="font-semibold text-severity-critical">{forecastClamped}%</span> in ~6 Wochen fallen.
     </p>
   )
 }
@@ -455,7 +455,7 @@ function ScoreHistoryCard() {
         <div className="flex items-center gap-2">
           {trendDelta !== null && (
             <span
-              className={`flex items-center gap-0.5 text-[11px] font-semibold ${trendDelta > 0.5 ? 'text-[#22c55e]' : trendDelta < -0.5 ? 'text-[#ef4444]' : 'text-secondary'}`}
+              className={`flex items-center gap-0.5 text-[11px] font-semibold ${trendDelta > 0.5 ? 'text-severity-low' : trendDelta < -0.5 ? 'text-severity-critical' : 'text-secondary'}`}
               aria-label={`Trend: ${trendDelta > 0 ? '+' : ''}${trendDelta.toFixed(1)}%`}
             >
               {trendDelta > 0.5 ? (
@@ -597,9 +597,9 @@ function TodayWidget() {
                       className="w-full flex items-center gap-2 text-left rounded-md px-2 py-1.5 hover:bg-border/50 transition-colors group"
                       onClick={() => { navigate(`/secvitals/risks/${r.id}`) }}
                     >
-                      <TriangleAlert className={`w-3.5 h-3.5 shrink-0 ${isOverdue ? 'text-[#ef4444]' : 'text-[#f59e0b]'}`} aria-hidden="true" />
+                      <TriangleAlert className={`w-3.5 h-3.5 shrink-0 ${isOverdue ? 'text-severity-critical' : 'text-severity-medium'}`} aria-hidden="true" />
                       <span className="text-[12px] text-primary flex-1 truncate group-hover:text-brand">{r.title}</span>
-                      <span className={`text-[10px] shrink-0 ${isOverdue ? 'text-[#ef4444]' : 'text-secondary'}`}>
+                      <span className={`text-[10px] shrink-0 ${isOverdue ? 'text-severity-critical' : 'text-secondary'}`}>
                         {isOverdue ? 'Überfällig' : 'Heute fällig'}
                       </span>
                     </button>
@@ -621,7 +621,7 @@ function TodayWidget() {
                     className="w-full flex items-center gap-2 text-left rounded-md px-2 py-1.5 hover:bg-border/50 transition-colors group"
                     onClick={() => { navigate(`/secvitals/incidents/${i.id}`) }}
                   >
-                    <Flame className="w-3.5 h-3.5 shrink-0 text-[#ef4444]" aria-hidden="true" />
+                    <Flame className="w-3.5 h-3.5 shrink-0 text-severity-critical" aria-hidden="true" />
                     <span className="text-[12px] text-primary flex-1 truncate group-hover:text-brand">{i.title}</span>
                     <span className="text-[10px] text-secondary shrink-0">{i.severity}</span>
                   </button>
@@ -689,7 +689,7 @@ function MyTasksWidget() {
               >
                 {task.type === 'control'
                   ? <Shield className="w-3.5 h-3.5 shrink-0 text-brand" aria-hidden="true" />
-                  : <TriangleAlert className="w-3.5 h-3.5 shrink-0 text-[#f59e0b]" aria-hidden="true" />}
+                  : <TriangleAlert className="w-3.5 h-3.5 shrink-0 text-severity-medium" aria-hidden="true" />}
                 <span className="text-[12px] text-primary flex-1 truncate group-hover:text-brand">{task.title}</span>
                 <span className="text-[10px] text-secondary shrink-0 capitalize">{task.status || '—'}</span>
               </button>
@@ -917,7 +917,7 @@ export default function Dashboard() {
       label: 'Kritische Findings',
       value: fmt(critCount),
       icon: AlertTriangle,
-      color: critCount ? 'text-[#ef4444]' : 'text-secondary',
+      color: critCount ? 'text-severity-critical' : 'text-secondary',
       path: '/secpulse/findings?severity=critical',
       loading: findingsLoading,
     },
@@ -925,7 +925,7 @@ export default function Dashboard() {
       label: 'Frameworks aktiv',
       value: fmt(fwCount),
       icon: CheckCircle,
-      color: fwCount ? 'text-[#22c55e]' : 'text-secondary',
+      color: fwCount ? 'text-severity-low' : 'text-secondary',
       path: '/secvitals',
       loading: fwLoading,
     },
@@ -933,7 +933,7 @@ export default function Dashboard() {
       label: 'Vault-Projekte',
       value: fmt(projCount),
       icon: ShieldAlert,
-      color: 'text-[#f59e0b]',
+      color: 'text-severity-medium',
       path: '/secvault',
       loading: projLoading,
     },
@@ -941,7 +941,7 @@ export default function Dashboard() {
       label: 'Aktive Kampagnen',
       value: fmt(activeCampaignCount),
       icon: Activity,
-      color: activeCampaignCount ? 'text-[#818cf8]' : 'text-secondary',
+      color: activeCampaignCount ? 'text-brand-hover' : 'text-secondary',
       path: '/secreflex',
       loading: campLoading,
     },
@@ -949,7 +949,7 @@ export default function Dashboard() {
       label: 'Offene Datenpannen',
       value: fmt(openBreachCount),
       icon: Flame,
-      color: openBreachCount ? 'text-[#ef4444]' : 'text-secondary',
+      color: openBreachCount ? 'text-severity-critical' : 'text-secondary',
       path: '/secprivacy?filter=breach&status=open',
       loading: breachLoading,
     },
@@ -960,25 +960,25 @@ export default function Dashboard() {
       label: 'Vakt Scan',
       description: 'Scanner-Orchestrierung & Vulnerability Management',
       icon: Bug,
-      iconColor: 'text-[#ef4444]',
+      iconColor: 'text-severity-critical',
       badge: critCount != null ? `${critCount} kritisch` : '—',
-      badgeColor: critCount ? 'text-[#ef4444]' : 'text-secondary',
+      badgeColor: critCount ? 'text-severity-critical' : 'text-secondary',
       path: '/secpulse',
     },
     {
       label: 'Vakt Comply',
       description: 'Compliance & Dokumentation — NIS2, ISO 27001, BSI',
       icon: FileCheck,
-      iconColor: 'text-[#22c55e]',
+      iconColor: 'text-severity-low',
       badge: fwCount != null ? `${fwCount} Framework${fwCount === 1 ? '' : 's'}` : '—',
-      badgeColor: fwCount ? 'text-[#22c55e]' : 'text-secondary',
+      badgeColor: fwCount ? 'text-severity-low' : 'text-secondary',
       path: '/secvitals',
     },
     {
       label: 'Vakt Vault',
       description: 'Secrets Management, Rotation & Git-Scanning',
       icon: Key,
-      iconColor: 'text-[#f59e0b]',
+      iconColor: 'text-severity-medium',
       badge: projCount != null ? `${projCount} Projekt${projCount === 1 ? '' : 'e'}` : '—',
       badgeColor: 'text-secondary',
       path: '/secvault',
@@ -987,18 +987,18 @@ export default function Dashboard() {
       label: 'Vakt Aware',
       description: 'Phishing-Simulation & Security Awareness',
       icon: Fish,
-      iconColor: 'text-[#818cf8]',
+      iconColor: 'text-brand-hover',
       badge: activeCampaignCount != null ? `${activeCampaignCount} aktiv` : '—',
-      badgeColor: activeCampaignCount ? 'text-[#818cf8]' : 'text-secondary',
+      badgeColor: activeCampaignCount ? 'text-brand-hover' : 'text-secondary',
       path: '/secreflex',
     },
     {
       label: 'Vakt Privacy',
       description: 'DSGVO-Dokumentation — VVT, DPIA, AVV, Meldepflichten',
       icon: Eye,
-      iconColor: 'text-[#06b6d4]',
+      iconColor: 'text-severity-info',
       badge: openBreachCount != null ? `${openBreachCount} offen` : '—',
-      badgeColor: openBreachCount ? 'text-[#ef4444]' : 'text-secondary',
+      badgeColor: openBreachCount ? 'text-severity-critical' : 'text-secondary',
       path: '/secprivacy',
     },
   ]
@@ -1069,7 +1069,7 @@ export default function Dashboard() {
             <p className="text-[12px] text-secondary">Gesamtbewertung</p>
             {scoreTrend !== null && (
               <span
-                className={`flex items-center gap-0.5 text-[11px] font-semibold ${scoreTrend > 0.5 ? 'text-[#22c55e]' : scoreTrend < -0.5 ? 'text-[#ef4444]' : 'text-secondary'}`}
+                className={`flex items-center gap-0.5 text-[11px] font-semibold ${scoreTrend > 0.5 ? 'text-severity-low' : scoreTrend < -0.5 ? 'text-severity-critical' : 'text-secondary'}`}
                 aria-label={`Trend: ${scoreTrend > 0 ? '+' : ''}${scoreTrend.toFixed(1)}%`}
               >
                 {scoreTrend > 0.5 ? (
@@ -1114,9 +1114,9 @@ export default function Dashboard() {
           {breachLoading ? (
             <Skeleton className="h-4 w-32" />
           ) : openBreachCount === 0 ? (
-            <p className="text-[12px] text-[#22c55e]">Keine offenen Datenpannen</p>
+            <p className="text-[12px] text-severity-low">Keine offenen Datenpannen</p>
           ) : (
-            <p className="text-[12px] text-[#ef4444]">
+            <p className="text-[12px] text-severity-critical">
               {openBreachCount} offene Datenpanne{openBreachCount === 1 ? '' : 'n'}
             </p>
           )}

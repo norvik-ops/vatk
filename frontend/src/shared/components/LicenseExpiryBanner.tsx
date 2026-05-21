@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '../../api/client'
 import { useAuthStore } from '../stores/auth'
 import { VAKT_LS_PORTAL_URL } from '../../lib/constants'
+import { formatLocale } from '../utils/locale'
 
 interface LicenseInfo {
   tier: string
@@ -69,7 +70,7 @@ export function LicenseExpiryBanner() {
     return null
   }
 
-  const formattedDate = new Date(expiresAt).toLocaleDateString('de-DE')
+  const formattedDate = new Date(expiresAt).toLocaleDateString(formatLocale())
   const isExpired = days < 0
   const isUrgent = days <= 7 // includes expired
 

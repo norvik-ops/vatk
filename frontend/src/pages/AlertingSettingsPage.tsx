@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/table'
 import { cn } from '../lib/utils'
+import { formatLocale } from '../shared/utils/locale'
 import {
   ALERT_EVENTS,
   useAlertChannels,
@@ -39,7 +40,7 @@ const TYPE_LABELS: Record<AlertChannel['type'], string> = {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('de-DE', {
+  return new Date(iso).toLocaleString(formatLocale(), {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })

@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { useAuthStore } from '../../../shared/stores/auth'
 import { toast } from '../../../shared/hooks/useToast'
 import { handleApiError } from '../../../shared/utils/errorMessages'
+import { formatLocale } from '../../../shared/utils/locale'
 import {
   usePendingApprovals, useApproveApproval, useRejectApproval,
   type ApprovalWithDetails,
@@ -203,7 +204,7 @@ export default function ApprovalsPage() {
                   </TableCell>
                   <TableCell>
                     <span className="text-xs text-secondary">
-                      {new Date(a.created_at).toLocaleDateString('de-DE')}
+                      {new Date(a.created_at).toLocaleDateString(formatLocale())}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">

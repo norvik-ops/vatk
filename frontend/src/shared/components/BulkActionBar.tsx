@@ -28,7 +28,7 @@ export function BulkActionBar({ selectedCount, onClearSelection, actions }: Bulk
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-white/10 bg-[#1a1f2e] shadow-2xl">
+      <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-white/10 bg-surface2 shadow-2xl">
         {/* Selection count + clear */}
         <span className="text-sm font-medium text-white whitespace-nowrap">
           {t('common.selected', { count: selectedCount })}

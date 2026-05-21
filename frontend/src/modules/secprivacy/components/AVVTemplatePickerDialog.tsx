@@ -12,6 +12,7 @@ import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { useAVVTemplates, useCreateAVVFromTemplate } from '../hooks/useAVVTemplates'
 import type { AVVTemplate } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 interface AVVTemplatePickerDialogProps {
   open: boolean
@@ -33,7 +34,7 @@ function emptyVars(tpl: AVVTemplate): VarFormState {
   const state: VarFormState = {
     auftraggeber: '',
     auftragnehmer: '',
-    datum: new Date().toLocaleDateString('de-DE'),
+    datum: new Date().toLocaleDateString(formatLocale()),
     zweck: '',
   }
   for (const v of tpl.variables) {

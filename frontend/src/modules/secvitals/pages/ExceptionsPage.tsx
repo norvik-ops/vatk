@@ -11,6 +11,7 @@ import { useAuthStore } from '../../../shared/stores/auth'
 import { useDeferredDelete } from '../../../shared/hooks/useDeferredDelete'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '../../../api/client'
+import { formatLocale } from '../../../shared/utils/locale'
 import {
   useDeleteControlException,
   type ControlException,
@@ -209,9 +210,9 @@ function ExceptionCard({
         <p><span className="text-slate-300">Akzeptiertes Risiko:</span> {e.risk_accepted}</p>
         {e.approved_by && <p><span className="text-slate-300">Genehmigt von:</span> {e.approved_by}</p>}
         {e.expires_at && (
-          <p><span className="text-slate-300">Läuft ab:</span> {new Date(e.expires_at).toLocaleDateString('de-DE')}</p>
+          <p><span className="text-slate-300">Läuft ab:</span> {new Date(e.expires_at).toLocaleDateString(formatLocale())}</p>
         )}
-        <p className="text-slate-500">Erstellt: {new Date(e.created_at).toLocaleDateString('de-DE')}</p>
+        <p className="text-slate-500">Erstellt: {new Date(e.created_at).toLocaleDateString(formatLocale())}</p>
       </CardContent>
     </Card>
   )

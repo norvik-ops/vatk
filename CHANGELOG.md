@@ -7,6 +7,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Sprint 16 — Frontend-Polish + Doku-Reife (Tag-Kandidat v0.9.0)
+
+Sprint 16 schließt die Reife-Sanierung-Welle 2 strukturell ab. Schwerpunkt: Frontend-Hygiene + Doku-Vollständigkeit, keine API-Breaking-Changes.
+
+**Doku-Wave (S16-5..9):**
+- `docs/GLOSSARY.md` neu — Compliance-Vokabular (Control, Evidence, Framework, Finding, Risk, Incident, Cross-Module-Evidence, SoA, TOM, VVT, DPIA, AVV, DSR) + Vakt-Architektur-Begriffe (Modul, Service, Shared, Demo-Flow, safego.Run, Public Mirror).
+- `docs/concepts/` Subdir mit `module-isolation.md`, `evidence-collection.md`, `rbac-model.md`, `demo-flow.md`. Narrative Erklärungen zur Architektur, komplementär zu den ADRs.
+- `docs/api-versioning-policy.md` — Breaking-Change-Definition, 6-Monats-Deprecation-Window, CI-Enforcement-Plan, Sonderfälle für Security-/Legal-Pflichten.
+- `docs/wiki/admin-cli.md` — vollständige Doku zu `vakt-admin` CLI (`health-check`, `list-orgs`, `list-users`, `reset-password`).
+- `docs/adr/0019-sse-statt-websocket-fuer-realtime.md` Accepted — Server-Sent Events als Pflicht-Transport für alle Realtime-Pfade, WebSockets bewusst ausgeschlossen.
+
+**Frontend-Polish (S16-1, S16-3, S16-10, S16-2):**
+- **Severity-Farben als Design-Tokens** — Tailwind `theme.colors.severity.{critical,high,medium,low,info}` + `*-bg`-Varianten. Alle hardcoded `bg-[#hexhex]`-Bracket-Notations bereinigt (0 verbleibend). Whitelabel-Theme-Vorbereitung.
+- **Code-Splitting** — alle Settings-/Admin-Pages auf `React.lazy()` umgestellt; Layout wrapped Outlet in Suspense. Eager bleiben Login/Setup/Dashboard + Token-Magic-Link-Pages (Auditor/Policy/Invite/DSR). Größter einzelner Chunk: `SecVitalsRoutes 452 kB` (gzip 105 kB) — unter Warning-Threshold.
+- **`useFormatDate`-Bulk-Migration** — 60 Files mit hardcoded `toLocaleDateString('de-DE', ...)` / `toLocaleString('de-DE')` auf `formatLocale()` (neuer non-Hook-Helper) migriert. Hook-Variante `useFormatDate` (Sprint 13) bleibt für reaktive Komponenten verfügbar. 0 verbleibende Stellen.
+- **openapi-typescript Client-Generierung** — `npm run api-types` generiert `frontend/src/api/generated.ts` (7018 LOC) aus `openapi.yaml`. CI-Step `api-types:check` enforced Drift (ADR-0017). `Login.tsx` als Demo-Migration nutzt jetzt `components['schemas']['LoginResponse']` statt Manual-Interface.
+
+**Skip-Item:**
+- S16-4 Bundle-Audit verschoben — `vite build` Chunk-Size-Warning erfüllt den Monitoring-Zweck; echte Tree-Shake-Optimierung lohnt sich erst nach Recharts/framer-motion-Bereinigung in einer Q3-Polish-Welle.
+
 ### Sprint 15 — AI-Härtung + Observability + Welle 2 (Tag-Kandidat v0.8.0)
 
 Sprint 15 schließt die Backend-Stabilität (Sprint 14) ab und liefert produktreife AI-UX + Observability-Default-On.

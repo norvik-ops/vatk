@@ -16,18 +16,18 @@ import { cn } from '../../../lib/utils'
 import { useState, useRef, useEffect } from 'react'
 
 const criticalityClass: Record<Asset['criticality'], string> = {
-  low:      'border-transparent bg-[#374151] text-[#94a3b8]',
-  medium:   'border-transparent bg-[#78350f] text-[#f59e0b]',
-  high:     'border-transparent bg-[#7c2d12] text-[#f97316]',
-  critical: 'border-transparent bg-[#7f1d1d] text-[#ef4444]',
+  low:      'border-transparent bg-surface2 text-muted',
+  medium:   'border-transparent bg-severity-medium-bg text-severity-medium',
+  high:     'border-transparent bg-severity-high-bg text-severity-high',
+  critical: 'border-transparent bg-severity-critical-bg text-severity-critical',
 }
 
 const severityClass: Record<Finding['severity'], string> = {
-  info:     'border-transparent bg-[#374151] text-[#94a3b8]',
-  low:      'border-transparent bg-[#1e3a5f] text-[#93c5fd]',
-  medium:   'border-transparent bg-[#78350f] text-[#f59e0b]',
-  high:     'border-transparent bg-[#7c2d12] text-[#f97316]',
-  critical: 'border-transparent bg-[#7f1d1d] text-[#ef4444]',
+  info:     'border-transparent bg-surface2 text-muted',
+  low:      'border-transparent bg-severity-info-bg text-severity-info',
+  medium:   'border-transparent bg-severity-medium-bg text-severity-medium',
+  high:     'border-transparent bg-severity-high-bg text-severity-high',
+  critical: 'border-transparent bg-severity-critical-bg text-severity-critical',
 }
 
 const assetTypeLabels: Record<Asset['type'], string> = {

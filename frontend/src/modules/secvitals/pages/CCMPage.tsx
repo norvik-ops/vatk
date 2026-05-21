@@ -32,6 +32,7 @@ import {
 import { ProGate } from '../../../shared/components/ProGate'
 import { useFrameworks } from '../hooks/useFrameworks'
 import type { CCMCheck, CCMCheckType, CCMStatus, CreateCCMCheckInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ function ResultsDialog({
                     {STATUS_LABEL[r.status as CCMStatus] ?? r.status}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(r.ran_at).toLocaleString('de-DE')}
+                    {new Date(r.ran_at).toLocaleString(formatLocale())}
                   </span>
                 </div>
                 {r.output && (
@@ -163,7 +164,7 @@ function CCMCheckRow({
             </p>
             {check.last_run_at && (
               <p className="text-xs text-muted-foreground">
-                Zuletzt: {new Date(check.last_run_at).toLocaleString('de-DE')}
+                Zuletzt: {new Date(check.last_run_at).toLocaleString(formatLocale())}
                 {check.last_output ? ` — ${check.last_output}` : ''}
               </p>
             )}

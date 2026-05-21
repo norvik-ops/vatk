@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sparkles, X } from 'lucide-react'
 import changelog from '../data/changelog.json'
+import { formatLocale } from '../utils/locale'
 
 interface ChangelogEntry {
   type: 'feat' | 'improvement' | 'fix'
@@ -79,7 +80,7 @@ export function ChangelogPopover() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-mono text-xs font-bold text-primary">v{version.version}</span>
                     <span className="text-xs text-secondary">
-                      {new Date(version.date).toLocaleDateString('de-DE')}
+                      {new Date(version.date).toLocaleDateString(formatLocale())}
                     </span>
                   </div>
                   <ul className="space-y-1.5">

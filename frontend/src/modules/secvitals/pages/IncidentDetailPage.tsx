@@ -20,6 +20,7 @@ import { toast } from '../../../shared/hooks/useToast'
 import { Sparkles } from 'lucide-react'
 import { ReportabilityWizard } from '../components/ReportabilityWizard'
 import type { Incident, UpdateIncidentInput, DeadlineInfo, IncidentReport } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 const SEVERITY_CLASS: Record<Incident['severity'], string> = {
   low: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -87,10 +88,10 @@ function DeadlineRow({
         <div>
           <p className="text-sm font-medium">{label}</p>
           <p className="text-xs text-muted-foreground">
-            {new Date(info.deadline).toLocaleString('de-DE')}
+            {new Date(info.deadline).toLocaleString(formatLocale())}
             {isDone && info.reported_at && (
               <span className="ml-2 text-green-400">
-                ✓ Gemeldet: {new Date(info.reported_at).toLocaleString('de-DE')}
+                ✓ Gemeldet: {new Date(info.reported_at).toLocaleString(formatLocale())}
               </span>
             )}
             {!isDone && (
@@ -340,7 +341,7 @@ export default function IncidentDetailPage() {
                           <div key={r.id} className="flex items-center justify-between text-xs bg-muted/30 rounded px-2 py-1.5">
                             <span className="font-medium">{r.report_type} — {r.authority}</span>
                             <span className="text-muted-foreground">
-                              {new Date(r.generated_at).toLocaleString('de-DE')}
+                              {new Date(r.generated_at).toLocaleString(formatLocale())}
                             </span>
                             <a
                               href={`/api/v1/secvitals/incident-reports/${r.id}/pdf`}

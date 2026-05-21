@@ -14,6 +14,7 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ComplianceTooltip } from '../../../shared/components/ComplianceTooltip'
 import { useAuditRecords, useCreateAuditRecord } from '../hooks/useAudits'
 import type { AuditRecord, CreateAuditRecordInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 const STATUS_CLASS: Record<AuditRecord['status'], string> = {
   planned: 'bg-secondary text-secondary-foreground',
@@ -28,7 +29,7 @@ function AuditCard({ record, onClick }: { record: AuditRecord; onClick: () => vo
     in_progress: t('secvitals.auditsPage.statusInProgress'),
     completed: t('secvitals.auditsPage.statusCompleted'),
   }
-  const date = new Date(record.audit_date).toLocaleDateString('de-DE', {
+  const date = new Date(record.audit_date).toLocaleDateString(formatLocale(), {
     year: 'numeric', month: 'short', day: 'numeric',
   })
   return (

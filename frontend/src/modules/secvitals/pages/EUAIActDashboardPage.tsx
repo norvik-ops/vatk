@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { apiFetch } from '../../../api/client'
 import { ProGate } from '../../../shared/components/ProGate'
 import { RISK_CLASS_CSS, RISK_CLASS_LABELS } from '../components/aiRiskClassConfig'
+import { formatLocale } from '../../../shared/utils/locale'
 
 interface EUAIActISOMappingEntry {
   eu_ai_act_article: string
@@ -129,7 +130,7 @@ export default function EUAIActDashboardPage() {
                 <CardContent className="pt-5">
                   <p className="text-xs text-muted-foreground mb-1">Frist Hochrisiko</p>
                   <p className={`text-xl font-bold ${deadlineColor}`}>
-                    {new Date(dashboard.high_risk_deadline).toLocaleDateString('de-DE')}
+                    {new Date(dashboard.high_risk_deadline).toLocaleDateString(formatLocale())}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">{daysLeft} Tage</p>
                 </CardContent>

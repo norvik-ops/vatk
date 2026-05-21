@@ -3,6 +3,7 @@ import { Trash2, MessageSquare } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { useComments, useCreateComment, useDeleteComment } from '../hooks/useTasks'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // ── Relative time helper ──────────────────────────────────────────────────────
 
@@ -15,7 +16,7 @@ function relativeTime(dateStr: string): string {
   if (hours < 24) return `vor ${hours.toString()} Std.`
   const days = Math.floor(hours / 24)
   if (days < 7) return `vor ${days.toString()} Tag${days === 1 ? '' : 'en'}`
-  return new Date(dateStr).toLocaleDateString('de-DE')
+  return new Date(dateStr).toLocaleDateString(formatLocale())
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -76,7 +77,7 @@ export function CommentThread({
                     <span className="text-xs font-medium text-primary">
                       {comment.author_email || 'Anonym'}
                     </span>
-                    <span className="text-xs text-secondary" title={new Date(comment.created_at).toLocaleString('de-DE')}>
+                    <span className="text-xs text-secondary" title={new Date(comment.created_at).toLocaleString(formatLocale())}>
                       {relativeTime(comment.created_at)}
                     </span>
                   </div>

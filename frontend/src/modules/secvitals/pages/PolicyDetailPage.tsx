@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { usePolicy, useUpdatePolicy } from '../hooks/usePolicies'
 import PolicyVersionHistory from '../components/PolicyVersionHistory'
 import type { Policy, UpdatePolicyInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 const STATUS_LABELS: Record<Policy['status'], string> = {
   draft: 'Entwurf', active: 'Aktiv', archived: 'Archiviert',
@@ -201,13 +202,13 @@ export default function PolicyDetailPage() {
 
             <Card>
               <CardContent className="pt-4 space-y-1 text-xs text-muted-foreground">
-                <p>Erstellt: {new Date(policy.created_at).toLocaleDateString('de-DE')}</p>
-                <p>Geändert: {new Date(policy.updated_at).toLocaleDateString('de-DE')}</p>
+                <p>Erstellt: {new Date(policy.created_at).toLocaleDateString(formatLocale())}</p>
+                <p>Geändert: {new Date(policy.updated_at).toLocaleDateString(formatLocale())}</p>
                 {policy.reviewed_at && (
-                  <p>Zuletzt geprüft: {new Date(policy.reviewed_at).toLocaleDateString('de-DE')}</p>
+                  <p>Zuletzt geprüft: {new Date(policy.reviewed_at).toLocaleDateString(formatLocale())}</p>
                 )}
                 {policy.next_review_due && (
-                  <p>Nächste Prüfung: {new Date(policy.next_review_due).toLocaleDateString('de-DE')}</p>
+                  <p>Nächste Prüfung: {new Date(policy.next_review_due).toLocaleDateString(formatLocale())}</p>
                 )}
                 {policy.last_updated_by && (
                   <p>Bearbeitet von: {policy.last_updated_by}</p>

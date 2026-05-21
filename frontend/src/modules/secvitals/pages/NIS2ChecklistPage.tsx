@@ -120,7 +120,7 @@ function moduleBadgeClass(module: string): string {
   if (module.startsWith('SecVault')) return 'bg-yellow-900/40 text-yellow-300 border-yellow-800'
   if (module.startsWith('SecReflex')) return 'bg-purple-900/40 text-purple-300 border-purple-800'
   if (module.startsWith('SecPrivacy')) return 'bg-teal-900/40 text-teal-300 border-teal-800'
-  return 'bg-[#374151] text-[#94a3b8] border-transparent'
+  return 'bg-surface2 text-muted border-transparent'
 }
 
 export default function NIS2ChecklistPage() {
@@ -140,7 +140,7 @@ export default function NIS2ChecklistPage() {
             {/* Left: article + title + description */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <Badge className="bg-[#1e3a5f] text-[#93c5fd] border-transparent text-xs font-mono shrink-0">
+                <Badge className="bg-severity-info-bg text-severity-info border-transparent text-xs font-mono shrink-0">
                   {req.article}
                 </Badge>
                 <span className="text-sm font-semibold text-primary truncate">{req.title}</span>

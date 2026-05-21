@@ -23,6 +23,7 @@ import { toast } from '../../../shared/hooks/useToast'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { CSVImportDialog } from '../../../shared/components/CSVImportDialog'
+import { formatLocale } from '../../../shared/utils/locale'
 
 const CRITICALITY_ORDER: Record<Asset['criticality'], number> = {
   critical: 4, high: 3, medium: 2, low: 1,
@@ -40,7 +41,7 @@ const criticalityVariant: Record<Asset['criticality'], React.ComponentProps<type
 const criticalityClass: Record<Asset['criticality'], string> = {
   low:      '',
   medium:   '',
-  high:     'border-transparent bg-[#7c2d12] text-[#f97316]',
+  high:     'border-transparent bg-severity-high-bg text-severity-high',
   critical: '',
 }
 
@@ -110,7 +111,7 @@ function ASSET_COLUMNS(t: (key: string) => string): Column<SortableAsset>[] {
       label: t('common.date'),
       render: (row) => (
         <span className="text-sm text-secondary">
-          {new Date(row.created_at).toLocaleDateString('de-DE')}
+          {new Date(row.created_at).toLocaleDateString(formatLocale())}
         </span>
       ),
     },

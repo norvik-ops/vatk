@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import {
   Bug, FileCheck, Key, Fish, Eye, LayoutDashboard, LogOut, Sun, Moon, Monitor, Settings,
   ShieldCheck, ShieldAlert, Siren, BookOpen, ClipboardList,
@@ -589,9 +589,20 @@ export default function Layout() {
           </button>
         </div>
         <div className="flex-1 overflow-auto">
-          <PageTransition>
-            <Outlet />
-          </PageTransition>
+          {/* Sprint 16 S16-3: Suspense für lazy-geladene Page-Components.
+              Modulen-Routes haben ihren eigenen ModuleShell-Wrapper mit
+              Suspense; hier ist's für die Settings/Admin-Pages aus router.tsx. */}
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+              </div>
+            }
+          >
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
+          </Suspense>
         </div>
       </main>
       </div>

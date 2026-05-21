@@ -17,6 +17,7 @@ import { Textarea } from '../../../components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { useFormValidation } from '../../../shared/hooks/useFormValidation'
 import { toast } from '../../../shared/hooks/useToast'
+import { formatLocale } from '../../../shared/utils/locale'
 import {
   useCAPAs, useCreateCAPA, useUpdateCAPA, useDeleteCAPA, useBulkUpdateCAPAs,
   type CAPA, type CreateCAPAInput, type UpdateCAPAInput,
@@ -285,7 +286,7 @@ function CAPACard({
                   ? 'text-red-400 font-medium'
                   : ''
               }>
-                Fällig: {new Date(capa.due_date).toLocaleDateString('de-DE')}
+                Fällig: {new Date(capa.due_date).toLocaleDateString(formatLocale())}
               </span>
             )}
           </div>

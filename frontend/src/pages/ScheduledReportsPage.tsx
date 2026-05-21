@@ -37,6 +37,7 @@ import {
 import { apiFetch } from '../api/client'
 import { toast } from '../shared/hooks/useToast'
 import { SkeletonTable } from '../shared/components/SkeletonLoaders'
+import { formatLocale } from '../shared/utils/locale'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -134,7 +135,7 @@ const FORMAT_LABELS: Record<Format, string> = {
 
 function formatDate(iso: string | null) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('de-DE', {
+  return new Date(iso).toLocaleDateString(formatLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

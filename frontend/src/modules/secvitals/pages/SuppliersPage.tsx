@@ -18,6 +18,7 @@ import { SkeletonCardGrid } from '../../../shared/components/SkeletonLoaders'
 import { FieldError } from '../../../shared/components/FieldError'
 import { useFormValidation } from '../../../shared/hooks/useFormValidation'
 import { toast as globalToast } from '../../../shared/hooks/useToast'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // ─── Toast (minimal inline) ───────────────────────────────────────────────────
 function useToast() {
@@ -170,7 +171,7 @@ function SupplierCard({ supplier, onEdit, onDelete }: { supplier: Supplier; onEd
         </div>
         <div className="text-xs text-muted-foreground space-y-0.5">
           {supplier.contact_name && <p>Kontakt: {supplier.contact_name}{supplier.contact_email ? ` · ${supplier.contact_email}` : ''}</p>}
-          {supplier.contract_end && <p>Vertragsende: {new Date(supplier.contract_end).toLocaleDateString('de-DE')}</p>}
+          {supplier.contract_end && <p>Vertragsende: {new Date(supplier.contract_end).toLocaleDateString(formatLocale())}</p>}
         </div>
       </CardContent>
     </Card>

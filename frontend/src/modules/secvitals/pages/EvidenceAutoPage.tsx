@@ -20,6 +20,7 @@ import {
 import { useAutoEvidence, useAssignEvidence, type AutoEvidence } from '../hooks/useEvidenceAuto'
 import { useFrameworks, useFrameworkControls } from '../hooks/useFrameworks'
 import type { Control } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // --- Source helpers ---
 
@@ -44,7 +45,7 @@ function SourceBadge({ type }: { type: AutoEvidence['auto_source_type'] }) {
 
 function formatDate(iso?: string): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('de-DE', {
+  return new Date(iso).toLocaleDateString(formatLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

@@ -148,7 +148,7 @@ export function GettingStartedChecklist() {
             >
               {step.done ? (
                 <CheckCircle2
-                  className="w-4 h-4 text-[#22c55e] shrink-0"
+                  className="w-4 h-4 text-severity-low shrink-0"
                   aria-hidden="true"
                 />
               ) : (

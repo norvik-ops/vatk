@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '../components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/table'
+import { formatLocale } from '../shared/utils/locale'
 import {
   useAuditorInvites,
   useCreateAuditorInvite,
@@ -22,7 +23,7 @@ import {
 // ---------------------------------------------------------------------------
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('de-DE', {
+  return new Date(iso).toLocaleString(formatLocale(), {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })

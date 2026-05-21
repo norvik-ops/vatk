@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Skeleton } from '../components/ui/skeleton'
+import { formatLocale } from '../shared/utils/locale'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -195,7 +196,7 @@ export default function AdminHealthPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-[20px] font-bold text-primary">{formatUptime(data.uptime_seconds)}</p>
-                <p className="text-[12px] text-secondary">{data.uptime_seconds.toLocaleString('de-DE')} Sekunden</p>
+                <p className="text-[12px] text-secondary">{data.uptime_seconds.toLocaleString(formatLocale())} Sekunden</p>
               </CardContent>
             </Card>
 
@@ -208,7 +209,7 @@ export default function AdminHealthPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-[20px] font-bold text-primary">{data.goroutines.toLocaleString('de-DE')}</p>
+                <p className="text-[20px] font-bold text-primary">{data.goroutines.toLocaleString(formatLocale())}</p>
                 <p className="text-[12px] text-secondary">aktive Go-Routinen</p>
               </CardContent>
             </Card>

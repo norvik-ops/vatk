@@ -11,10 +11,11 @@ import {
 import { useOverdueControls } from '../hooks/useControlReviews'
 import { ControlReviewPanel } from '../components/ControlReviewPanel'
 import type { Control } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 function formatDate(iso?: string): string {
   if (!iso) return 'Noch nie überprüft'
-  return new Date(iso).toLocaleDateString('de-DE', {
+  return new Date(iso).toLocaleDateString(formatLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

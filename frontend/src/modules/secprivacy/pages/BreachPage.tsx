@@ -16,6 +16,7 @@ import { Pagination } from '../../../shared/components/Pagination'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { useBreaches, useCreateBreach, useUpdateBreach, useDeleteBreach, useMarkAuthorityNotified, useExportBreachNotification } from '../hooks/useBreaches'
 import type { Breach, CreateBreachInput, UpdateBreachInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 const STATUS_CLASS: Record<Breach['status'], string> = {
   open: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -73,8 +74,8 @@ function DeadlineIndicator({ deadline }: { deadline: string }) {
     <div className={`flex items-center gap-1 text-xs ${overdue ? 'text-red-400' : hoursLeft < 24 ? 'text-amber-400' : 'text-muted-foreground'}`}>
       <Clock className="w-3 h-3" />
       {overdue
-        ? `${t('secprivacy.breachPage.deadlineOverdue')} (${dl.toLocaleDateString('de-DE')})`
-        : `${t('secprivacy.breachPage.deadline')}: ${dl.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`}
+        ? `${t('secprivacy.breachPage.deadlineOverdue')} (${dl.toLocaleDateString(formatLocale())})`
+        : `${t('secprivacy.breachPage.deadline')}: ${dl.toLocaleDateString(formatLocale(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`}
     </div>
   )
 }
@@ -98,7 +99,7 @@ function BreachCard({
     authority_notified: t('secprivacy.breachPage.statusNotified'),
     closed: t('secprivacy.breachPage.statusClosed'),
   }
-  const discoveredDate = new Date(breach.discovered_at).toLocaleDateString('de-DE', {
+  const discoveredDate = new Date(breach.discovered_at).toLocaleDateString(formatLocale(), {
     year: 'numeric', month: 'short', day: 'numeric',
   })
 
@@ -114,7 +115,7 @@ function BreachCard({
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{t('secprivacy.breachPage.discovered')}: {discoveredDate}</span>
           {breach.affected_count != null && (
-            <span>{breach.affected_count.toLocaleString('de-DE')} {t('secprivacy.breachPage.affected')}</span>
+            <span>{breach.affected_count.toLocaleString(formatLocale())} {t('secprivacy.breachPage.affected')}</span>
           )}
         </div>
         {breach.data_categories.length > 0 && (

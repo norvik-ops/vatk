@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useRisk, useUpdateRisk } from '../hooks/useRisks'
 import RiskTreatmentPanel from '../components/RiskTreatmentPanel'
 import type { Risk, UpdateRiskInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 const SCORE_COLOR = (score: number) => {
   if (score >= 15) return 'bg-red-500/20 text-red-400 border-red-500/30'
@@ -189,8 +190,8 @@ export default function RiskDetailPage() {
 
             <Card>
               <CardContent className="pt-4 space-y-1 text-xs text-muted-foreground">
-                <p>Erstellt: {new Date(risk.created_at).toLocaleDateString('de-DE')}</p>
-                <p>Geändert: {new Date(risk.updated_at).toLocaleDateString('de-DE')}</p>
+                <p>Erstellt: {new Date(risk.created_at).toLocaleDateString(formatLocale())}</p>
+                <p>Geändert: {new Date(risk.updated_at).toLocaleDateString(formatLocale())}</p>
               </CardContent>
             </Card>
           </div>

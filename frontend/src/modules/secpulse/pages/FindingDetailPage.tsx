@@ -16,11 +16,11 @@ import { cn } from '../../../lib/utils'
 import { Comments } from '../../../shared/components/Comments'
 
 const severityClass: Record<Finding['severity'], string> = {
-  info:     'bg-[#374151] text-[#94a3b8] border-transparent',
-  low:      'bg-[#1e3a5f] text-[#93c5fd] border-transparent',
-  medium:   'bg-[#78350f] text-[#f59e0b] border-transparent',
-  high:     'bg-[#7c2d12] text-[#f97316] border-transparent',
-  critical: 'bg-[#7f1d1d] text-[#ef4444] border-transparent',
+  info:     'bg-surface2 text-muted border-transparent',
+  low:      'bg-severity-info-bg text-severity-info border-transparent',
+  medium:   'bg-severity-medium-bg text-severity-medium border-transparent',
+  high:     'bg-severity-high-bg text-severity-high border-transparent',
+  critical: 'bg-severity-critical-bg text-severity-critical border-transparent',
 }
 
 export default function FindingDetailPage() {

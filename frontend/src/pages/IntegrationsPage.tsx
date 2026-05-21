@@ -25,6 +25,7 @@ import {
   type CloudEvidenceItem,
 } from '../hooks/useCloud'
 import { toast } from '../shared/hooks/useToast'
+import { formatLocale } from '../shared/utils/locale'
 
 // --- Status badge ---
 
@@ -138,7 +139,7 @@ function IntegrationRow({ integration }: { integration: GitHubIntegration }) {
   const syncIntegration = useSyncGitHubIntegration()
 
   const lastSync = integration.last_synced_at
-    ? new Date(integration.last_synced_at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+    ? new Date(integration.last_synced_at).toLocaleString(formatLocale(), { dateStyle: 'short', timeStyle: 'short' })
     : 'Noch nicht synchronisiert'
 
   function handleSync() {
@@ -399,7 +400,7 @@ function RecentEvidenceList({ items }: { items: CloudEvidenceItem[] }) {
           <div className="min-w-0">
             <p className="text-xs font-medium text-primary truncate">{item.title}</p>
             <p className="text-[11px] text-secondary mt-0.5">
-              {new Date(item.created_at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}
+              {new Date(item.created_at).toLocaleString(formatLocale(), { dateStyle: 'short', timeStyle: 'short' })}
             </p>
           </div>
         </div>
@@ -489,7 +490,7 @@ function AWSTab() {
   }
 
   const lastSyncFormatted = status?.last_sync_at
-    ? new Date(status.last_sync_at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+    ? new Date(status.last_sync_at).toLocaleString(formatLocale(), { dateStyle: 'short', timeStyle: 'short' })
     : null
 
   return (
@@ -679,7 +680,7 @@ function AzureTab() {
   }
 
   const lastSyncFormatted = status?.last_sync_at
-    ? new Date(status.last_sync_at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+    ? new Date(status.last_sync_at).toLocaleString(formatLocale(), { dateStyle: 'short', timeStyle: 'short' })
     : null
 
   return (

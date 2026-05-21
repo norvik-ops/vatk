@@ -44,6 +44,7 @@ import {
   type CreateWebhookInput,
 } from '../hooks/useWebhooks'
 import { EmptyState } from '../shared/components/EmptyState'
+import { formatLocale } from '../shared/utils/locale'
 
 // ─── Event labels ─────────────────────────────────────────────────────────────
 
@@ -331,7 +332,7 @@ export default function WebhooksPage() {
                     </TableCell>
                     <TableCell className="text-xs text-secondary">
                       {wh.last_triggered_at
-                        ? new Date(wh.last_triggered_at).toLocaleString('de-DE')
+                        ? new Date(wh.last_triggered_at).toLocaleString(formatLocale())
                         : '—'}
                     </TableCell>
                     <TableCell>

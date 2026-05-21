@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { ShieldCheck, FileText, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { fetchAcceptanceInfo, submitAcceptance } from '../modules/secvitals/hooks/usePolicyAcceptance'
+import { formatLocale } from '../shared/utils/locale'
 
 // ---------------------------------------------------------------------------
 // Page
@@ -24,7 +25,7 @@ export default function PolicyAcceptPage() {
     mutationFn: () => submitAcceptance(token),
     onSuccess: () => {
       setAccepted(true)
-      setAcceptedAt(new Date().toLocaleString('de-DE', {
+      setAcceptedAt(new Date().toLocaleString(formatLocale(), {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
       }))

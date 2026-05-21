@@ -31,6 +31,7 @@ import {
   TableRow,
 } from '../../../components/ui/table'
 import { useAuthStore } from '../../../shared/stores/auth'
+import { formatLocale } from '../../../shared/utils/locale'
 import {
   useAccessReviewCampaigns,
   useCreateAccessReviewCampaign,
@@ -282,7 +283,7 @@ function CampaignRow({
                 {campaign.scope && <span>Scope: {campaign.scope}</span>}
                 {campaign.due_date && (
                   <span>
-                    Fällig: {new Date(campaign.due_date).toLocaleDateString('de-DE')}
+                    Fällig: {new Date(campaign.due_date).toLocaleDateString(formatLocale())}
                   </span>
                 )}
               </div>

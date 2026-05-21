@@ -5,10 +5,11 @@ import { apiFetch } from '../../../api/client'
 import { Button } from '../../../components/ui/button'
 import { Skeleton } from '../../../components/ui/skeleton'
 import type { ChecklistRun, Checklist, Employee } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 function fmtDate(iso: string): string {
   const d = new Date(iso)
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  return d.toLocaleDateString(formatLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 export default function ChecklistRunPage() {

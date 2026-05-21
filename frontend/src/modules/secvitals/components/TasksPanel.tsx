@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { cn } from '../../../lib/utils'
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '../hooks/useTasks'
 import type { CollabTask, TaskPriority, TaskStatus, CreateCollabTaskInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 // ── Priority config ───────────────────────────────────────────────────────────
 
@@ -208,7 +209,7 @@ function TaskRow({
           {task.due_date && (
             <span className={cn('text-xs', overdue ? 'text-red-500 font-medium' : 'text-secondary')}>
               {overdue && <AlertCircle className="inline w-3 h-3 mr-0.5" />}
-              {new Date(task.due_date).toLocaleDateString('de-DE')}
+              {new Date(task.due_date).toLocaleDateString(formatLocale())}
             </span>
           )}
         </div>

@@ -25,6 +25,7 @@ import { useExportData } from '../hooks/useDataExport'
 import { useAuditReport } from '../modules/secvitals/hooks/useAuditReport'
 import { ProGate } from '../shared/components/ProGate'
 import { useUpdateCheck } from '../shared/hooks/useUpdateCheck'
+import { formatLocale } from '../shared/utils/locale'
 
 // ─── Retention / Digest hooks (used by DigestToggleSection) ──────────────────
 
@@ -259,7 +260,7 @@ function LicenseSection() {
 
         {lic?.expires_at && (
           <p className="text-xs text-secondary">
-            Gültig bis {new Date(lic.expires_at).toLocaleDateString('de-DE')}
+            Gültig bis {new Date(lic.expires_at).toLocaleDateString(formatLocale())}
           </p>
         )}
 

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useAISystem } from '../hooks/useAISystems'
 import { useAIDocumentation, useAIDocumentationVersions, useSaveAIDocumentation } from '../hooks/useAISystems'
 import type { UpsertAIDocumentationInput } from '../types'
+import { formatLocale } from '../../../shared/utils/locale'
 
 function emptyForm(): UpsertAIDocumentationInput {
   return {
@@ -148,7 +149,7 @@ export default function AIDocumentationPage() {
                 <div key={v.id} className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="font-mono">v{v.version}</span>
                   <Badge variant="outline" className="text-xs">{v.status}</Badge>
-                  <span>{new Date(v.created_at).toLocaleDateString('de-DE')}</span>
+                  <span>{new Date(v.created_at).toLocaleDateString(formatLocale())}</span>
                   {v.authored_by && <span>von {v.authored_by}</span>}
                 </div>
               ))}

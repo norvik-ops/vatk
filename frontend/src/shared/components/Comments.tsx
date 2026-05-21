@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button'
 import { apiFetch } from '../../api/client'
 import { formatDateTime } from '../utils/date'
+import { formatLocale } from '../utils/locale'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ function relativeTime(dateStr: string, lang: string): string {
   if (hours < 24) return `vor ${hours.toString()} Std.`
   const days = Math.floor(hours / 24)
   if (days < 7) return `vor ${days.toString()} Tag${days === 1 ? '' : 'en'}`
-  return new Date(dateStr).toLocaleDateString('de-DE')
+  return new Date(dateStr).toLocaleDateString(formatLocale())
 }
 
 // ── Avatar initials helper ────────────────────────────────────────────────────

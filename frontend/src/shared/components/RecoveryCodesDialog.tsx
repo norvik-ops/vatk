@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '../../components/ui/dialog'
 import { Button } from '../../components/ui/button'
+import { formatLocale } from '../utils/locale'
 
 interface RecoveryCodesDialogProps {
   open: boolean
@@ -27,7 +28,7 @@ export function RecoveryCodesDialog({ open, codes, onClose }: RecoveryCodesDialo
       '',
       ...codes,
       '',
-      `Generiert am: ${new Date().toLocaleString('de-DE')}`,
+      `Generiert am: ${new Date().toLocaleString(formatLocale())}`,
     ].join('\n')
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })

@@ -13,30 +13,15 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 
-interface LoginResponse {
-  access_token: string
-  user: {
-    id: string
-    email: string
-    display_name: string
-    roles: string[]
-  }
-}
+// Sprint 16 S16-2: Manual-Types ersetzt durch generierte Types aus
+// backend/internal/shared/apidocs/openapi.yaml. Regenerieren via
+// `npm run api-types` — Drift wird in CI via `npm run api-types:check`
+// detektiert (siehe ADR-0017).
+import type { components } from '../api/generated'
 
-interface HealthResponse {
-  status: string
-  version: string
-  demo: boolean
-  sso_enabled: boolean
-}
-
-interface DemoStartResponse {
-  admin_email: string
-  admin_password: string
-  analyst_email: string
-  analyst_password: string
-  expires_in: number
-}
+type LoginResponse = components['schemas']['LoginResponse']
+type HealthResponse = components['schemas']['HealthResponse']
+type DemoStartResponse = components['schemas']['DemoStartResponse']
 
 type DemoUser = { label: string; email: string; password: string }
 

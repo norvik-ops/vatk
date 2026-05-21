@@ -75,7 +75,7 @@ export function GettingStartedModal() {
                 className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-surface2 transition-colors group"
               >
                 {step.done ? (
-                  <CheckCircle2 className="w-4 h-4 text-[#22c55e] shrink-0" aria-hidden="true" />
+                  <CheckCircle2 className="w-4 h-4 text-severity-low shrink-0" aria-hidden="true" />
                 ) : (
                   <Circle className="w-4 h-4 text-secondary shrink-0" aria-hidden="true" />
                 )}
