@@ -6572,6 +6572,594 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/secvitals/dora/third-parties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List DORA IKT third-party providers */
+        get: operations["listDORAThirdParties"];
+        put?: never;
+        /** Register a DORA IKT third-party provider */
+        post: operations["createDORAThirdParty"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/dora/third-parties/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get a DORA IKT third-party provider */
+        get: operations["getDORAThirdParty"];
+        put?: never;
+        post?: never;
+        /** Delete a DORA IKT third-party provider */
+        delete: operations["deleteDORAThirdParty"];
+        options?: never;
+        head?: never;
+        /** Update a DORA IKT third-party provider */
+        patch: operations["updateDORAThirdParty"];
+        trace?: never;
+    };
+    "/secvitals/dora/third-parties/{id}/controls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link a control to a DORA third-party provider */
+        post: operations["linkDORAThirdPartyControl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/dora/third-parties/{id}/controls/{controlId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                controlId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unlink a control from a DORA third-party provider */
+        delete: operations["unlinkDORAThirdPartyControl"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/resilience-tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List DORA resilience tests */
+        get: operations["listResilienceTests"];
+        put?: never;
+        /** Create a DORA resilience test */
+        post: operations["createResilienceTest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/resilience-tests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get a DORA resilience test */
+        get: operations["getResilienceTest"];
+        put?: never;
+        post?: never;
+        /** Delete a DORA resilience test */
+        delete: operations["deleteResilienceTest"];
+        options?: never;
+        head?: never;
+        /** Update a DORA resilience test */
+        patch: operations["updateResilienceTest"];
+        trace?: never;
+    };
+    "/secvitals/resilience-tests/{id}/attachment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload an attachment to a resilience test */
+        post: operations["uploadResilienceTestAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/resilience-tests/{id}/link-evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link a resilience test as compliance evidence */
+        post: operations["linkResilienceTestEvidence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/incidents/{id}/classify-reporting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** BSI 3-question reporting obligation classification wizard */
+        post: operations["classifyIncidentReporting"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/authorities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List relevant regulatory authorities */
+        get: operations["listAuthorities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/org-sector": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update organisation sector classification */
+        patch: operations["updateOrgSector"];
+        trace?: never;
+    };
+    "/secvitals/frameworks/{id}/tisax-controls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List TISAX controls for a framework instance */
+        get: operations["listTISAXControls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/frameworks/{id}/tisax-gaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get TISAX gap analysis for a framework instance */
+        get: operations["getTISAXGaps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/frameworks/{id}/tisax-report-pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Export TISAX readiness report as PDF */
+        get: operations["exportTISAXReportPDF"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/ai-systems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List AI systems in the inventory */
+        get: operations["listAISystems"];
+        put?: never;
+        /** Register an AI system */
+        post: operations["createAISystem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/ai-systems/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get an AI system */
+        get: operations["getAISystem"];
+        put?: never;
+        post?: never;
+        /** Delete an AI system */
+        delete: operations["deleteAISystem"];
+        options?: never;
+        head?: never;
+        /** Update an AI system */
+        patch: operations["updateAISystem"];
+        trace?: never;
+    };
+    "/secvitals/ai-systems/{id}/classifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List risk classifications for an AI system */
+        get: operations["listAIClassifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/ai-systems/{id}/classify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run EU AI Act risk classification for an AI system */
+        post: operations["classifyAISystem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/ai-systems/{id}/documentation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get the latest technical documentation for an AI system */
+        get: operations["getAIDocumentation"];
+        put?: never;
+        /** Save (create or update) AI system technical documentation */
+        post: operations["saveAIDocumentation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/ai-systems/{id}/documentation/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List documentation versions for an AI system */
+        get: operations["listAIDocumentationVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/ai-systems/{id}/documentation/export-pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Export AI system documentation as PDF */
+        get: operations["exportAIDocumentationPDF"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/supplier/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        /** Get supplier portal assessment by token (public) */
+        get: operations["portalGetAssessment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/supplier/{token}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save (draft) supplier portal answers (public) */
+        post: operations["portalSaveAnswers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/supplier/{token}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit final supplier portal answers (public) */
+        post: operations["portalSubmitAssessment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/supplier/{token}/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a file in the supplier portal (public) */
+        post: operations["portalUploadFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/suppliers/{id}/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List incidents linked to a supplier */
+        get: operations["getSupplierIncidents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/suppliers/{id}/risks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List risks linked to a supplier */
+        get: operations["listSupplierRisks"];
+        put?: never;
+        /** Link a risk to a supplier */
+        post: operations["linkSupplierRisk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/suppliers/{id}/risks/{riskId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                riskId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unlink a risk from a supplier */
+        delete: operations["unlinkSupplierRisk"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/suppliers/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get aggregated compliance status for a supplier */
+        get: operations["getSupplierStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/suppliers/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export supplier register as CSV/Excel */
+        get: operations["exportSuppliers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secvitals/suppliers/import-csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import suppliers from CSV */
+        post: operations["importSuppliersCSV"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6700,6 +7288,8 @@ export interface components {
             /** @enum {string} */
             criticality?: "low" | "medium" | "high" | "critical";
             tags?: string[];
+            /** @enum {string} */
+            environment?: "prod" | "staging" | "dev";
             /** Format: date-time */
             created_at?: string;
         };
@@ -7034,6 +7624,115 @@ export interface components {
             /** Format: date-time */
             completed_at?: string;
         };
+        DORAThirdParty: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            service_type?: string;
+            /** @enum {string} */
+            criticality?: "low" | "medium" | "high" | "critical";
+            country?: string;
+            /** Format: email */
+            contact_email?: string;
+            notes?: string;
+            linked_controls_count?: number;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        ResilienceTest: {
+            /** Format: uuid */
+            id?: string;
+            title?: string;
+            /** @enum {string} */
+            test_type?: "vulnerability_assessment" | "penetration_test" | "tlpt" | "scenario_based";
+            /** @enum {string} */
+            status?: "planned" | "in_progress" | "completed" | "failed";
+            /** Format: date */
+            scheduled_date?: string;
+            /** Format: date */
+            completed_date?: string;
+            scope?: string;
+            outcome?: string;
+            notes?: string;
+            attachments?: {
+                /** Format: uuid */
+                id?: string;
+                filename?: string;
+                /** Format: date-time */
+                uploaded_at?: string;
+            }[];
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        AISystem: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            description?: string;
+            vendor?: string;
+            use_case?: string;
+            deployment_context?: string;
+            /** @enum {string} */
+            risk_category?: "minimal" | "limited" | "high" | "unacceptable";
+            /** @enum {string} */
+            classification_status?: "not_classified" | "classified" | "review_needed";
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        AIClassification: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            ai_system_id?: string;
+            /** @enum {string} */
+            risk_category?: "minimal" | "limited" | "high" | "unacceptable";
+            prohibited_use_case?: boolean;
+            high_risk_annex3?: boolean;
+            high_risk_annex2?: boolean;
+            limited_transparency?: boolean;
+            reasoning?: string;
+            /** Format: uuid */
+            classified_by?: string;
+            /** Format: date-time */
+            classified_at?: string;
+        };
+        AIDocumentation: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            ai_system_id?: string;
+            version?: number;
+            intended_purpose?: string;
+            training_data_description?: string;
+            performance_metrics?: string;
+            human_oversight_measures?: string;
+            limitations?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        Authority: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            country?: string;
+            /** @enum {string} */
+            type?: "data_protection" | "cybersecurity" | "sector_specific" | "financial";
+            /** Format: email */
+            notification_email?: string;
+            /** Format: uri */
+            notification_url?: string;
+            /** @description Reporting deadline in hours (e.g. 72 for GDPR Art. 33) */
+            deadline_hours?: number;
+            applicable_frameworks?: string[];
+        };
     };
     responses: never;
     parameters: {
@@ -7045,4 +7744,1105 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    listDORAThirdParties: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of third-party providers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DORAThirdParty"][];
+                };
+            };
+        };
+    };
+    createDORAThirdParty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    service_type: string;
+                    /** @enum {string} */
+                    criticality: "low" | "medium" | "high" | "critical";
+                    country?: string;
+                    /** Format: email */
+                    contact_email?: string;
+                    notes?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Third-party provider created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DORAThirdParty"];
+                };
+            };
+        };
+    };
+    getDORAThirdParty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Third-party provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DORAThirdParty"];
+                };
+            };
+        };
+    };
+    deleteDORAThirdParty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateDORAThirdParty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    service_type?: string;
+                    /** @enum {string} */
+                    criticality?: "low" | "medium" | "high" | "critical";
+                    country?: string;
+                    /** Format: email */
+                    contact_email?: string;
+                    notes?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated third-party provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DORAThirdParty"];
+                };
+            };
+        };
+    };
+    linkDORAThirdPartyControl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    control_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Control linked */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlinkDORAThirdPartyControl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                controlId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unlinked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listResilienceTests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of resilience tests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResilienceTest"][];
+                };
+            };
+        };
+    };
+    createResilienceTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                    /** @enum {string} */
+                    test_type: "vulnerability_assessment" | "penetration_test" | "tlpt" | "scenario_based";
+                    /** Format: date */
+                    scheduled_date?: string;
+                    scope?: string;
+                    notes?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Resilience test created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResilienceTest"];
+                };
+            };
+        };
+    };
+    getResilienceTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resilience test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResilienceTest"];
+                };
+            };
+        };
+    };
+    deleteResilienceTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateResilienceTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title?: string;
+                    /** @enum {string} */
+                    status?: "planned" | "in_progress" | "completed" | "failed";
+                    /** Format: date */
+                    scheduled_date?: string;
+                    /** Format: date */
+                    completed_date?: string;
+                    outcome?: string;
+                    notes?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated resilience test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResilienceTest"];
+                };
+            };
+        };
+    };
+    uploadResilienceTestAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    title?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Attachment uploaded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    linkResilienceTestEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    control_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Evidence linked */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    classifyIncidentReporting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    q1_critical_infrastructure?: boolean;
+                    q2_significant_impact?: boolean;
+                    q3_personal_data_breach?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Classification result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        obligation?: "probably" | "none" | "unclear";
+                        reasoning?: string;
+                    };
+                };
+            };
+        };
+    };
+    listAuthorities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of authorities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Authority"][];
+                };
+            };
+        };
+    };
+    updateOrgSector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    sector?: string;
+                    sub_sector?: string;
+                    employee_count?: number;
+                    annual_revenue_eur?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated sector */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listTISAXControls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of TISAX controls */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id?: string;
+                        tisax_id?: string;
+                        title?: string;
+                        maturity_level?: number;
+                        /** @enum {string} */
+                        status?: "not_assessed" | "in_progress" | "compliant" | "non_compliant";
+                    }[];
+                };
+            };
+        };
+    };
+    getTISAXGaps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description TISAX gap analysis */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        total_controls?: number;
+                        compliant?: number;
+                        non_compliant?: number;
+                        not_assessed?: number;
+                        gaps?: Record<string, never>[];
+                    };
+                };
+            };
+        };
+    };
+    exportTISAXReportPDF: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PDF report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+        };
+    };
+    listAISystems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of AI systems */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AISystem"][];
+                };
+            };
+        };
+    };
+    createAISystem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    description?: string;
+                    vendor?: string;
+                    use_case?: string;
+                    deployment_context?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description AI system created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AISystem"];
+                };
+            };
+        };
+    };
+    getAISystem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description AI system */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AISystem"];
+                };
+            };
+        };
+    };
+    deleteAISystem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateAISystem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    description?: string;
+                    vendor?: string;
+                    use_case?: string;
+                    deployment_context?: string;
+                    /** @enum {string} */
+                    risk_category?: "minimal" | "limited" | "high" | "unacceptable";
+                };
+            };
+        };
+        responses: {
+            /** @description Updated AI system */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AISystem"];
+                };
+            };
+        };
+    };
+    listAIClassifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of classifications */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIClassification"][];
+                };
+            };
+        };
+    };
+    classifyAISystem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    prohibited_use_case?: boolean;
+                    high_risk_annex3?: boolean;
+                    high_risk_annex2?: boolean;
+                    limited_transparency?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Classification result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIClassification"];
+                };
+            };
+        };
+    };
+    getAIDocumentation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description AI system documentation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIDocumentation"];
+                };
+            };
+        };
+    };
+    saveAIDocumentation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    intended_purpose?: string;
+                    training_data_description?: string;
+                    performance_metrics?: string;
+                    human_oversight_measures?: string;
+                    limitations?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Documentation saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIDocumentation"];
+                };
+            };
+        };
+    };
+    listAIDocumentationVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of documentation versions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id?: string;
+                        version?: number;
+                        /** Format: date-time */
+                        created_at?: string;
+                        /** Format: uuid */
+                        created_by?: string;
+                    }[];
+                };
+            };
+        };
+    };
+    exportAIDocumentationPDF: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PDF document */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+        };
+    };
+    portalGetAssessment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Supplier portal assessment data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        supplier_name?: string;
+                        questionnaire_title?: string;
+                        /** Format: date-time */
+                        expires_at?: string;
+                        questions?: Record<string, never>[];
+                        answers?: Record<string, never>[];
+                    };
+                };
+            };
+        };
+    };
+    portalSaveAnswers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    answers?: Record<string, never>[];
+                };
+            };
+        };
+        responses: {
+            /** @description Answers saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    portalSubmitAssessment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    answers?: Record<string, never>[];
+                };
+            };
+        };
+        responses: {
+            /** @description Assessment submitted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    portalUploadFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    /** Format: uuid */
+                    question_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description File uploaded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        file_id?: string;
+                        filename?: string;
+                    };
+                };
+            };
+        };
+    };
+    getSupplierIncidents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of incidents */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Incident"][];
+                };
+            };
+        };
+    };
+    listSupplierRisks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of risks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Risk"][];
+                };
+            };
+        };
+    };
+    linkSupplierRisk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    risk_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Risk linked */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlinkSupplierRisk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                riskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unlinked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getSupplierStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Supplier compliance status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        overall_status?: "compliant" | "partial" | "non_compliant" | "unknown";
+                        open_risks?: number;
+                        open_incidents?: number;
+                        /** Format: date */
+                        last_assessment_date?: string;
+                    };
+                };
+            };
+        };
+    };
+    exportSuppliers: {
+        parameters: {
+            query?: {
+                format?: "csv" | "xlsx";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Exported file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+        };
+    };
+    importSuppliersCSV: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Import result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        imported?: number;
+                        skipped?: number;
+                        errors?: string[];
+                    };
+                };
+            };
+        };
+    };
+}
