@@ -20,6 +20,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/matharnica/vakt/internal/db"
 	"github.com/matharnica/vakt/internal/services/crossevidence"
 )
 
@@ -336,8 +337,7 @@ func (s *Service) getSecretByShareLinkOrg(ctx context.Context, sl *ShareLink, or
 }
 
 func (s *Service) getOrgIDForShareLink(ctx context.Context, linkID string) (string, error) {
-	var orgID string
-	err := s.db.QueryRow(ctx, `SELECT org_id::text FROM so_share_links WHERE id = $1::uuid`, linkID).Scan(&orgID)
+	orgID, err := s.repo.q.GetSVShareLinkOrgID(ctx, linkID)
 	if err != nil {
 		return "", fmt.Errorf("get org for share link: %w", err)
 	}
@@ -378,11 +378,7 @@ func (s *Service) RevokeToken(ctx context.Context, orgID, userID, tokenID string
 
 // getProjectIDForEnv resolves the project UUID for a given environment ID.
 func (s *Service) getProjectIDForEnv(ctx context.Context, envID, orgID string) (string, error) {
-	var projectID string
-	err := s.db.QueryRow(ctx, `
-		SELECT project_id::text FROM so_environments WHERE id = $1::uuid AND org_id = $2::uuid`,
-		envID, orgID,
-	).Scan(&projectID)
+	projectID, err := s.repo.q.GetSVEnvProjectID(ctx, db.GetSVEnvProjectIDParams{ID: envID, OrgID: orgID})
 	if err != nil {
 		return "", fmt.Errorf("environment not found: %w", err)
 	}
@@ -391,14 +387,7 @@ func (s *Service) getProjectIDForEnv(ctx context.Context, envID, orgID string) (
 
 // getProjectIDForEnvBySecretID resolves the project ID for a secret (via its environment).
 func (s *Service) getProjectIDForEnvBySecretID(ctx context.Context, secretID string) (string, error) {
-	var projectID string
-	err := s.db.QueryRow(ctx, `
-		SELECT e.project_id::text
-		FROM so_secrets s
-		JOIN so_environments e ON e.id = s.environment_id
-		WHERE s.id = $1::uuid`,
-		secretID,
-	).Scan(&projectID)
+	projectID, err := s.repo.q.GetSVSecretProjectID(ctx, secretID)
 	if err != nil {
 		return "", fmt.Errorf("project not found for secret: %w", err)
 	}

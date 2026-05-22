@@ -2157,3 +2157,14 @@ JOIN ck_policy_acceptance_campaigns pac ON pac.id = par.campaign_id
 JOIN ck_policies p ON p.id = pac.policy_id
 JOIN organizations o ON o.id = pac.org_id
 WHERE par.token_hash = $1;
+
+-- ── CI Evidence (from Vakt Scan CI webhook) ──────────────────────────────────
+
+-- name: InsertCKCIEvidence :one
+INSERT INTO ck_evidence
+    (org_id, control_id, title, description, source, status,
+     auto_source_type, auto_source_ref, auto_collected_at, collector_data)
+VALUES
+    ($1::uuid, NULL, $2, $3, 'ci_webhook', 'pending',
+     'ci_webhook', $4, $5, $6::jsonb)
+RETURNING id::text;

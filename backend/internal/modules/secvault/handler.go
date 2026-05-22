@@ -215,16 +215,16 @@ func (h *Handler) GetSecret(c echo.Context) error {
 		if auditOrgID == "" {
 			return nil
 		}
-		var uid *string
-		if auditUserID != "" {
-			uid = &auditUserID
-		}
 		ctx, cancel := context.WithTimeout(context.WithoutCancel(parent), 5*time.Second)
 		defer cancel()
-		_, _ = h.db.Exec(ctx, `
-			INSERT INTO audit_log (org_id, user_id, action, resource_type, resource_id, ip_address)
-			VALUES ($1::uuid, $2::uuid, 'secret.reveal', 'secvault/secret', $3, $4)`,
-			auditOrgID, uid, auditKey, auditIP)
+		audit.Write(ctx, h.db, audit.WriteEntry{
+			OrgID:        auditOrgID,
+			UserID:       auditUserID,
+			Action:       "secret.reveal",
+			ResourceType: "secvault/secret",
+			ResourceID:   auditKey,
+			IPAddress:    auditIP,
+		})
 		return nil
 	})
 

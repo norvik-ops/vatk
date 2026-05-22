@@ -29,6 +29,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
+
+	"github.com/matharnica/vakt/internal/db"
 )
 
 // CIEvidenceInput is the request body for the CI/CD evidence webhook endpoint.
@@ -131,16 +133,14 @@ func (h *Handler) ReceiveCIEvidence(c echo.Context) error {
 	// Use a unique source ref to enable idempotent inserts from the same run.
 	sourceRef := fmt.Sprintf("ci_webhook:%s:%s:%s", input.Pipeline, input.Repo, collectedAt.Format(time.RFC3339))
 
-	var evidenceID string
-	err = h.service.db.QueryRow(c.Request().Context(), `
-		INSERT INTO ck_evidence
-			(org_id, control_id, title, description, source, status,
-			 auto_source_type, auto_source_ref, auto_collected_at, collector_data)
-		VALUES
-			($1::uuid, NULL, $2, $3, 'ci_webhook', 'pending',
-			 'ci_webhook', $4, $5, $6::jsonb)
-		RETURNING id::text
-	`, orgID, title, description, sourceRef, collectedAt, collectorJSON).Scan(&evidenceID)
+	evidenceID, err := h.service.repo.q.InsertCKCIEvidence(c.Request().Context(), db.InsertCKCIEvidenceParams{
+		OrgID:         orgID,
+		Title:         title,
+		Description:   description,
+		AutoSourceRef: sourceRef,
+		CollectedAt:   collectedAt,
+		CollectorData: collectorJSON,
+	})
 	if err != nil {
 		log.Error().Err(err).
 			Str("org_id", orgID).

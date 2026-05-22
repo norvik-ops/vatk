@@ -10499,3 +10499,37 @@ func (q *Queries) CountCKFrameworkMilestoneNotifs(ctx context.Context, arg Count
 	err := row.Scan(&cnt)
 	return cnt, err
 }
+
+// ── CI Evidence (from Vakt Scan CI webhook) ──────────────────────────────────
+
+const insertCKCIEvidence = `-- name: InsertCKCIEvidence :one
+INSERT INTO ck_evidence
+    (org_id, control_id, title, description, source, status,
+     auto_source_type, auto_source_ref, auto_collected_at, collector_data)
+VALUES
+    ($1::uuid, NULL, $2, $3, 'ci_webhook', 'pending',
+     'ci_webhook', $4, $5, $6::jsonb)
+RETURNING id::text`
+
+type InsertCKCIEvidenceParams struct {
+	OrgID         string    `json:"org_id"`
+	Title         string    `json:"title"`
+	Description   string    `json:"description"`
+	AutoSourceRef string    `json:"auto_source_ref"`
+	CollectedAt   time.Time `json:"collected_at"`
+	CollectorData []byte    `json:"collector_data"`
+}
+
+func (q *Queries) InsertCKCIEvidence(ctx context.Context, arg InsertCKCIEvidenceParams) (string, error) {
+	row := q.db.QueryRow(ctx, insertCKCIEvidence,
+		arg.OrgID,
+		arg.Title,
+		arg.Description,
+		arg.AutoSourceRef,
+		arg.CollectedAt,
+		arg.CollectorData,
+	)
+	var id string
+	err := row.Scan(&id)
+	return id, err
+}

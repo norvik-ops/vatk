@@ -79,28 +79,26 @@ func (r *Repository) ListProjects(ctx context.Context, orgID string) ([]Project,
 }
 
 func (r *Repository) GetProject(ctx context.Context, orgID, projectID string) (*Project, error) {
-	var p Project
-	err := r.db.QueryRow(ctx, `
-		SELECT id::text, org_id::text, name, slug, COALESCE(description,''), created_at
-		FROM so_projects
-		WHERE id = $1::uuid AND org_id = $2::uuid`,
-		projectID, orgID,
-	).Scan(&p.ID, &p.OrgID, &p.Name, &p.Slug, &p.Description, &p.CreatedAt)
+	row, err := r.q.GetSVProject(ctx, db.GetSVProjectParams{ID: projectID, OrgID: orgID})
 	if err != nil {
 		return nil, fmt.Errorf("get project: %w", err)
 	}
-	return &p, nil
+	return &Project{
+		ID:          row.ID,
+		OrgID:       row.OrgID,
+		Name:        row.Name,
+		Slug:        row.Slug,
+		Description: row.Description.String,
+		CreatedAt:   row.CreatedAt.Time,
+	}, nil
 }
 
 func (r *Repository) DeleteProject(ctx context.Context, orgID, projectID string) error {
-	tag, err := r.db.Exec(ctx, `
-		DELETE FROM so_projects WHERE id = $1::uuid AND org_id = $2::uuid`,
-		projectID, orgID,
-	)
+	n, err := r.q.DeleteSVProject(ctx, db.DeleteSVProjectParams{ID: projectID, OrgID: orgID})
 	if err != nil {
 		return fmt.Errorf("delete project: %w", err)
 	}
-	if tag.RowsAffected() == 0 {
+	if n == 0 {
 		return fmt.Errorf("project not found")
 	}
 	return nil
@@ -109,42 +107,40 @@ func (r *Repository) DeleteProject(ctx context.Context, orgID, projectID string)
 // --- Environments ---
 
 func (r *Repository) CreateEnvironment(ctx context.Context, orgID, projectID, name string) (*Environment, error) {
-	var e Environment
-	err := r.db.QueryRow(ctx, `
-		INSERT INTO so_environments (project_id, org_id, name)
-		VALUES ($1::uuid, $2::uuid, $3)
-		RETURNING id::text, project_id::text, name, created_at`,
-		projectID, orgID, name,
-	).Scan(&e.ID, &e.ProjectID, &e.Name, &e.CreatedAt)
+	row, err := r.q.CreateSVEnvironment(ctx, db.CreateSVEnvironmentParams{
+		ProjectID: projectID,
+		OrgID:     orgID,
+		Name:      name,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("create environment: %w", err)
 	}
-	return &e, nil
+	return &Environment{
+		ID:        row.ID,
+		ProjectID: row.ProjectID,
+		Name:      row.Name,
+		CreatedAt: row.CreatedAt.Time,
+	}, nil
 }
 
 func (r *Repository) ListEnvironments(ctx context.Context, orgID, projectID string) ([]Environment, error) {
-	rows, err := r.db.Query(ctx, `
-		SELECT id::text, project_id::text, name, created_at
-		FROM so_environments
-		WHERE project_id = $1::uuid
-		  AND org_id = $2::uuid
-		ORDER BY created_at ASC`,
-		projectID, orgID,
-	)
+	rows, err := r.q.ListSVEnvironments(ctx, db.ListSVEnvironmentsParams{
+		ProjectID: projectID,
+		OrgID:     orgID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list environments: %w", err)
 	}
-	defer rows.Close()
-
-	var envs []Environment
-	for rows.Next() {
-		var e Environment
-		if err := rows.Scan(&e.ID, &e.ProjectID, &e.Name, &e.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan environment: %w", err)
-		}
-		envs = append(envs, e)
+	out := make([]Environment, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, Environment{
+			ID:        row.ID,
+			ProjectID: row.ProjectID,
+			Name:      row.Name,
+			CreatedAt: row.CreatedAt.Time,
+		})
 	}
-	return envs, rows.Err()
+	return out, nil
 }
 
 // --- Secrets ---
@@ -195,55 +191,30 @@ func (r *Repository) GetSecretRaw(ctx context.Context, orgID, envID, key string)
 }
 
 func (r *Repository) UpdateSecretAccess(ctx context.Context, secretID string) error {
-	_, err := r.db.Exec(ctx, `
-		UPDATE so_secrets
-		SET access_count     = access_count + 1,
-		    last_accessed_at = NOW()
-		WHERE id = $1::uuid`,
-		secretID,
-	)
-	return err
+	return r.q.UpdateSVSecretAccess(ctx, secretID)
 }
 
 func (r *Repository) ListSecretKeys(ctx context.Context, orgID, envID string) ([]Secret, error) {
-	rows, err := r.db.Query(ctx, `
-		SELECT id::text, key, version, rotation_due_at, last_rotated_at, last_accessed_at,
-		       access_count, created_at, updated_at
-		FROM so_secrets
-		WHERE environment_id = $1::uuid AND org_id = $2::uuid
-		ORDER BY key ASC`,
-		envID, orgID,
-	)
+	rows, err := r.q.ListSVSecretKeys(ctx, db.ListSVSecretKeysParams{
+		EnvironmentID: envID,
+		OrgID:         orgID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list secret keys: %w", err)
 	}
-	defer rows.Close()
-
-	var secrets []Secret
-	for rows.Next() {
-		var s Secret
-		if err := rows.Scan(
-			&s.ID, &s.Key, &s.Version,
-			&s.RotationDueAt, &s.LastRotatedAt, &s.LastAccessedAt,
-			&s.AccessCount, &s.CreatedAt, &s.UpdatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scan secret: %w", err)
-		}
-		secrets = append(secrets, s)
-	}
-	return secrets, rows.Err()
+	return mapSecretKeyRows(rows), nil
 }
 
 func (r *Repository) DeleteSecret(ctx context.Context, orgID, envID, key string) error {
-	tag, err := r.db.Exec(ctx, `
-		DELETE FROM so_secrets
-		WHERE environment_id = $1::uuid AND org_id = $2::uuid AND key = $3`,
-		envID, orgID, key,
-	)
+	n, err := r.q.DeleteSVSecret(ctx, db.DeleteSVSecretParams{
+		EnvironmentID: envID,
+		OrgID:         orgID,
+		Key:           key,
+	})
 	if err != nil {
 		return fmt.Errorf("delete secret: %w", err)
 	}
-	if tag.RowsAffected() == 0 {
+	if n == 0 {
 		return fmt.Errorf("secret not found")
 	}
 	return nil
@@ -252,44 +223,55 @@ func (r *Repository) DeleteSecret(ctx context.Context, orgID, envID, key string)
 // --- Access log ---
 
 func (r *Repository) LogAccess(ctx context.Context, secretID, orgID string, accessedBy *string, accessVia, ip, userAgent string) error {
-	_, err := r.db.Exec(ctx, `
-		INSERT INTO so_access_log (secret_id, org_id, accessed_by, access_via, ip_address, user_agent)
-		VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6)`,
-		secretID, orgID, accessedBy, accessVia, nilIfEmpty(ip), nilIfEmpty(userAgent),
-	)
-	return err
+	var byUUID pgtype.UUID
+	if accessedBy != nil && *accessedBy != "" {
+		if err := byUUID.Scan(*accessedBy); err != nil {
+			return fmt.Errorf("parse accessed_by uuid: %w", err)
+		}
+	}
+	return r.q.InsertSVAccessLog(ctx, db.InsertSVAccessLogParams{
+		SecretID:   secretID,
+		OrgID:      orgID,
+		AccessedBy: byUUID,
+		AccessVia:  accessVia,
+		IpAddress:  optionalText(ip),
+		UserAgent:  optionalText(userAgent),
+	})
 }
 
 func (r *Repository) GetAccessLog(ctx context.Context, secretID, orgID string, limit, offset int) ([]AccessLogEntry, error) {
-	rows, err := r.db.Query(ctx, `
-		SELECT id::text, secret_id::text,
-		       accessed_by::text, access_via,
-		       ip_address, user_agent, accessed_at
-		FROM so_access_log
-		WHERE secret_id = $1::uuid
-		  AND org_id = $2::uuid
-		ORDER BY accessed_at DESC
-		LIMIT $3 OFFSET $4`,
-		secretID, orgID, limit, offset,
-	)
+	rows, err := r.q.GetSVAccessLog(ctx, db.GetSVAccessLogParams{
+		SecretID: secretID,
+		OrgID:    orgID,
+		Limit:    int32(limit),
+		Offset:   int32(offset),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get access log: %w", err)
 	}
-	defer rows.Close()
-
-	var entries []AccessLogEntry
-	for rows.Next() {
-		var e AccessLogEntry
-		if err := rows.Scan(
-			&e.ID, &e.SecretID,
-			&e.AccessedBy, &e.AccessVia,
-			&e.IPAddress, &e.UserAgent, &e.AccessedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scan access log entry: %w", err)
+	out := make([]AccessLogEntry, 0, len(rows))
+	for _, row := range rows {
+		e := AccessLogEntry{
+			ID:         row.ID,
+			SecretID:   row.SecretID,
+			AccessVia:  row.AccessVia,
+			AccessedAt: row.AccessedAt.Time,
 		}
-		entries = append(entries, e)
+		if row.AccessedBy.Valid {
+			s := row.AccessedBy.String
+			e.AccessedBy = &s
+		}
+		if row.IpAddress.Valid {
+			s := row.IpAddress.String
+			e.IPAddress = &s
+		}
+		if row.UserAgent.Valid {
+			s := row.UserAgent.String
+			e.UserAgent = &s
+		}
+		out = append(out, e)
 	}
-	return entries, rows.Err()
+	return out, nil
 }
 
 // GetProjectAccessLog returns paginated access log entries across all secrets that belong to
@@ -297,54 +279,42 @@ func (r *Repository) GetAccessLog(ctx context.Context, secretID, orgID string, l
 // It runs a COUNT query first to obtain the total row count needed for frontend pagination,
 // then a bounded SELECT using limit/offset. Returns (entries, total, error).
 func (r *Repository) GetProjectAccessLog(ctx context.Context, orgID, projectID string, limit, offset int) ([]ProjectAccessLogEntry, int, error) {
-	var total int
-	err := r.db.QueryRow(ctx, `
-		SELECT COUNT(*)
-		FROM so_access_log al
-		JOIN so_secrets s ON s.id = al.secret_id
-		JOIN so_environments e ON e.id = s.environment_id
-		WHERE e.project_id = $1::uuid
-		  AND al.org_id = $2::uuid`,
-		projectID, orgID,
-	).Scan(&total)
+	total, err := r.q.CountSVProjectAccessLog(ctx, db.CountSVProjectAccessLogParams{
+		ProjectID: projectID,
+		OrgID:     orgID,
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("count project access log: %w", err)
 	}
 
-	rows, err := r.db.Query(ctx, `
-		SELECT
-		    al.id::text,
-		    s.key AS secret_key,
-		    al.access_via,
-		    al.accessed_by::text,
-		    al.ip_address,
-		    al.accessed_at
-		FROM so_access_log al
-		JOIN so_secrets s ON s.id = al.secret_id
-		JOIN so_environments e ON e.id = s.environment_id
-		WHERE e.project_id = $1::uuid
-		  AND al.org_id = $2::uuid
-		ORDER BY al.accessed_at DESC
-		LIMIT $3 OFFSET $4`,
-		projectID, orgID, limit, offset,
-	)
+	rows, err := r.q.ListSVProjectAccessLog(ctx, db.ListSVProjectAccessLogParams{
+		ProjectID: projectID,
+		OrgID:     orgID,
+		Limit:     int32(limit),
+		Offset:    int32(offset),
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("get project access log: %w", err)
 	}
-	defer rows.Close()
-
-	var entries []ProjectAccessLogEntry
-	for rows.Next() {
-		var e ProjectAccessLogEntry
-		if err := rows.Scan(
-			&e.ID, &e.SecretKey, &e.AccessVia,
-			&e.AccessedBy, &e.IPAddress, &e.AccessedAt,
-		); err != nil {
-			return nil, 0, fmt.Errorf("scan project access log entry: %w", err)
+	out := make([]ProjectAccessLogEntry, 0, len(rows))
+	for _, row := range rows {
+		e := ProjectAccessLogEntry{
+			ID:         row.ID,
+			SecretKey:  row.SecretKey,
+			AccessVia:  row.AccessVia,
+			AccessedAt: row.AccessedAt.Time,
 		}
-		entries = append(entries, e)
+		if row.AccessedBy.Valid {
+			s := row.AccessedBy.String
+			e.AccessedBy = &s
+		}
+		if row.IpAddress.Valid {
+			s := row.IpAddress.String
+			e.IPAddress = &s
+		}
+		out = append(out, e)
 	}
-	return entries, total, rows.Err()
+	return out, int(total), nil
 }
 
 // GetSecretByID returns a secret by its UUID (for access-log key lookups).
@@ -372,17 +342,22 @@ func (r *Repository) GetSecretByID(ctx context.Context, orgID, secretID string) 
 // --- Share links ---
 
 func (r *Repository) CreateShareLink(ctx context.Context, secretID, orgID, userID, tokenHash string, expiresAt time.Time) (*ShareLink, error) {
-	var sl ShareLink
-	err := r.db.QueryRow(ctx, `
-		INSERT INTO so_share_links (secret_id, org_id, token_hash, expires_at, created_by)
-		VALUES ($1::uuid, $2::uuid, $3, $4, $5::uuid)
-		RETURNING id::text, secret_id::text, expires_at, created_at`,
-		secretID, orgID, tokenHash, expiresAt, userID,
-	).Scan(&sl.ID, &sl.SecretID, &sl.ExpiresAt, &sl.CreatedAt)
+	row, err := r.q.CreateSVShareLink(ctx, db.CreateSVShareLinkParams{
+		SecretID:  secretID,
+		OrgID:     orgID,
+		TokenHash: tokenHash,
+		ExpiresAt: expiresAt,
+		CreatedBy: userID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("create share link: %w", err)
 	}
-	return &sl, nil
+	return &ShareLink{
+		ID:        row.ID,
+		SecretID:  row.SecretID,
+		ExpiresAt: row.ExpiresAt.Time,
+		CreatedAt: row.CreatedAt.Time,
+	}, nil
 }
 
 // GetShareLink looks up a share link by its token hash and validates expiry / single-use.
@@ -394,88 +369,78 @@ func (r *Repository) CreateShareLink(ctx context.Context, secretID, orgID, userI
 // at call time; the service layer retrieves it post-fetch (via getOrgIDForShareLink)
 // and then enforces it in MarkShareLinkUsed via an org_id-scoped UPDATE.
 func (r *Repository) GetShareLink(ctx context.Context, tokenHash string) (*ShareLink, error) {
-	var sl ShareLink
-	err := r.db.QueryRow(ctx, `
-		SELECT id::text, secret_id::text, expires_at, used_at, created_at
-		FROM so_share_links
-		WHERE token_hash = $1`,
-		tokenHash,
-	).Scan(&sl.ID, &sl.SecretID, &sl.ExpiresAt, &sl.UsedAt, &sl.CreatedAt)
+	row, err := r.q.GetSVShareLink(ctx, tokenHash)
 	if err != nil {
 		return nil, fmt.Errorf("get share link: %w", err)
 	}
-	return &sl, nil
+	sl := &ShareLink{
+		ID:        row.ID,
+		SecretID:  row.SecretID,
+		ExpiresAt: row.ExpiresAt.Time,
+		CreatedAt: row.CreatedAt.Time,
+	}
+	if row.UsedAt.Valid {
+		t := row.UsedAt.Time
+		sl.UsedAt = &t
+	}
+	return sl, nil
 }
 
 func (r *Repository) MarkShareLinkUsed(ctx context.Context, linkID, orgID string) error {
 	// org_id filter prevents a caller who knows the link UUID from burning
 	// another organisation's share link (DoS / IDOR defense).
-	_, err := r.db.Exec(ctx, `
-		UPDATE so_share_links SET used_at = NOW()
-		WHERE id = $1::uuid AND org_id = $2::uuid`, linkID, orgID)
-	return err
+	return r.q.MarkSVShareLinkUsed(ctx, db.MarkSVShareLinkUsedParams{ID: linkID, OrgID: orgID})
 }
 
 // --- API tokens (uses shared api_keys table) ---
 
 func (r *Repository) CreateAPIToken(ctx context.Context, orgID, userID, name, keyHash, keyPrefix string, scopes []string, expiresAt *time.Time) (*APIToken, error) {
-	var t APIToken
-	err := r.db.QueryRow(ctx, `
-		INSERT INTO api_keys (org_id, created_by, name, key_hash, key_prefix, scopes, expires_at)
-		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7)
-		RETURNING id::text, name, key_prefix, scopes, expires_at, last_used_at, revoked_at, created_at`,
-		orgID, userID, name, keyHash, keyPrefix, scopes, expiresAt,
-	).Scan(
-		&t.ID, &t.Name, &t.KeyPrefix, &t.Scopes,
-		&t.ExpiresAt, &t.LastUsedAt, &t.RevokedAt, &t.CreatedAt,
-	)
+	var expiresAtPG pgtype.Timestamptz
+	if expiresAt != nil {
+		expiresAtPG = pgtype.Timestamptz{Time: *expiresAt, Valid: true}
+	}
+	row, err := r.q.CreateSVAPIToken(ctx, db.CreateSVAPITokenParams{
+		OrgID:     orgID,
+		CreatedBy: userID,
+		Name:      name,
+		KeyHash:   keyHash,
+		KeyPrefix: keyPrefix,
+		Scopes:    scopes,
+		ExpiresAt: expiresAtPG,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("create api token: %w", err)
 	}
-	return &t, nil
+	return mapAPITokenRow(row), nil
 }
 
 func (r *Repository) ListAPITokens(ctx context.Context, orgID, userID string) ([]APIToken, error) {
-	rows, err := r.db.Query(ctx, `
-		SELECT id::text, name, key_prefix, scopes, expires_at, last_used_at, revoked_at, created_at
-		FROM api_keys
-		WHERE org_id = $1::uuid AND created_by = $2::uuid
-		  AND $3 = ANY(scopes)
-		ORDER BY created_at DESC`,
-		orgID, userID, "secvault",
-	)
+	rows, err := r.q.ListSVAPITokens(ctx, db.ListSVAPITokensParams{
+		OrgID:     orgID,
+		CreatedBy: userID,
+		Scope:     "secvault",
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list api tokens: %w", err)
 	}
-	defer rows.Close()
-
-	var tokens []APIToken
-	for rows.Next() {
-		var t APIToken
-		if err := rows.Scan(
-			&t.ID, &t.Name, &t.KeyPrefix, &t.Scopes,
-			&t.ExpiresAt, &t.LastUsedAt, &t.RevokedAt, &t.CreatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scan api token: %w", err)
-		}
-		tokens = append(tokens, t)
+	out := make([]APIToken, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, *mapAPITokenRow(row))
 	}
-	return tokens, rows.Err()
+	return out, nil
 }
 
 func (r *Repository) RevokeAPIToken(ctx context.Context, orgID, userID, tokenID string) error {
-	tag, err := r.db.Exec(ctx, `
-		UPDATE api_keys
-		SET revoked_at = NOW()
-		WHERE id = $1::uuid AND org_id = $2::uuid AND created_by = $3::uuid
-		  AND $4 = ANY(scopes)
-		  AND revoked_at IS NULL`,
-		tokenID, orgID, userID, "secvault",
-	)
+	n, err := r.q.RevokeSVAPIToken(ctx, db.RevokeSVAPITokenParams{
+		ID:        tokenID,
+		OrgID:     orgID,
+		CreatedBy: userID,
+		Scope:     "secvault",
+	})
 	if err != nil {
 		return fmt.Errorf("revoke api token: %w", err)
 	}
-	if tag.RowsAffected() == 0 {
+	if n == 0 {
 		return fmt.Errorf("token not found or already revoked")
 	}
 	return nil
@@ -483,44 +448,23 @@ func (r *Repository) RevokeAPIToken(ctx context.Context, orgID, userID, tokenID 
 
 // ListProjectSecrets returns all secrets (with metadata) for health scoring.
 func (r *Repository) ListProjectSecrets(ctx context.Context, orgID, projectID string) ([]Secret, error) {
-	rows, err := r.db.Query(ctx, `
-		SELECT s.id::text, s.key, s.version,
-		       s.rotation_due_at, s.last_rotated_at, s.last_accessed_at,
-		       s.access_count, s.created_at, s.updated_at
-		FROM so_secrets s
-		JOIN so_environments e ON e.id = s.environment_id
-		WHERE e.project_id = $1::uuid AND s.org_id = $2::uuid
-		ORDER BY s.key ASC`,
-		projectID, orgID,
-	)
+	rows, err := r.q.ListSVProjectSecrets(ctx, db.ListSVProjectSecretsParams{
+		ProjectID: projectID,
+		OrgID:     orgID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project secrets: %w", err)
 	}
-	defer rows.Close()
-
-	var secrets []Secret
-	for rows.Next() {
-		var s Secret
-		if err := rows.Scan(
-			&s.ID, &s.Key, &s.Version,
-			&s.RotationDueAt, &s.LastRotatedAt, &s.LastAccessedAt,
-			&s.AccessCount, &s.CreatedAt, &s.UpdatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scan project secret: %w", err)
-		}
-		secrets = append(secrets, s)
-	}
-	return secrets, rows.Err()
+	return mapSecretKeyRows(rows), nil
 }
 
 // GetSecretIDByKey returns the secret ID for an access-log query given key + env + org.
 func (r *Repository) GetSecretIDByKey(ctx context.Context, orgID, envID, key string) (string, error) {
-	var id string
-	err := r.db.QueryRow(ctx, `
-		SELECT id::text FROM so_secrets
-		WHERE environment_id = $1::uuid AND org_id = $2::uuid AND key = $3`,
-		envID, orgID, key,
-	).Scan(&id)
+	id, err := r.q.GetSVSecretIDByKey(ctx, db.GetSVSecretIDByKeyParams{
+		EnvironmentID: envID,
+		OrgID:         orgID,
+		Key:           key,
+	})
 	if err != nil {
 		return "", fmt.Errorf("get secret id by key: %w", err)
 	}
@@ -537,85 +481,66 @@ func nilIfEmpty(s string) *string {
 
 // GetSecretByKey returns a secret record (without encrypted value) for a given env + key.
 func (r *Repository) GetSecretByKey(ctx context.Context, orgID, envID, key string) (*Secret, error) {
-	var s Secret
-	err := r.db.QueryRow(ctx, `
-		SELECT id::text, key, version,
-		       rotation_due_at, last_rotated_at, last_accessed_at,
-		       access_count, created_at, updated_at
-		FROM so_secrets
-		WHERE environment_id = $1::uuid AND key = $2 AND org_id = $3::uuid`,
-		envID, key, orgID,
-	).Scan(
-		&s.ID, &s.Key, &s.Version,
-		&s.RotationDueAt, &s.LastRotatedAt, &s.LastAccessedAt,
-		&s.AccessCount, &s.CreatedAt, &s.UpdatedAt,
-	)
+	row, err := r.q.GetSVSecretByKey(ctx, db.GetSVSecretByKeyParams{
+		EnvironmentID: envID,
+		Key:           key,
+		OrgID:         orgID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get secret by key: %w", err)
 	}
-	return &s, nil
+	return mapSecretByKeyRow(row), nil
 }
 
 // --- Git Scanner ---
 
 func (r *Repository) CreateGitScan(ctx context.Context, orgID, repoURL, branch string) (*GitScan, error) {
-	const q = `INSERT INTO so_git_scans (org_id, repo_url, branch)
-	           VALUES ($1::uuid, $2, $3)
-	           RETURNING id::text, org_id::text, repo_url, branch, status,
-	                     finding_count, open_count, dismissed_count,
-	                     COALESCE(error_message,''), scanned_at, created_at`
-	row := r.db.QueryRow(ctx, q, orgID, repoURL, branch)
-	var s GitScan
-	err := row.Scan(&s.ID, &s.OrgID, &s.RepoURL, &s.Branch, &s.Status,
-		&s.FindingCount, &s.OpenCount, &s.DismissedCount, &s.ErrorMessage, &s.ScannedAt, &s.CreatedAt)
+	row, err := r.q.CreateSVGitScan(ctx, db.CreateSVGitScanParams{
+		OrgID:   orgID,
+		RepoURL: repoURL,
+		Branch:  branch,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("create git scan: %w", err)
 	}
-	return &s, nil
+	return mapGitScanRow(row), nil
 }
 
 func (r *Repository) GetGitScan(ctx context.Context, orgID, scanID string) (*GitScan, error) {
-	const q = `SELECT id::text, org_id::text, repo_url, branch, status,
-	                  finding_count, open_count, dismissed_count,
-	                  COALESCE(error_message,''), scanned_at, created_at
-	           FROM so_git_scans WHERE id=$1::uuid AND org_id=$2::uuid`
-	row := r.db.QueryRow(ctx, q, scanID, orgID)
-	var s GitScan
-	err := row.Scan(&s.ID, &s.OrgID, &s.RepoURL, &s.Branch, &s.Status,
-		&s.FindingCount, &s.OpenCount, &s.DismissedCount, &s.ErrorMessage, &s.ScannedAt, &s.CreatedAt)
+	row, err := r.q.GetSVGitScan(ctx, db.GetSVGitScanParams{ID: scanID, OrgID: orgID})
 	if err != nil {
 		return nil, fmt.Errorf("get git scan: %w", err)
 	}
-	return &s, nil
+	return mapGitScanRow(row), nil
 }
 
 func (r *Repository) ListGitScans(ctx context.Context, orgID string) ([]GitScan, error) {
-	const q = `SELECT id::text, org_id::text, repo_url, branch, status,
-	                  finding_count, open_count, dismissed_count,
-	                  COALESCE(error_message,''), scanned_at, created_at
-	           FROM so_git_scans WHERE org_id=$1::uuid ORDER BY created_at DESC`
-	rows, err := r.db.Query(ctx, q, orgID)
+	rows, err := r.q.ListSVGitScans(ctx, orgID)
 	if err != nil {
 		return nil, fmt.Errorf("list git scans: %w", err)
 	}
-	defer rows.Close()
-	var scans []GitScan
-	for rows.Next() {
-		var s GitScan
-		if err := rows.Scan(&s.ID, &s.OrgID, &s.RepoURL, &s.Branch, &s.Status,
-			&s.FindingCount, &s.OpenCount, &s.DismissedCount, &s.ErrorMessage, &s.ScannedAt, &s.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan git scan: %w", err)
-		}
-		scans = append(scans, s)
+	out := make([]GitScan, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, *mapGitScanRow(row))
 	}
-	return scans, rows.Err()
+	return out, nil
 }
 
 func (r *Repository) UpdateGitScanStatus(ctx context.Context, scanID, orgID, status string, findingCount, openCount, dismissedCount int, errMsg string, scannedAt *time.Time) error {
-	const q = `UPDATE so_git_scans SET status=$1, finding_count=$2, open_count=$3, dismissed_count=$4, error_message=$5, scanned_at=$6
-	           WHERE id=$7::uuid AND org_id=$8::uuid`
-	_, err := r.db.Exec(ctx, q, status, findingCount, openCount, dismissedCount, nilIfEmpty(errMsg), scannedAt, scanID, orgID)
-	return err
+	var scannedAtPG pgtype.Timestamptz
+	if scannedAt != nil {
+		scannedAtPG = pgtype.Timestamptz{Time: *scannedAt, Valid: true}
+	}
+	return r.q.UpdateSVGitScanStatus(ctx, db.UpdateSVGitScanStatusParams{
+		Status:         status,
+		FindingCount:   int32(findingCount),
+		OpenCount:      int32(openCount),
+		DismissedCount: int32(dismissedCount),
+		ErrorMessage:   optionalText(errMsg),
+		ScannedAt:      scannedAtPG,
+		ID:             scanID,
+		OrgID:          orgID,
+	})
 }
 
 func (r *Repository) SaveScanResults(ctx context.Context, orgID, scanID string, results []ScanResult) error {
@@ -645,81 +570,210 @@ func (r *Repository) SaveScanResults(ctx context.Context, orgID, scanID string, 
 }
 
 func (r *Repository) GetScanResults(ctx context.Context, orgID, scanID string) ([]ScanResult, error) {
-	const q = `SELECT id::text, org_id::text, scan_id::text, repo_url,
-	                  COALESCE(commit_hash,''), file_path, COALESCE(line_number,0),
-	                  pattern_name, match_preview, severity, status,
-	                  COALESCE(dismiss_reason,''), dismiss_count, created_at
-	           FROM so_scan_results WHERE scan_id=$1::uuid AND org_id=$2::uuid ORDER BY severity, file_path`
-	rows, err := r.db.Query(ctx, q, scanID, orgID)
+	rows, err := r.q.GetSVScanResults(ctx, db.GetSVScanResultsParams{ScanID: scanID, OrgID: orgID})
 	if err != nil {
 		return nil, fmt.Errorf("get scan results: %w", err)
 	}
-	defer rows.Close()
-	var results []ScanResult
-	for rows.Next() {
-		var res ScanResult
-		if err := rows.Scan(&res.ID, &res.OrgID, &res.ScanID, &res.RepoURL, &res.CommitHash, &res.FilePath, &res.LineNumber,
-			&res.PatternName, &res.MatchPreview, &res.Severity, &res.Status, &res.DismissReason, &res.DismissCount, &res.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan result row: %w", err)
-		}
-		results = append(results, res)
+	out := make([]ScanResult, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, ScanResult{
+			ID:            row.ID,
+			OrgID:         row.OrgID,
+			ScanID:        row.ScanID,
+			RepoURL:       row.RepoURL,
+			CommitHash:    row.CommitHash,
+			FilePath:      row.FilePath,
+			LineNumber:    int(row.LineNumber),
+			PatternName:   row.PatternName,
+			MatchPreview:  row.MatchPreview,
+			Severity:      row.Severity,
+			Status:        row.Status,
+			DismissReason: row.DismissReason,
+			DismissCount:  int(row.DismissCount),
+			CreatedAt:     row.CreatedAt.Time,
+		})
 	}
-	return results, rows.Err()
+	return out, nil
 }
 
 func (r *Repository) DismissScanResult(ctx context.Context, orgID, resultID, reason string) error {
-	const q = `UPDATE so_scan_results SET status='dismissed', dismiss_reason=$1, dismiss_count=dismiss_count+1
-	           WHERE id=$2::uuid AND org_id=$3::uuid`
-	tag, err := r.db.Exec(ctx, q, reason, resultID, orgID)
+	n, err := r.q.DismissSVScanResult(ctx, db.DismissSVScanResultParams{
+		Reason: reason,
+		ID:     resultID,
+		OrgID:  orgID,
+	})
 	if err != nil {
 		return fmt.Errorf("dismiss scan result: %w", err)
 	}
-	if tag.RowsAffected() == 0 {
+	if n == 0 {
 		return fmt.Errorf("scan result not found")
 	}
 	return nil
 }
 
 func (r *Repository) CountDismissals(ctx context.Context, orgID, patternName, filePath string) (int, error) {
-	const q = `SELECT COALESCE(SUM(dismiss_count), 0) FROM so_scan_results
-	           WHERE org_id=$1::uuid AND pattern_name=$2 AND file_path=$3 AND status='dismissed'`
-	var count int
-	err := r.db.QueryRow(ctx, q, orgID, patternName, filePath).Scan(&count)
-	return count, err
+	count, err := r.q.CountSVDismissals(ctx, db.CountSVDismissalsParams{
+		OrgID:       orgID,
+		PatternName: patternName,
+		FilePath:    filePath,
+	})
+	return int(count), err
 }
 
 // --- Rotation policies ---
 
 func (r *Repository) UpsertRotationPolicy(ctx context.Context, orgID, secretID string, intervalDays int) (*RotationPolicy, error) {
 	nextRotation := time.Now().AddDate(0, 0, intervalDays)
-	const q = `INSERT INTO so_rotation_policies (org_id, secret_id, interval_days, next_rotation_at)
-	           VALUES ($1::uuid, $2::uuid, $3, $4)
-	           ON CONFLICT (secret_id) DO UPDATE SET interval_days=EXCLUDED.interval_days, next_rotation_at=EXCLUDED.next_rotation_at
-	           RETURNING id::text, org_id::text, secret_id::text, interval_days, last_rotated_at, next_rotation_at, is_active, created_at`
-	row := r.db.QueryRow(ctx, q, orgID, secretID, intervalDays, nextRotation)
-	var p RotationPolicy
-	err := row.Scan(&p.ID, &p.OrgID, &p.SecretID, &p.IntervalDays, &p.LastRotatedAt, &p.NextRotationAt, &p.IsActive, &p.CreatedAt)
+	row, err := r.q.UpsertSVRotationPolicy(ctx, db.UpsertSVRotationPolicyParams{
+		OrgID:          orgID,
+		SecretID:       secretID,
+		IntervalDays:   int32(intervalDays),
+		NextRotationAt: nextRotation,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert rotation policy: %w", err)
 	}
-	return &p, nil
+	return mapRotationPolicyRow(row), nil
 }
 
 func (r *Repository) GetRotationPolicy(ctx context.Context, orgID, secretID string) (*RotationPolicy, error) {
-	const q = `SELECT id::text, org_id::text, secret_id::text, interval_days, last_rotated_at, next_rotation_at, is_active, created_at
-	           FROM so_rotation_policies WHERE secret_id=$1::uuid AND org_id=$2::uuid`
-	row := r.db.QueryRow(ctx, q, secretID, orgID)
-	var p RotationPolicy
-	err := row.Scan(&p.ID, &p.OrgID, &p.SecretID, &p.IntervalDays, &p.LastRotatedAt, &p.NextRotationAt, &p.IsActive, &p.CreatedAt)
+	row, err := r.q.GetSVRotationPolicy(ctx, db.GetSVRotationPolicyParams{
+		SecretID: secretID,
+		OrgID:    orgID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get rotation policy: %w", err)
 	}
-	return &p, nil
+	return mapRotationPolicyRow(row), nil
 }
 
 func (r *Repository) UpdateRotationAfterRotate(ctx context.Context, orgID, secretID string, intervalDays int) error {
 	nextRotation := time.Now().AddDate(0, 0, intervalDays)
-	const q = `UPDATE so_rotation_policies SET last_rotated_at=NOW(), next_rotation_at=$1 WHERE secret_id=$2::uuid AND org_id=$3::uuid`
-	_, err := r.db.Exec(ctx, q, nextRotation, secretID, orgID)
-	return err
+	return r.q.UpdateSVRotationAfterRotate(ctx, db.UpdateSVRotationAfterRotateParams{
+		NextRotationAt: nextRotation,
+		SecretID:       secretID,
+		OrgID:          orgID,
+	})
+}
+
+// ── Mapping helpers ───────────────────────────────────────────────────────────
+
+// mapSecretKeyRows converts sqlc ListSVSecretKeysRow rows to domain Secret slices.
+func mapSecretKeyRows(rows []db.ListSVSecretKeysRow) []Secret {
+	out := make([]Secret, 0, len(rows))
+	for _, row := range rows {
+		s := Secret{
+			ID:          row.ID,
+			Key:         row.Key,
+			Version:     int(row.Version),
+			AccessCount: row.AccessCount,
+			CreatedAt:   row.CreatedAt.Time,
+			UpdatedAt:   row.UpdatedAt.Time,
+		}
+		if row.RotationDueAt.Valid {
+			t := row.RotationDueAt.Time
+			s.RotationDueAt = &t
+		}
+		if row.LastRotatedAt.Valid {
+			t := row.LastRotatedAt.Time
+			s.LastRotatedAt = &t
+		}
+		if row.LastAccessedAt.Valid {
+			t := row.LastAccessedAt.Time
+			s.LastAccessedAt = &t
+		}
+		out = append(out, s)
+	}
+	return out
+}
+
+// mapSecretByKeyRow converts a GetSVSecretByKeyRow to a domain Secret.
+func mapSecretByKeyRow(row db.GetSVSecretByKeyRow) *Secret {
+	s := &Secret{
+		ID:          row.ID,
+		Key:         row.Key,
+		Version:     int(row.Version),
+		AccessCount: row.AccessCount,
+		CreatedAt:   row.CreatedAt.Time,
+		UpdatedAt:   row.UpdatedAt.Time,
+	}
+	if row.RotationDueAt.Valid {
+		t := row.RotationDueAt.Time
+		s.RotationDueAt = &t
+	}
+	if row.LastRotatedAt.Valid {
+		t := row.LastRotatedAt.Time
+		s.LastRotatedAt = &t
+	}
+	if row.LastAccessedAt.Valid {
+		t := row.LastAccessedAt.Time
+		s.LastAccessedAt = &t
+	}
+	return s
+}
+
+// mapGitScanRow converts a SVGitScanRow to a domain GitScan.
+func mapGitScanRow(row db.SVGitScanRow) *GitScan {
+	gs := &GitScan{
+		ID:             row.ID,
+		OrgID:          row.OrgID,
+		RepoURL:        row.RepoURL,
+		Branch:         row.Branch,
+		Status:         row.Status,
+		FindingCount:   int(row.FindingCount),
+		OpenCount:      int(row.OpenCount),
+		DismissedCount: int(row.DismissedCount),
+		ErrorMessage:   row.ErrorMessage,
+		CreatedAt:      row.CreatedAt.Time,
+	}
+	if row.ScannedAt.Valid {
+		t := row.ScannedAt.Time
+		gs.ScannedAt = &t
+	}
+	return gs
+}
+
+// mapAPITokenRow converts a CreateSVAPITokenRow to a domain APIToken.
+func mapAPITokenRow(row db.CreateSVAPITokenRow) *APIToken {
+	t := &APIToken{
+		ID:        row.ID,
+		Name:      row.Name,
+		KeyPrefix: row.KeyPrefix,
+		Scopes:    row.Scopes,
+		CreatedAt: row.CreatedAt.Time,
+	}
+	if row.ExpiresAt.Valid {
+		ts := row.ExpiresAt.Time
+		t.ExpiresAt = &ts
+	}
+	if row.LastUsedAt.Valid {
+		ts := row.LastUsedAt.Time
+		t.LastUsedAt = &ts
+	}
+	if row.RevokedAt.Valid {
+		ts := row.RevokedAt.Time
+		t.RevokedAt = &ts
+	}
+	return t
+}
+
+// mapRotationPolicyRow converts a SVRotationPolicyRow to a domain RotationPolicy.
+func mapRotationPolicyRow(row db.SVRotationPolicyRow) *RotationPolicy {
+	p := &RotationPolicy{
+		ID:           row.ID,
+		OrgID:        row.OrgID,
+		SecretID:     row.SecretID,
+		IntervalDays: int(row.IntervalDays),
+		IsActive:     row.IsActive,
+		CreatedAt:    row.CreatedAt.Time,
+	}
+	if row.LastRotatedAt.Valid {
+		t := row.LastRotatedAt.Time
+		p.LastRotatedAt = &t
+	}
+	if row.NextRotationAt.Valid {
+		t := row.NextRotationAt.Time
+		p.NextRotationAt = &t
+	}
+	return p
 }

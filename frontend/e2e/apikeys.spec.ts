@@ -13,6 +13,20 @@ const API_KEYS = [
   },
 ]
 
+// Key fixture where rotated_at is set to "just now" — so inGrace is true.
+const API_KEYS_IN_GRACE = [
+  {
+    id: 'key-1',
+    name: 'CI Pipeline',
+    key_prefix: 'vk_ci_',
+    scopes: ['secvault.secrets.read'],
+    last_used_at: new Date().toISOString(),
+    last_used_ip: '10.0.0.1',
+    created_at: new Date().toISOString(),
+    rotated_at: new Date().toISOString(), // just rotated → within 24h window
+  },
+]
+
 function mockStoreAuth(page: Parameters<typeof test>[1]['page']) {
   return page.addInitScript(() => {
     localStorage.setItem(
@@ -71,6 +85,28 @@ test.describe('ApiKeysPage', () => {
       ).or(
         page.getByText('vk_new_secret_key_abc123'),
       ),
+    ).toBeVisible({ timeout: 8000 })
+  })
+
+  test('grace-period badge appears in key list after rotation', async ({ page }) => {
+    await mockStoreAuth(page)
+    // Return a key that was already rotated (rotated_at = now) so inGrace is true.
+    await page.route('**/api/v1/**', (route) => {
+      const url = route.request().url()
+      if (url.includes('/api-keys') && route.request().method() === 'GET') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(API_KEYS_IN_GRACE),
+        })
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+    })
+    await page.goto('/settings/api-keys')
+
+    // The component renders "Grace 24h aktiv" badge when inGrace is true.
+    await expect(
+      page.locator('text=Grace 24h aktiv').or(page.locator('text=Grace')).or(page.locator('text=24h')),
     ).toBeVisible({ timeout: 8000 })
   })
 

@@ -51,6 +51,8 @@ type Querier interface {
 	CountPPBreaches(ctx context.Context, orgID string) (int64, error)
 	CountPPVVT(ctx context.Context, orgID string) (int64, error)
 	CountSPAssets(ctx context.Context, arg CountSPAssetsParams) (int64, error)
+	CountSVDismissals(ctx context.Context, arg CountSVDismissalsParams) (int32, error)
+	CountSVProjectAccessLog(ctx context.Context, arg CountSVProjectAccessLogParams) (int32, error)
 	CountSPFindings(ctx context.Context, arg CountSPFindingsParams) (int64, error)
 	// Anzahl auf 'resolved' gesetzter Findings seit einem Zeitpunkt (Executive Summary).
 	CountSPResolvedFindingsSince(ctx context.Context, arg CountSPResolvedFindingsSinceParams) (int32, error)
@@ -161,8 +163,11 @@ type Querier interface {
 	CreateSRTrackingEvent(ctx context.Context, arg CreateSRTrackingEventParams) error
 	// ── Training modules ──────────────────────────────────────────────────────
 	CreateSRTrainingModule(ctx context.Context, arg CreateSRTrainingModuleParams) (SrTrainingModules, error)
+	CreateSVAPIToken(ctx context.Context, arg CreateSVAPITokenParams) (CreateSVAPITokenRow, error)
 	// ── Environments ────────────────────────────────────────────────────────────
 	CreateSVEnvironment(ctx context.Context, arg CreateSVEnvironmentParams) (SoEnvironments, error)
+	CreateSVGitScan(ctx context.Context, arg CreateSVGitScanParams) (SVGitScanRow, error)
+	CreateSVShareLink(ctx context.Context, arg CreateSVShareLinkParams) (CreateSVShareLinkRow, error)
 	// SecVault queries — migrated to sqlc in Sprint 11+ (ADR-0005, inkrementell).
 	//
 	// Migrationspfad:
@@ -200,6 +205,8 @@ type Querier interface {
 	DeleteSPSuppression(ctx context.Context, arg DeleteSPSuppressionParams) (int64, error)
 	DeleteSVEnvironment(ctx context.Context, arg DeleteSVEnvironmentParams) (int64, error)
 	DeleteSVProject(ctx context.Context, arg DeleteSVProjectParams) (int64, error)
+	DeleteSVSecret(ctx context.Context, arg DeleteSVSecretParams) (int64, error)
+	DismissSVScanResult(ctx context.Context, arg DismissSVScanResultParams) (int64, error)
 	DeleteUserModulePermissions(ctx context.Context, arg DeleteUserModulePermissionsParams) error
 	ExecutePPDSRErasure(ctx context.Context, arg ExecutePPDSRErasureParams) (ExecutePPDSRErasureRow, error)
 	FindActiveSRCampaignForReporter(ctx context.Context, arg FindActiveSRCampaignForReporterParams) (string, error)
@@ -327,14 +334,26 @@ type Querier interface {
 	GetSRTemplate(ctx context.Context, arg GetSRTemplateParams) (SrTemplates, error)
 	GetSRTrainingModuleByAttackType(ctx context.Context, arg GetSRTrainingModuleByAttackTypeParams) (SrTrainingModules, error)
 	GetSRTrainingModuleByID(ctx context.Context, arg GetSRTrainingModuleByIDParams) (SrTrainingModules, error)
+	GetSVAccessLog(ctx context.Context, arg GetSVAccessLogParams) ([]GetSVAccessLogRow, error)
+	GetSVEnvProjectID(ctx context.Context, arg GetSVEnvProjectIDParams) (string, error)
 	GetSVEnvironment(ctx context.Context, arg GetSVEnvironmentParams) (SoEnvironments, error)
+	GetSVGitScan(ctx context.Context, arg GetSVGitScanParams) (SVGitScanRow, error)
 	GetSVProject(ctx context.Context, arg GetSVProjectParams) (GetSVProjectRow, error)
+	GetSVRotationPolicy(ctx context.Context, arg GetSVRotationPolicyParams) (SVRotationPolicyRow, error)
+	GetSVScanResults(ctx context.Context, arg GetSVScanResultsParams) ([]SVScanResultRow, error)
+	GetSVSecretByKey(ctx context.Context, arg GetSVSecretByKeyParams) (GetSVSecretByKeyRow, error)
+	GetSVSecretIDByKey(ctx context.Context, arg GetSVSecretIDByKeyParams) (string, error)
+	GetSVSecretProjectID(ctx context.Context, secretID string) (string, error)
+	GetSVShareLink(ctx context.Context, tokenHash string) (GetSVShareLinkRow, error)
+	GetSVShareLinkOrgID(ctx context.Context, id string) (string, error)
 	GetUserDisplayName(ctx context.Context, id string) (string, error)
 	GetUserModulePermissions(ctx context.Context, arg GetUserModulePermissionsParams) ([]UserModulePermissions, error)
 	IncrementCKAuditorLinkUsage(ctx context.Context, id string) error
 	// ── EU AI Act: Classifications + Documentation ─────────────────────────────
 	InsertCKAIClassification(ctx context.Context, arg InsertCKAIClassificationParams) (string, error)
 	InsertCKAIDocumentation(ctx context.Context, arg InsertCKAIDocumentationParams) (CkAiDocumentation, error)
+	// ── CI Evidence (from Vakt Scan CI webhook) ──────────────────────────────────
+	InsertCKCIEvidence(ctx context.Context, arg InsertCKCIEvidenceParams) (string, error)
 	// ── Score History ───────────────────────────────────────────────────────────
 	InsertCKScoreSnapshot(ctx context.Context, arg InsertCKScoreSnapshotParams) error
 	InsertHRRunEvent(ctx context.Context, arg InsertHRRunEventParams) error
@@ -487,8 +506,14 @@ type Querier interface {
 	ListSRTemplates(ctx context.Context, orgID string) ([]SrTemplates, error)
 	ListSRTrainingModules(ctx context.Context, orgID string) ([]SrTrainingModules, error)
 	ListSVAccessLog(ctx context.Context, orgID string) ([]SoAccessLog, error)
+	ListSVAPITokens(ctx context.Context, arg ListSVAPITokensParams) ([]CreateSVAPITokenRow, error)
 	ListSVEnvironments(ctx context.Context, arg ListSVEnvironmentsParams) ([]SoEnvironments, error)
+	ListSVGitScans(ctx context.Context, orgID string) ([]SVGitScanRow, error)
+	ListSVProjectAccessLog(ctx context.Context, arg ListSVProjectAccessLogParams) ([]ListSVProjectAccessLogRow, error)
+	ListSVProjectSecrets(ctx context.Context, arg ListSVProjectSecretsParams) ([]ListSVSecretKeysRow, error)
 	ListSVProjects(ctx context.Context, orgID string) ([]ListSVProjectsRow, error)
+	ListSVSecretKeys(ctx context.Context, arg ListSVSecretKeysParams) ([]ListSVSecretKeysRow, error)
+	MarkSVShareLinkUsed(ctx context.Context, arg MarkSVShareLinkUsedParams) error
 	// Setzt Assessment auf 'reviewed' und gibt supplier_id für den nachfolgenden
 	// Supplier-Update zurück. Wird vom Repo in einer TX mit Update-Supplier
 	// kombiniert.
@@ -629,7 +654,12 @@ type Querier interface {
 	UpdateSPScanStatus(ctx context.Context, arg UpdateSPScanStatusParams) error
 	UpdateSRCampaignStatus(ctx context.Context, arg UpdateSRCampaignStatusParams) error
 	// ── Answers + Reviews ───────────────────────────────────────────────────────
+	RevokeSVAPIToken(ctx context.Context, arg RevokeSVAPITokenParams) (int64, error)
 	UpsertCKAnswer(ctx context.Context, arg UpsertCKAnswerParams) error
+	UpdateSVGitScanStatus(ctx context.Context, arg UpdateSVGitScanStatusParams) error
+	UpdateSVRotationAfterRotate(ctx context.Context, arg UpdateSVRotationAfterRotateParams) error
+	UpdateSVSecretAccess(ctx context.Context, id string) error
+	UpsertSVRotationPolicy(ctx context.Context, arg UpsertSVRotationPolicyParams) (SVRotationPolicyRow, error)
 	BatchUpdateSPComponentEOL(ctx context.Context, arg BatchUpdateSPComponentEOLParams) error
 	GetSPScanOrgID(ctx context.Context, id string) (string, error)
 	UpsertSPEOLCache(ctx context.Context, arg UpsertSPEOLCacheParams) error

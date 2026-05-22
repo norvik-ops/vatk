@@ -19,10 +19,12 @@ function mockAgentStream(page: Parameters<typeof test>[1]['page']) {
   return page.route('**/api/v1/**', async (route) => {
     const url = route.request().url()
     if (url.includes('/ai/agent')) {
+      // Use "arguments" (not "args") to match the AgentEvent interface so that
+      // hasDetails is true and the expand/collapse toggle renders.
       const events = [
-        'data: {"type":"plan","step":1,"text":"Analysiere Controls…"}\n\n',
-        'data: {"type":"tool_call","step":2,"tool":"list_controls","args":{"framework":"NIS2"},"result":"OK"}\n\n',
-        'data: {"type":"result","step":3,"text":"Ich habe 12 offene Controls gefunden."}\n\n',
+        'data: {"type":"plan","step":1,"message":"Analysiere Controls…"}\n\n',
+        'data: {"type":"tool_call","step":2,"tool":"list_controls","arguments":{"framework":"NIS2"},"result":"OK"}\n\n',
+        'data: {"type":"final","step":3,"message":"Ich habe 12 offene Controls gefunden."}\n\n',
         'data: [DONE]\n\n',
       ].join('')
       return route.fulfill({
@@ -60,6 +62,37 @@ test.describe('AgentRunPanel', () => {
     await expect(
       page.locator('text=Analysiere').or(page.locator('[data-type="plan"]')).or(page.locator('text=Plan')),
     ).toBeVisible({ timeout: 10000 })
+  })
+
+  test('tool_call card expand/collapse toggle works', async ({ page }) => {
+    await mockStoreAuth(page)
+    await mockAgentStream(page)
+    await page.goto('/secvitals/ai/agent')
+
+    const textarea = page.locator('textarea').first()
+    await textarea.waitFor({ state: 'visible', timeout: 8000 })
+    await textarea.fill('Zeige offene NIS2 Controls')
+
+    const startBtn = page.locator('button', { hasText: /starten|start/i }).first()
+    await startBtn.click()
+
+    // Wait for the tool_call card to appear — it has a "JSON" toggle button
+    // because arguments is set (hasDetails = true).
+    const jsonToggle = page.locator('button', { hasText: /JSON/i }).first()
+    await jsonToggle.waitFor({ state: 'visible', timeout: 10000 })
+
+    // Initially collapsed: toggle shows "JSON"
+    await expect(jsonToggle).toBeVisible()
+
+    // Expand by clicking the toggle.
+    await jsonToggle.click()
+
+    // After expansion the toggle label changes to "einklappen" and the
+    // Arguments section becomes visible.
+    await expect(
+      page.locator('button', { hasText: /einklappen/i }).first()
+        .or(page.locator('text=Arguments:')),
+    ).toBeVisible({ timeout: 5000 })
   })
 
   test('stop button is visible while agent is running', async ({ page }) => {
