@@ -56,7 +56,7 @@ VAKT_SECRET_KEY=$(openssl rand -hex 32)   # Beispiel — echten Wert generieren!
 |----------|---------|----------|--------------|
 | `VAKT_API_PORT` | — | `8080` | Port, auf dem der API-Server innerhalb des Containers lauscht. |
 | `APP_VERSION` | — | `0.1.0` | Versionsnummer. Wird im `/health`-Endpunkt zurückgegeben. |
-| `VAKT_MODULES_ENABLED` | — | alle | Kommagetrennte Liste aktiver Module. Mögliche Werte: `secpulse`, `secvitals`, `secvault`, `secreflex`, `secprivacy`. |
+| `VAKT_MODULES_ENABLED` | — | alle | Kommagetrennte Liste aktiver Module. Mögliche Werte: `secpulse`, `secvitals`, `secvault`, `secreflex`, `secprivacy`, `sechr`. |
 | `AUTO_MIGRATE` | — | `false` | Wenn `true`, führt der API-Container beim Start automatisch ausstehende Datenbankmigrationen aus. |
 | `VAKT_FRONTEND_URL` | — | `http://localhost:5173` | Öffentlich erreichbare URL des Frontends. Wird für E-Mail-Links in Benachrichtigungen, Vakt-Aware-Kampagnen und Policy-Akzeptanz-E-Mails verwendet. In Produktion auf die echte Domain setzen. |
 | `VAKT_UPLOAD_DIR` | — | `./data/uploads` | Verzeichnis für hochgeladene Dateien (Evidence-Anhänge). In Docker-Deployments als Volume mounten. |
@@ -66,7 +66,7 @@ VAKT_SECRET_KEY=$(openssl rand -hex 32)   # Beispiel — echten Wert generieren!
 ```env
 VAKT_API_PORT=8080
 APP_VERSION=1.0.0
-VAKT_MODULES_ENABLED=secpulse,secvitals,secvault,secreflex,secprivacy
+VAKT_MODULES_ENABLED=secpulse,secvitals,secvault,secreflex,secprivacy,sechr
 AUTO_MIGRATE=false
 VAKT_FRONTEND_URL=https://vakt.meine-firma.de
 VAKT_UPLOAD_DIR=/data/uploads
@@ -246,7 +246,7 @@ POSTGRES_PASSWORD=passwort
 # ── Anwendung ──────────────────────────────────────────────────────────────────
 VAKT_API_PORT=8080
 APP_VERSION=1.0.0
-VAKT_MODULES_ENABLED=secpulse,secvitals,secvault,secreflex,secprivacy
+VAKT_MODULES_ENABLED=secpulse,secvitals,secvault,secreflex,secprivacy,sechr
 AUTO_MIGRATE=false
 VAKT_FRONTEND_URL=https://vakt.meine-firma.de
 VAKT_UPLOAD_DIR=/data/uploads
@@ -282,11 +282,20 @@ VAKT_LDAP_TLS=false
 
 ---
 
-## Integrationen (Roadmap)
+## Enterprise-Integrationen (keine Env-Vars)
 
-Folgende Integrationen sind geplant und noch nicht im aktuellen Release enthalten:
+Die folgenden Integrationen werden **pro Organisation** in der Vakt-Oberfläche konfiguriert (Admin → Einstellungen) und benötigen keine eigenen Umgebungsvariablen:
 
-- **Jira** — Direkte Erstellung von Jira-Tickets aus Findings (Vakt Scan) und offenen Controls (Vakt Comply). Bis zur nativen Integration können Ergebnisse per CSV-Export oder via Webhook (Slack, Teams, generischer Webhook) weitergeleitet werden.
+| Integration | Edition | Setup |
+|-------------|---------|-------|
+| **SAML 2.0 Direct SP** | CE | Admin → Enterprise SSO → SAML → IdP-Metadaten hochladen |
+| **OIDC via Casdoor** | CE | `CASDOOR_*`-Vars (siehe oben) |
+| **SCIM 2.0 Provisioning** | Pro | Admin → Enterprise SSO → SCIM → Token generieren |
+| **SIEM-Forwarder** (Splunk, Elastic, Webhook) | Pro | Admin → Integrationen → SIEM → Adapter + Endpoint konfigurieren |
+| **IP-Allowlist für Admin-Endpunkte** | Pro | Admin → Sicherheit → IP-Allowlist → CIDR-Einträge |
+| **MFA für sensitive API-Calls** | Pro | Admin → Sicherheit → MFA-Enforcement |
+
+Ausführliche Setup-Anleitungen: `docs/wiki/enterprise-sso.md`
 
 ---
 

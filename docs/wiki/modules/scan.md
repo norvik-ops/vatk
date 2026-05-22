@@ -32,8 +32,10 @@ Assets sind die Objekte, die gescannt werden. Typen: `server`, `container`, `web
 
 Jedes Asset bekommt:
 - Eine Kritikalitätsstufe (low / medium / high / critical)
+- Eine **Umgebung** (`prod`, `staging`, `dev`) — beeinflusst SLA-Priorisierung und Filter-Voreinstellungen
 - Tags für Gruppierung und Unterdrückungsregeln
 - Optional eine externe URL
+- Einen **Owner** (Verantwortliche Person/Team)
 
 Assets können einzeln angelegt oder per CSV-Massenimport hinzugefügt werden.
 
@@ -60,8 +62,8 @@ Pro Asset und Scanner können wiederkehrende Scan-Schedules eingerichtet werden 
 
 Nach einem Scan normalisiert Vakt Scan alle Ergebnisse in ein einheitliches Finding-Modell:
 
-- **Deduplizierung** — Wiederholte Findings (gleiche CVE-ID auf gleichem Asset) werden zusammengeführt und als Wiederkehrungen gezählt
-- **CVSS-Anreicherung** — CVSS-Score wird aus der NVD-Datenbank ergänzt
+- **Deduplizierung** — Gleiche CVE-ID auf gleichem Asset wird über Scanner hinweg zusammengeführt; Severity wird auf Maximum gesetzt, alle Quellen (`sources`-JSONB) werden beibehalten
+- **CVE-Anreicherung** — CVSS-Score und Beschreibung werden über NVD API v2.0 nachgeladen (Redis-Cache 24h; automatischer Retry bei 429-Responses)
 - **EPSS-Anreicherung** — EPSS-Score (Exploit Prediction Scoring System) wird nach dem Scan automatisch nachgeladen
 
 ### Finding-Status
@@ -87,7 +89,7 @@ Pro Schweregrad können Remediierungsfristen konfiguriert werden:
 | Medium | 90 Tage |
 | Low | 180 Tage |
 
-Das SLA-Dashboard zeigt alle offenen Findings mit Fristenstatus — welche sind überfällig, welche laufen bald ab.
+Das SLA-Dashboard zeigt alle offenen Findings mit Fristenstatus — welche sind überfällig, welche laufen bald ab. Überfällige Findings erhalten in der Findings-Liste ein rotes **"SLA überfällig"**-Badge.
 
 ---
 

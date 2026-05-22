@@ -7,6 +7,98 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### v0.22.0 — Supplier Portal + Vakt Scan (2026-05-22)
+
+#### Added
+- Supplier Portal Phase 1 — Lieferanten-Register, Fragebogen-Builder (4 Frage-Typen, 3 Templates), externes Portal via Token-Link ohne Login
+- Supplier Portal Phase 2 — Auswertungsansicht, Zertifikat-Ablauf-Alert (30 Tage), Assessment-Report PDF
+- Asset Inventory — `environment` (prod/staging/dev), Kritikalitätsstufen, Ownership; Migration 139
+- CVE-Enrichment-Service — NVD API v2.0, Redis-Cache 24h, 429-Retry-Backoff
+- Finding-Deduplizierung cross-scanner — CVE+Asset-Key, Severity-Max-Merge, `sources`-JSONB
+- SLA-Overdue-Badge in Findings-Liste — zeigt "SLA überfällig" wenn `sla_due_at` überschritten
+
+---
+
+### v0.21.0 — EU AI Act (2026-05-22)
+
+#### Added
+- KI-System-Inventar — `ai_systems`, `ai_classifications`; CRUD + Filter nach Risikoklasse + Status
+- Risiko-Klassifizierungs-Wizard — JSON-konfigurierter Entscheidungsbaum nach Annex III (Verbots-Prüfung → Hochrisiko → Transparenzpflicht)
+- Technische Dokumentation Hochrisiko-KI (Art. 11) — Template nach Annex IV, Versionierung, PDF-Export
+- EU AI Act Dashboard — Kachel mit Systemen pro Risikoklasse, Countdown August 2026
+
+---
+
+### v0.20.0 — TISAX (2026-05-22)
+
+#### Added
+- TISAX® / VDA ISA-Framework — alle 15 Kapitel als Controls, Reifegrad 0–3, Schutzbedarf Normal/Hoch/Sehr hoch (Kapitel 15 Prototypenschutz optional)
+- TISAX ↔ ISO27001 Mapping — ~60–70% Controls als vorgefüllt bei aktivem ISO27001
+- TISAX Bereitschaftsbericht PDF — Reifegrad pro Kapitel, offene Controls, Deckblatt mit Assessment-Level
+
+---
+
+### v0.19.0 — BSI-Meldungsassistent + i18n (2026-05-22)
+
+#### Added
+- BSI-Meldungsassistent — Meldepflicht-Klassifizierung (3-Fragen-Wizard, obligation probably/unclear/none), Behörden-Empfehlung (BSI/BaFin+BSI/BNetzA/LDA), Migration 140
+- Behörden-Verzeichnis (`authorities.yaml`) + Sektor-Konfiguration in Org-Settings
+- Täglicher NIS2-Deadline-Check-Worker (24h/72h/30d-Fristen ab `first_detected_at`)
+- Gemeinsamer `compliance_reporting`-Service — `DeadlineTracker`, `ComputeDeadlines()`, `AmpelStatus()`, `DORADeadlines`, `NIS2Deadlines`, `DSGVODeadlines`
+- DORA TLPT-Dokumentation — Resilience-Test als DORA-Evidenz verknüpfbar; `POST /resilience-tests/:id/link-evidence`
+- i18n-Infrastruktur Phase 1 — `i18next` vollständig verdrahtet, Locales DE/EN/FR/NL, Locale-Umschalter in User-Settings
+
+---
+
+### v0.18.0 — DORA Phase 1+2 (2026-05-22)
+
+#### Added
+- DORA-Kontrollkatalog als Framework-Seed (Art. II–VI, alle Artikel als Controls)
+- DORA ↔ ISO27001 Mapping — geteilte Evidenz, „DORA-Lücken nach ISO27001-Abzug"
+- IKT-Incident-Register — Typ `ikt_dora`, Felder `first_detected_at`, `reported_24h/72h/30d_at`, `severity_dora`, DORA-Klassifizierungs-JSONB; Migration 136
+- Frist-Berechnung + Ampel (Worker-Cron alle 5 min, grün/gelb/rot pro Frist)
+- IKT-Drittanbieter-Register — `dora_third_parties`, Kritikalitätsstufen, Ausstiegsstrategie, Vertragsparameter; Migration 138
+- DORA Dashboard-Kachel — Drittanbieter-Zähler, fehlende Ausstiegsstrategien
+- DORA PDF-Report — Abschnitt IKT-Drittanbieter + Resilienz-Tests
+
+#### Changed
+- `internal/shared/` → `platform/` Welle 4 (auditor, integrations, ldap, trustcenter, webhooks)
+
+---
+
+### v0.17.0 — Auth-Welle (2026-05-22)
+
+#### Added
+- SAML 2.0 Direct SP (CE) — AzureAD, Okta, OneLogin, Google Workspace; Metadata-XML-Endpoint
+- SCIM 2.0 User+Group Provisioning (Pro) — `/scim/v2/Users`, `/scim/v2/Groups`, Filter-DSL
+- IP-Allowlist für Admin-Endpoints (Pro) — CIDR-Konfiguration in Org-Settings
+- MFA für sensitive API-Calls (Pro) — TOTP-Validation via `X-MFA-Token`-Header
+- SIEM-Audit-Forwarder (Pro) — Splunk HEC, Elastic Bulk API, Generic Webhook; Asynq-Job mit Retry
+- ADR-0022 Auth-Tier-Cut (SAML CE / SCIM+SIEM Pro)
+
+---
+
+### v0.16.0 — Foundation-Welle (2026-05-22)
+
+#### Added
+- Feature-Flag-Infrastruktur (`platform/features`) — alle Pro-Features über `IsEnabled()` steuerbar
+- AgentRunPanel Approve-Cards — Write-Tool-Freigabe-Flow mit Audit-Log
+- Cursor-basierte Pagination für Findings, Controls, Risks, Secrets, DSRs, Employees, Campaigns
+- Typisierte Cross-Module Event-Contracts (`platform/events`) — `FindingCreated`, `BreachNotified`, `EvidenceCollected`, `IncidentCreated`
+
+#### Changed
+- `internal/shared/` → `platform/` Welle 3 (crypto, db, cache, telemetry, middleware, metrics, alerting, notify, scheduledreports, retention)
+- Worker-Queue-Namespaces pro Modul (secpulse concurrency 8, secprivacy 5, ai_agent 3, secvitals 5)
+- Redis-Auth-Fallback auf PostgreSQL bei Redis-Ausfall
+
+#### Fixed
+- Dashboard.tsx von 1448 auf 144 Zeilen dekomponiert (5 Komponenten)
+- SQL-Injection-Risiko in `admin/service.go` (dynamisches WHERE → fixe NULL-Safe-Placeholder)
+- `interface{}` vollständig aus `internal/` eliminiert (Go 1.18 `any`)
+- CI Frontend-Lint ist jetzt explizit blockend (`continue-on-error: false`)
+
+---
+
 ### v0.15.0 — NIS2 Pro-Layer (Tag-Kandidat, Sprint 28)
 
 Schließt die Pro-Schicht aus Sprint 19 vollständig ab. Kein Breaking-Change — alle neuen Features sind additiv und hinter `FeatureNIS2Reporting` Pro-gated. CE-Features des NIS2-Wizards bleiben unverändert.
