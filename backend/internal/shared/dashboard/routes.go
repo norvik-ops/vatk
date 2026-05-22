@@ -28,4 +28,8 @@ func Register(g *echo.Group, db *pgxpool.Pool, rdb *redis.Client, auth echo.Midd
 	g.GET("/notifications", h.ListNotifications, auth)
 	g.POST("/notifications/read-all", h.MarkAllRead, auth)
 	g.POST("/notifications/:id/read", h.MarkNotificationRead, auth)
+	// Sprint 17 S17-1: SSE-Stream-Endpoint. Klient verbindet sich nach dem
+	// initialen GET /notifications und empfängt Deltas via Server-Sent Events
+	// (siehe ADR-0019).
+	g.GET("/notifications/stream", h.StreamNotifications, auth)
 }

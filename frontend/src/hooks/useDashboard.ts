@@ -95,16 +95,18 @@ export interface UserNotification {
 }
 
 /**
- * Fetches the current user's notification list and polls every 60 seconds.
- * `staleTime` is intentionally shorter than `refetchInterval` so that a
- * newly opened tab triggers an immediate background refresh.
+ * Fetches the current user's notification list.
+ *
+ * Sprint 17 S17-4: Polling-Interval entfernt — der NotificationBell verbindet
+ * sich jetzt zusätzlich mit useNotificationStream und ruft bei jeder neuen
+ * Notification queryClient.invalidateQueries(['dashboard', 'notifications'])
+ * auf. staleTime bleibt 30 s als Cache-Hint für TabSwitch-Refetches.
  */
 export function useNotifications() {
   return useQuery<UserNotification[]>({
     queryKey: ['dashboard', 'notifications'],
     queryFn: () => apiFetch<UserNotification[]>('/dashboard/notifications'),
     staleTime: 30_000,
-    refetchInterval: 60_000,
   })
 }
 

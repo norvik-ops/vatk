@@ -15,6 +15,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
@@ -55,6 +56,19 @@ func handleScanJob(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 			}
 		}
 
+		// Sprint 17 S17-2: Live-Progress via Redis Pub/Sub. rdb darf nil sein
+		// (lokales Dev ohne Redis) — PublishProgress ist dann no-op.
+		var rdb *redis.Client
+		if cfg != nil && cfg.RedisUrl != "" {
+			if opt, err := redis.ParseURL(cfg.RedisUrl); err == nil {
+				rdb = redis.NewClient(opt)
+				defer rdb.Close()
+			}
+		}
+		secpulse.PublishProgress(ctx, rdb, secpulse.ProgressEvent{
+			ScanID: payload.ScanID, Phase: "started", Message: payload.Scanner + " scan started",
+		})
+
 		var scanErr error
 		switch t.Type() {
 		case secpulse.TaskScanTrivy:
@@ -75,6 +89,16 @@ func handleScanJob(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 		default:
 			return fmt.Errorf("unknown scan task type: %s", t.Type())
 		}
+
+		// S17-2: Terminal-Event publizieren — beendet aktive SSE-Streams.
+		finalPhase := "finished"
+		if scanErr != nil {
+			finalPhase = "failed"
+		}
+		secpulse.PublishProgress(ctx, rdb, secpulse.ProgressEvent{
+			ScanID: payload.ScanID, Phase: finalPhase, Percent: 100,
+			Message: payload.Scanner + " scan " + finalPhase,
+		})
 
 		if scanErr != nil {
 			// Fire scan.failed alert — non-fatal, best-effort.

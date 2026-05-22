@@ -7,6 +7,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Sprint 17 — Realtime-Welle (Tag-Kandidat v0.10.0)
+
+Erste produktive SSE-Endpoints nach dem ADR-0019-Pattern aus Sprint 16. Notifications und Scan-Progress werden jetzt live gepushed statt gepollt.
+
+**Backend (S17-1, S17-2, S17-7):**
+- `GET /api/v1/dashboard/notifications/stream` — server-side-poll-and-push, 2 s Cursor-Tick, 30 s Heartbeat-Pongs (`event: ping`). Skaliert besser als Postgres-LISTEN-per-Connection.
+- `GET /api/v1/secpulse/scans/:id/progress/stream` — subscribed Redis Pub/Sub auf `scan:progress:<id>`-Channel. Worker publiziert `started` und `finished`/`failed`; Stream beendet sich mit `data: [DONE]`. Org-Isolation enforced (Cross-Org-Stream → 404).
+- `internal/modules/secpulse/progress_stream.go` mit `PublishProgress(rdb, evt)`-Helper; im Worker (`handleScanJob`) verdrahtet vor + nach jedem Scan-Run.
+- OpenTelemetry-Spans pro Stream-Lifecycle.
+
+**Frontend (S17-3, S17-4):**
+- `useNotificationStream`-Hook — fetch-SSE-Reader, Auto-Reconnect mit 1-s-Backoff, Heartbeat-Filter, Unmount-Cleanup.
+- `NotificationBell` invalidiert React-Query-Cache bei jedem Stream-Event statt 60-s-Polling. `useNotifications.refetchInterval` entfernt.
+
+**Docs (S17-6):**
+- `docs/wiki/reverse-proxy.md` — nginx-Konfig für SSE-Endpoints (`proxy_buffering off`, `proxy_read_timeout 1h`, `location ~ ^/api/v1/.+/stream$`-Block). Caddy/Traefik/HAProxy/Cloudflare-Hinweise. Liste aller aktiven SSE-Endpoints.
+
+**Tests (S17-8):**
+- `parseSSEFrames`-Helper in `notifications_stream_test.go` — testbarer SSE-Frame-Parser mit 5 Unit-Tests (single-frame, ping-heartbeat, mixed-stream, empty, DONE-marker).
+
+**Verschoben (S17-5 [~]):**
+- `ScanProgressIndicator`-Frontend-UI als Cosmetic-Polish nach Sprint 18 verschoben. Backend-Pub/Sub-Infra produktiv, Hook-Pattern aus S17-3 wiederverwendbar.
+
 ### Sprint 16 — Frontend-Polish + Doku-Reife (Tag-Kandidat v0.9.0)
 
 Sprint 16 schließt die Reife-Sanierung-Welle 2 strukturell ab. Schwerpunkt: Frontend-Hygiene + Doku-Vollständigkeit, keine API-Breaking-Changes.

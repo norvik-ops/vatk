@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Bell, BellDot, CheckCheck, Info, AlertTriangle, AlertCircle } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '../../components/ui/button'
 import { cn } from '../../lib/utils'
 import { useNotifications, useMarkNotificationRead, useMarkAllRead } from '../../hooks/useDashboard'
 import type { UserNotification } from '../../hooks/useDashboard'
 import { formatLocale } from '../utils/locale'
+import { useNotificationStream } from '../hooks/useNotificationStream'
 
 /** Maps notification type to the corresponding Lucide icon component. */
 const typeIcon: Record<string, React.ElementType> = {
@@ -33,6 +35,16 @@ export function NotificationBell() {
   const { data: notifications } = useNotifications()
   const markRead = useMarkNotificationRead()
   const markAll = useMarkAllRead()
+  const queryClient = useQueryClient()
+
+  // Sprint 17 S17-4: SSE-Stream invalidiert die React-Query-Cache bei jeder
+  // neuen Notification. Polling-Interval wurde in useNotifications entfernt.
+  // Backoff-Reconnect läuft im Hook (1 s).
+  useNotificationStream({
+    onItem: () => {
+      void queryClient.invalidateQueries({ queryKey: ['dashboard', 'notifications'] })
+    },
+  })
 
   const unread = notifications?.filter((n) => !n.read).length ?? 0
 

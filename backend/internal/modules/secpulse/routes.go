@@ -34,6 +34,10 @@ func Register(g *echo.Group, h *Handler) {
 
 	// --- Community: Scans ---
 	assets.GET("/scans/:id", h.GetScan)
+	// Sprint 17 S17-2: SSE-Progress-Stream pro Scan. Verbraucht Redis Pub/Sub
+	// vom Worker (siehe progress_stream.go). Erfordert Redis — degradiert
+	// 503 wenn nicht konfiguriert.
+	assets.GET("/scans/:id/progress/stream", h.StreamScanProgress)
 
 	// --- Pro: Findings bulk export/import and Wazuh import — must be before /:id routes ---
 	assets.GET("/findings/export/xlsx", h.ExportFindingsXLSX, license.Require(license.FeatureSecPulse))
