@@ -22,7 +22,7 @@ export function usePhishReportStats() {
 
 export function useRegeneratePhishToken() {
   const queryClient = useQueryClient()
-  return useMutation<{ token: string }, Error, void>({
+  return useMutation<{ token: string }>({
     mutationFn: () =>
       apiFetch<{ token: string }>(`${BASE}/phish-report-token/regenerate`, {
         method: 'POST',

@@ -74,7 +74,7 @@ function TemplateCard({
   return (
     <Card
       className="cursor-pointer hover:border-brand/50 transition-colors"
-      onClick={() => onPreview(template)}
+      onClick={() => { onPreview(template); }}
     >
       <CardContent className="pt-5 space-y-2">
         <div className="flex items-start justify-between gap-2">
@@ -175,7 +175,7 @@ function TemplateCategoryTab({ category }: { category: Category }) {
           )}
 
           <DialogFooter className="mt-2">
-            <Button variant="outline" onClick={() => setPreview(null)}>
+            <Button variant="outline" onClick={() => { setPreview(null); }}>
               Schließen
             </Button>
             <Button
@@ -212,7 +212,7 @@ export default function PolicyTemplatesPage() {
       <div className="flex-1 p-6">
         <Tabs
           value={activeCategory}
-          onValueChange={(v) => setActiveCategory(v as Category)}
+          onValueChange={(v) => { setActiveCategory(v as Category); }}
         >
           <TabsList className="mb-6">
             {categories.map((cat) => {

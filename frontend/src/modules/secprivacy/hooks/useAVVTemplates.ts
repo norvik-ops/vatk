@@ -62,9 +62,9 @@ export function useDownloadAVVPDF() {
 
 export function useUpdateAVVSCC() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, { id: string; input: UpdateAVVSCCInput }>({
+  return useMutation<undefined, Error, { id: string; input: UpdateAVVSCCInput }>({
     mutationFn: ({ id, input }) =>
-      apiFetch<void>(`/secprivacy/avvs/${id}/scc`, {
+      apiFetch<undefined>(`/secprivacy/avvs/${id}/scc`, {
         method: 'PATCH',
         body: JSON.stringify(input),
       }),

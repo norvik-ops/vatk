@@ -52,10 +52,10 @@ export function useNotificationStream({
 
   useEffect(() => {
     if (!enabled) return
-    let cancelled = false
+    const state = { cancelled: false }
 
     const connect = async () => {
-      while (!cancelled) {
+      while (!state.cancelled) {
         const controller = new AbortController()
         abortRef.current = controller
         try {
@@ -65,13 +65,14 @@ export function useNotificationStream({
             signal: controller.signal,
           })
           if (!res.ok || !res.body) {
-            throw new Error(`stream HTTP ${res.status}`)
+            throw new Error(`stream HTTP ${String(res.status)}`)
           }
           setConnected(true)
           const reader = res.body.getReader()
           const decoder = new TextDecoder()
           let buffer = ''
-          while (!cancelled) {
+           
+          for (;;) {
             const { value, done } = await reader.read()
             if (done) break
             buffer += decoder.decode(value, { stream: true })
@@ -101,13 +102,13 @@ export function useNotificationStream({
           // Netzwerk-Disconnect — Backoff 1 s, dann reconnect.
         }
         setConnected(false)
-        if (!cancelled) await new Promise((r) => setTimeout(r, 1000))
+        await new Promise((r) => setTimeout(r, 1000))
       }
     }
     void connect()
 
     return () => {
-      cancelled = true
+      state.cancelled = true
       abortRef.current?.abort()
     }
   }, [endpoint, enabled])

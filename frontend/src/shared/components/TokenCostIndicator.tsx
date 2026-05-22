@@ -21,7 +21,7 @@ interface Props {
 
 function fmtTokens(n: number | undefined): string | null {
   if (n == null) return null
-  if (n < 1000) return `${n} Tk`
+  if (n < 1000) return `${String(n)} Tk`
   return `${(n / 1000).toFixed(1)}k Tk`
 }
 
@@ -35,7 +35,7 @@ function fmtCost(microEur: number | undefined): string | null {
 
 function fmtDur(ms: number | undefined): string | null {
   if (ms == null || ms === 0) return null
-  if (ms < 1000) return `${ms} ms`
+  if (ms < 1000) return `${String(ms)} ms`
   return `${(ms / 1000).toFixed(1)} s`
 }
 

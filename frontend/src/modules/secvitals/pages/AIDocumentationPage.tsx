@@ -72,7 +72,7 @@ export default function AIDocumentationPage() {
     }
   }, [latestDoc])
 
-  useEffect(() => () => clearTimeout(timerRef.current), [])
+  useEffect(() => () => { clearTimeout(timerRef.current); }, [])
 
   function handleSave(status?: 'draft' | 'final') {
     saveDoc.mutate(
@@ -80,7 +80,7 @@ export default function AIDocumentationPage() {
       {
         onSuccess: () => {
           setSaved(true)
-          timerRef.current = setTimeout(() => setSaved(false), 2500)
+          timerRef.current = setTimeout(() => { setSaved(false); }, 2500)
         },
       },
     )
@@ -116,7 +116,7 @@ export default function AIDocumentationPage() {
         description="EU AI Act Art. 11 / Annex IV — Technische Dokumentation für Hochrisiko-KI-Systeme"
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowVersions((v) => !v)}>
+            <Button variant="outline" size="sm" onClick={() => { setShowVersions((v) => !v); }}>
               <History className="w-4 h-4 mr-1" />
               {versions?.length ?? 0} Version{(versions?.length ?? 0) !== 1 ? 'en' : ''}
             </Button>
@@ -127,7 +127,7 @@ export default function AIDocumentationPage() {
               </Button>
               {pdfError && <p className="text-xs text-red-500">{pdfError}</p>}
             </div>
-            <Button onClick={() => handleSave('final')} disabled={saveDoc.isPending} data-testid="finalize-doc-btn">
+            <Button onClick={() => { handleSave('final'); }} disabled={saveDoc.isPending} data-testid="finalize-doc-btn">
               Als final speichern
             </Button>
           </div>
@@ -174,7 +174,7 @@ export default function AIDocumentationPage() {
                   rows={sec.rows}
                   placeholder={`${sec.label} ausfüllen …`}
                   value={(form[sec.key] as string) ?? ''}
-                  onChange={(e) => setField(sec.key, e.target.value)}
+                  onChange={(e) => { setField(sec.key, e.target.value); }}
                   data-testid={`doc-field-${sec.key}`}
                 />
               </div>
@@ -187,7 +187,7 @@ export default function AIDocumentationPage() {
                 <Input
                   placeholder="Name der verantwortlichen Person"
                   value={form.authored_by ?? ''}
-                  onChange={(e) => setField('authored_by', e.target.value)}
+                  onChange={(e) => { setField('authored_by', e.target.value); }}
                   data-testid="doc-field-authored_by"
                 />
               </div>
@@ -195,7 +195,7 @@ export default function AIDocumentationPage() {
                 <Label>Status</Label>
                 <Select
                   value={form.status ?? 'draft'}
-                  onValueChange={(v) => setForm((f) => ({ ...f, status: v as 'draft' | 'final' }))}
+                  onValueChange={(v) => { setForm((f) => ({ ...f, status: v as 'draft' | 'final' })); }}
                 >
                   <SelectTrigger data-testid="doc-status-select">
                     <SelectValue />
@@ -211,14 +211,14 @@ export default function AIDocumentationPage() {
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
-                onClick={() => handleSave('draft')}
+                onClick={() => { handleSave('draft'); }}
                 disabled={saveDoc.isPending}
                 data-testid="save-draft-btn"
               >
                 Als Entwurf speichern
               </Button>
               <Button
-                onClick={() => handleSave('final')}
+                onClick={() => { handleSave('final'); }}
                 disabled={saveDoc.isPending}
                 data-testid="save-final-btn"
               >

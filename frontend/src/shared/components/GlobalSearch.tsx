@@ -66,7 +66,9 @@ function saveRecent(result: SearchResult) {
   )
   try {
     localStorage.setItem(RECENT_KEY, JSON.stringify([result, ...prev].slice(0, MAX_RECENT)))
-  } catch {}
+  } catch {
+    // localStorage may be unavailable
+  }
 }
 
 export function GlobalSearch() {
@@ -146,14 +148,14 @@ export function GlobalSearch() {
     item?.scrollIntoView({ block: 'nearest' })
   }, [activeIdx])
 
-  const trapRef = useFocusTrap<HTMLDivElement>(open, () => setOpen(false))
+  const trapRef = useFocusTrap<HTMLDivElement>(open, () => { setOpen(false); })
 
   if (!open) return null
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-black/40"
-      onClick={() => setOpen(false)}
+      onClick={() => { setOpen(false); }}
     >
       <div
         ref={trapRef as RefObject<HTMLDivElement>}
@@ -161,7 +163,7 @@ export function GlobalSearch() {
         aria-label="Suche"
         aria-modal="true"
         className="w-full max-w-lg bg-background dark:bg-card rounded-xl shadow-2xl border border-border overflow-hidden"
-        onClick={e => e.stopPropagation()}
+        onClick={e => { e.stopPropagation(); }}
       >
         {/* Input row */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
@@ -176,7 +178,7 @@ export function GlobalSearch() {
             aria-label="Globale Suche"
             aria-autocomplete="list"
             aria-controls="global-search-results"
-            aria-activedescendant={activeIdx >= 0 ? `search-result-${activeIdx}` : undefined}
+            aria-activedescendant={activeIdx >= 0 ? `search-result-${String(activeIdx)}` : undefined}
             role="combobox"
             aria-expanded={displayList.length > 0}
             className="flex-1 bg-transparent text-sm outline-none text-primary placeholder:text-secondary"
@@ -205,9 +207,9 @@ export function GlobalSearch() {
         {displayList.length > 0 && (
           <ul ref={listRef} id="global-search-results" role="listbox" aria-label="Suchergebnisse" className="max-h-80 overflow-y-auto py-1.5">
             {displayList.map((r, idx) => (
-              <li key={r.id + r.entity_type} role="option" aria-selected={idx === activeIdx} id={`search-result-${idx}`}>
+              <li key={r.id + r.entity_type} role="option" aria-selected={idx === activeIdx} id={`search-result-${String(idx)}`}>
                 <button
-                  onClick={() => handleSelect(r)}
+                  onClick={() => { handleSelect(r); }}
                   className={[
                     'w-full flex items-center gap-3 px-4 py-2 text-left transition-colors',
                     idx === activeIdx

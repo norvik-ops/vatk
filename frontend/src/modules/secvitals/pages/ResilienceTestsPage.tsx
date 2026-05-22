@@ -203,10 +203,10 @@ export default function ResilienceTestsPage() {
     if (editId) {
       updateTest.mutate(
         { ...payload, remediation_status: payload.remediation_status ?? 'open' },
-        { onSuccess: () => setDialogOpen(false) },
+        { onSuccess: () => { setDialogOpen(false); } },
       )
     } else {
-      createTest.mutate(payload, { onSuccess: () => setDialogOpen(false) })
+      createTest.mutate(payload, { onSuccess: () => { setDialogOpen(false); } })
     }
   }
 
@@ -278,8 +278,8 @@ export default function ResilienceTestsPage() {
               <ResilienceTestRow
                 key={t.id}
                 test={t}
-                onEdit={() => openEdit(t)}
-                onDelete={() => handleDelete(t.id)}
+                onEdit={() => { openEdit(t); }}
+                onDelete={() => { handleDelete(t.id); }}
                 onLinkEvidence={() => { setLinkTestId(t.id); setLinkControlId('') }}
               />
             ))}
@@ -288,7 +288,7 @@ export default function ResilienceTestsPage() {
       </div>
 
       {/* Link-as-evidence dialog (S40-1) */}
-      <Dialog open={!!linkTestId} onOpenChange={(v) => !v && setLinkTestId(null)}>
+      <Dialog open={!!linkTestId} onOpenChange={(v) => { if (!v) { setLinkTestId(null); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Als DORA-Evidenz verknüpfen</DialogTitle>
@@ -303,17 +303,17 @@ export default function ResilienceTestsPage() {
               <Input
                 placeholder="UUID des Controls (z.B. DORA-3.2)"
                 value={linkControlId}
-                onChange={(e) => setLinkControlId(e.target.value)}
+                onChange={(e) => { setLinkControlId(e.target.value); }}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLinkTestId(null)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => { setLinkTestId(null); }}>Abbrechen</Button>
             <Button
               disabled={!linkControlId || linkEvidence.isPending}
               onClick={() => {
                 linkEvidence.mutate({ control_id: linkControlId }, {
-                  onSuccess: () => setLinkTestId(null),
+                  onSuccess: () => { setLinkTestId(null); },
                 })
               }}
             >
@@ -333,7 +333,7 @@ export default function ResilienceTestsPage() {
               <Label>Typ *</Label>
               <Select
                 value={form.type}
-                onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}
+                onValueChange={(v) => { setForm((f) => ({ ...f, type: v })); }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Testtyp auswählen …" />
@@ -354,7 +354,7 @@ export default function ResilienceTestsPage() {
               <Input
                 type="date"
                 value={form.test_date ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, test_date: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, test_date: e.target.value })); }}
               />
             </div>
 
@@ -363,7 +363,7 @@ export default function ResilienceTestsPage() {
               <Input
                 placeholder="z.B. Core-Banking-Systeme"
                 value={form.scope ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, scope: e.target.value })); }}
               />
             </div>
 
@@ -372,7 +372,7 @@ export default function ResilienceTestsPage() {
               <Input
                 placeholder="z.B. CyberProof GmbH"
                 value={form.provider ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, provider: e.target.value })); }}
               />
             </div>
 
@@ -380,7 +380,7 @@ export default function ResilienceTestsPage() {
               <Label>Remediationsstatus</Label>
               <Select
                 value={form.remediation_status ?? 'open'}
-                onValueChange={(v) => setForm((f) => ({ ...f, remediation_status: v }))}
+                onValueChange={(v) => { setForm((f) => ({ ...f, remediation_status: v })); }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -400,7 +400,7 @@ export default function ResilienceTestsPage() {
                 rows={4}
                 placeholder="Ergebnisse, Befunde, Empfehlungen …"
                 value={form.summary ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, summary: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, summary: e.target.value })); }}
               />
             </div>
 
@@ -412,7 +412,7 @@ export default function ResilienceTestsPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>
               Abbrechen
             </Button>
             <Button

@@ -38,7 +38,7 @@ export function Toaster() {
             role={variant === 'error' ? 'alert' : 'status'}
             aria-live={variant === 'error' ? 'assertive' : 'polite'}
             aria-atomic="true"
-            style={{ bottom: `${16 + i * 64}px` }}
+            style={{ bottom: `${String(16 + i * 64)}px` }}
             className={cn(
               'fixed right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)]',
               'flex items-start gap-3 rounded-lg border px-4 py-3 shadow-lg',
@@ -74,7 +74,7 @@ export function Toaster() {
             <RadixToast.Close
               className="text-secondary hover:text-primary transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
               aria-label="Schließen"
-              onClick={() => dismiss(id)}
+              onClick={() => { dismiss(id); }}
             >
               <X className="w-3.5 h-3.5" aria-hidden="true" />
             </RadixToast.Close>

@@ -139,7 +139,7 @@ function VVTCard({
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">{t('secprivacy.vvtPage.createdOn')} {date}</p>
           <div className="flex gap-1">
-            <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('common.edit')} onClick={() => onEdit(entry)}>
+            <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('common.edit')} onClick={() => { onEdit(entry); }}>
               <Pencil className="w-3.5 h-3.5" />
             </Button>
             <Button
@@ -147,7 +147,7 @@ function VVTCard({
               variant="ghost"
               className="h-7 w-7 text-destructive hover:text-destructive"
               aria-label={t('common.delete')}
-              onClick={() => onDelete(entry.id)}
+              onClick={() => { onDelete(entry.id); }}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
@@ -170,7 +170,7 @@ function VVTForm({
   onClearError?: (field: string) => void
 }) {
   const { t } = useTranslation()
-  const set = (patch: Partial<VVTFormState>) => onChange({ ...form, ...patch })
+  const set = (patch: Partial<VVTFormState>) => { onChange({ ...form, ...patch }); }
 
   return (
     <div className="space-y-4 py-2">
@@ -195,7 +195,7 @@ function VVTForm({
       </div>
       <div className="space-y-1.5">
         <Label>{t('secprivacy.vvtPage.labelLegalBasis')} *</Label>
-        <Select value={form.legal_basis} onValueChange={(v) => set({ legal_basis: v })}>
+        <Select value={form.legal_basis} onValueChange={(v) => { set({ legal_basis: v }); }}>
           <SelectTrigger>
             <SelectValue placeholder={t('secprivacy.vvtPage.placeholderLegalBasis')} />
           </SelectTrigger>
@@ -213,7 +213,7 @@ function VVTForm({
         <Input
           placeholder={t('secprivacy.vvtPage.placeholderCategories')}
           value={form.rawCategories}
-          onChange={(e) => set({ rawCategories: e.target.value })}
+          onChange={(e) => { set({ rawCategories: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -221,7 +221,7 @@ function VVTForm({
         <Input
           placeholder={t('secprivacy.vvtPage.placeholderSubjects')}
           value={form.rawSubjects}
-          onChange={(e) => set({ rawSubjects: e.target.value })}
+          onChange={(e) => { set({ rawSubjects: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -229,7 +229,7 @@ function VVTForm({
         <Input
           placeholder={t('secprivacy.vvtPage.placeholderRecipients')}
           value={form.rawRecipients}
-          onChange={(e) => set({ rawRecipients: e.target.value })}
+          onChange={(e) => { set({ rawRecipients: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -237,7 +237,7 @@ function VVTForm({
         <Input
           placeholder={t('secprivacy.vvtPage.placeholderRetention')}
           value={form.retention_period}
-          onChange={(e) => set({ retention_period: e.target.value })}
+          onChange={(e) => { set({ retention_period: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -245,12 +245,12 @@ function VVTForm({
         <Input
           placeholder={t('secprivacy.vvtPage.placeholderResponsible')}
           value={form.responsible_person}
-          onChange={(e) => set({ responsible_person: e.target.value })}
+          onChange={(e) => { set({ responsible_person: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
         <Label>{t('secprivacy.vvtPage.labelStatus')}</Label>
-        <Select value={form.status} onValueChange={(v) => set({ status: v as 'active' | 'archived' })}>
+        <Select value={form.status} onValueChange={(v) => { set({ status: v as 'active' | 'archived' }); }}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -265,7 +265,7 @@ function VVTForm({
           type="checkbox"
           id="vvt-thirdcountry"
           checked={form.third_country_transfer}
-          onChange={(e) => set({ third_country_transfer: e.target.checked })}
+          onChange={(e) => { set({ third_country_transfer: e.target.checked }); }}
           className="w-4 h-4"
         />
         <Label htmlFor="vvt-thirdcountry">{t('secprivacy.vvtPage.labelThirdCountry')}</Label>
@@ -277,7 +277,7 @@ function VVTForm({
             placeholder={t('secprivacy.vvtPage.placeholderSafeguards')}
             rows={2}
             value={form.safeguards}
-            onChange={(e) => set({ safeguards: e.target.value })}
+            onChange={(e) => { set({ safeguards: e.target.value }); }}
           />
         </div>
       )}
@@ -352,7 +352,7 @@ export default function VVTPage() {
       })
     } else if (dialogMode === 'edit' && editId) {
       const payload: UpdateVVTInput = { ...buildPayload(), status: form.status }
-      updateVVT.mutate({ id: editId, input: payload }, { onSuccess: () => setDialogMode(null) })
+      updateVVT.mutate({ id: editId, input: payload }, { onSuccess: () => { setDialogMode(null); } })
     }
   }
 
@@ -421,7 +421,7 @@ export default function VVTPage() {
         />
       </div>
 
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('secprivacy.vvtPage.deleteDialogTitle')}</AlertDialogTitle>
@@ -430,13 +430,13 @@ export default function VVTPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setDeleteId(null); }}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('common.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && setDialogMode(null)}>
+      <Dialog open={dialogMode !== null} onOpenChange={(open) => { if (!open) setDialogMode(null) }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -447,7 +447,7 @@ export default function VVTPage() {
           </DialogHeader>
           <VVTForm form={form} onChange={setForm} errors={vvtErrors} onClearError={clearVVTError} />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogMode(null)}>
+            <Button variant="outline" onClick={() => { setDialogMode(null); }}>
               {t('common.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={isPending}>

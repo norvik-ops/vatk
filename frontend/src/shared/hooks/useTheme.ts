@@ -20,7 +20,7 @@ export function useTheme() {
       document.documentElement.classList.toggle('dark', isDark)
     }
     mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
+    return () => { mql.removeEventListener('change', handler); }
   }, [theme])
 
   function cycleTheme() {

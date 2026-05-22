@@ -86,7 +86,7 @@ export function ClassifyReportingWizard({ incidentId, open, onClose, onResult }:
   const cfg = result ? OBLIGATION_CONFIG[result.obligation] : null
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { handleClose(); } }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Meldepflicht klassifizieren (NIS2 § 32 BSIG-neu)</DialogTitle>
@@ -103,7 +103,7 @@ export function ClassifyReportingWizard({ incidentId, open, onClose, onResult }:
                 variant="outline"
                 className="flex-1"
                 disabled={classify.isPending}
-                onClick={() => handleAnswer(true)}
+                onClick={() => { handleAnswer(true); }}
                 data-testid="classify-yes-btn"
               >
                 Ja
@@ -112,7 +112,7 @@ export function ClassifyReportingWizard({ incidentId, open, onClose, onResult }:
                 variant="outline"
                 className="flex-1"
                 disabled={classify.isPending}
-                onClick={() => handleAnswer(false)}
+                onClick={() => { handleAnswer(false); }}
                 data-testid="classify-no-btn"
               >
                 Nein

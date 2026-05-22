@@ -19,7 +19,6 @@ import {
 } from '../../../components/ui/select'
 import { useAutoEvidence, useAssignEvidence, type AutoEvidence } from '../hooks/useEvidenceAuto'
 import { useFrameworks, useFrameworkControls } from '../hooks/useFrameworks'
-import type { Control } from '../types'
 import { formatLocale } from '../../../shared/utils/locale'
 
 // --- Source helpers ---
@@ -78,10 +77,10 @@ function AssignDialog({ evidence, onClose }: AssignDialogProps) {
   }
 
   // Controls list — useFrameworkControls returns a sub-type, cast to Control[]
-  const controlList = (controls ?? []) as Control[]
+  const controlList = (controls ?? [])
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open onOpenChange={(open) => { if (!open) { onClose(); } }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-sm font-semibold">
@@ -218,7 +217,7 @@ export default function EvidenceAutoPage() {
                     size="sm"
                     variant="outline"
                     className="shrink-0 h-7 text-xs gap-1"
-                    onClick={() => setAssigning(ev)}
+                    onClick={() => { setAssigning(ev); }}
                   >
                     <Inbox className="w-3 h-3" />
                     Kontrolle zuordnen
@@ -233,7 +232,7 @@ export default function EvidenceAutoPage() {
       {assigning && (
         <AssignDialog
           evidence={assigning}
-          onClose={() => setAssigning(null)}
+          onClose={() => { setAssigning(null); }}
         />
       )}
     </div>

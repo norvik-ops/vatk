@@ -52,7 +52,7 @@ function useTOTPStatus() {
 }
 
 function useSetup2FA() {
-  return useMutation<SetupResponse, Error>({
+  return useMutation<SetupResponse>({
     mutationFn: () =>
       apiFetch<SetupResponse>('/auth/2fa/setup', { method: 'POST' }),
   })
@@ -83,7 +83,7 @@ function useDisable2FA() {
 }
 
 function useRegenerateRecoveryCodes() {
-  return useMutation<RegenerateResponse, Error>({
+  return useMutation<RegenerateResponse>({
     mutationFn: () =>
       apiFetch<RegenerateResponse>('/auth/2fa/recovery-codes/regenerate', {
         method: 'POST',
@@ -112,7 +112,7 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
   function handleOpen() {
     if (step === 'qr' && !setupData) {
       setup.mutate(undefined, {
-        onSuccess: (data) => setSetupData(data),
+        onSuccess: (data) => { setSetupData(data); },
       })
     }
   }
@@ -150,8 +150,8 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
 
   useEffect(() => {
     if (!copied) return
-    const id = setTimeout(() => setCopied(false), 2000)
-    return () => clearTimeout(id)
+    const id = setTimeout(() => { setCopied(false); }, 2000)
+    return () => { clearTimeout(id); }
   }, [copied])
 
   function copyBackupCodes() {
@@ -215,7 +215,7 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
                 {t('common.cancel')}
               </Button>
               <Button
-                onClick={() => setStep('confirm')}
+                onClick={() => { setStep('confirm'); }}
                 disabled={!setupData || setup.isPending}
               >
                 {t('accountSettingsPage.continue')}
@@ -235,7 +235,7 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
               <Input
                 id="totp-code"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => { setCode(e.target.value); }}
                 placeholder="123456"
                 maxLength={6}
                 inputMode="numeric"
@@ -246,7 +246,7 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
               )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setStep('qr')}>
+              <Button variant="outline" onClick={() => { setStep('qr'); }}>
                 {t('accountSettingsPage.backStep')}
               </Button>
               <Button
@@ -287,7 +287,7 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => setRecoveryDialogOpen(true)}
+                onClick={() => { setRecoveryDialogOpen(true); }}
               >
                 {t('accountSettingsPage.showRecoveryCodes')}
               </Button>
@@ -304,7 +304,7 @@ function SetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
       <RecoveryCodesDialog
         open={recoveryDialogOpen}
         codes={recoveryCodes}
-        onClose={() => setRecoveryDialogOpen(false)}
+        onClose={() => { setRecoveryDialogOpen(false); }}
       />
     </Dialog>
   )
@@ -355,7 +355,7 @@ function DisableDialog({ open, onClose }: { open: boolean; onClose: () => void }
             <Input
               id="disable-code"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => { setCode(e.target.value); }}
               placeholder="123456"
               maxLength={6}
               inputMode="numeric"
@@ -459,7 +459,7 @@ export default function AccountSettingsPage() {
 
         <div className="flex gap-2 flex-wrap">
           {!is2FAEnabled && (
-            <Button onClick={() => setSetupOpen(true)} disabled={isLoading}>
+            <Button onClick={() => { setSetupOpen(true); }} disabled={isLoading}>
               <ShieldCheck className="mr-2 h-4 w-4" />
               {t('accountSettingsPage.enable2FA')}
             </Button>
@@ -467,7 +467,7 @@ export default function AccountSettingsPage() {
           {is2FAEnabled && (
             <Button
               variant="destructive"
-              onClick={() => setDisableOpen(true)}
+              onClick={() => { setDisableOpen(true); }}
             >
               <ShieldOff className="mr-2 h-4 w-4" />
               {t('accountSettingsPage.disable2FA')}
@@ -522,8 +522,8 @@ export default function AccountSettingsPage() {
       {/* Sprint 22 S22-11: Login-History */}
       <LoginHistorySection />
 
-      <SetupDialog open={setupOpen} onClose={() => setSetupOpen(false)} />
-      <DisableDialog open={disableOpen} onClose={() => setDisableOpen(false)} />
+      <SetupDialog open={setupOpen} onClose={() => { setSetupOpen(false); }} />
+      <DisableDialog open={disableOpen} onClose={() => { setDisableOpen(false); }} />
       <RecoveryCodesDialog
         open={regenerateDialogOpen}
         codes={regeneratedCodes}

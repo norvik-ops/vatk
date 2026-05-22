@@ -53,8 +53,8 @@ export function useUpdateDSR() {
  */
 export function useDeleteDSR() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/secprivacy/dsr/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/secprivacy/dsr/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secprivacy', 'dsr'] })
     },

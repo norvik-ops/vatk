@@ -62,7 +62,7 @@ export function GettingStartedModal() {
         >
           <div
             className="h-full rounded-full bg-brand transition-all duration-500"
-            style={{ width: `${pct}%` }}
+            style={{ width: `${String(pct)}%` }}
           />
         </div>
 

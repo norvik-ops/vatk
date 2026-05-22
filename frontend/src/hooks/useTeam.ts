@@ -54,9 +54,9 @@ export function useTeamMembers() {
 
 export function useUpdateRole() {
   const qc = useQueryClient()
-  return useMutation<void, Error, { id: string; role: 'admin' | 'editor' | 'viewer' }>({
+  return useMutation<undefined, Error, { id: string; role: 'admin' | 'editor' | 'viewer' }>({
     mutationFn: ({ id, role }) =>
-      apiFetch<void>(`/admin/users/${id}/role`, {
+      apiFetch<undefined>(`/admin/users/${id}/role`, {
         method: 'PATCH',
         body: JSON.stringify({ role }),
       }),
@@ -68,8 +68,8 @@ export function useUpdateRole() {
 
 export function useRemoveUser() {
   const qc = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/admin/users/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/admin/users/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['team', 'members'] })
     },
@@ -103,8 +103,8 @@ export function useCreateInvitation() {
 
 export function useRevokeInvitation() {
   const qc = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/admin/invitations/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/admin/invitations/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['team', 'invitations'] })
     },

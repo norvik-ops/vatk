@@ -56,7 +56,7 @@ export function ExpiringEvidenceWidget() {
           size="sm"
           variant="outline"
           className="w-full text-amber-700 border-amber-300 hover:bg-amber-100"
-          onClick={() => navigate('/secvitals')}
+          onClick={() => { navigate('/secvitals'); }}
         >
           Alle anzeigen
         </Button>

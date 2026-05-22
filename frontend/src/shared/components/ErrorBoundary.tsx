@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
             )}
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => { window.location.reload(); }}
                 className="px-4 py-2 rounded bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
               >
                 Seite neu laden

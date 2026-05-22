@@ -18,9 +18,9 @@ interface ReviewPayload {
 
 export function useReviewEvidence(evidenceId: string, controlId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, ReviewPayload>({
+  return useMutation<undefined, Error, ReviewPayload>({
     mutationFn: (payload) =>
-      apiFetch<void>(`/secvitals/evidence/${evidenceId}/review`, {
+      apiFetch<undefined>(`/secvitals/evidence/${evidenceId}/review`, {
         method: 'POST',
         body: JSON.stringify(payload),
       }),

@@ -99,9 +99,9 @@ export function useUpdateCAPA() {
 
 export function useDeleteCAPA() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secvitals/capas/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/capas/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'capas'] })
     },
@@ -115,9 +115,9 @@ export interface BulkUpdateCAPAsInput {
 
 export function useBulkUpdateCAPAs() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, BulkUpdateCAPAsInput>({
+  return useMutation<undefined, Error, BulkUpdateCAPAsInput>({
     mutationFn: (data) =>
-      apiFetch<void>('/secvitals/capas/bulk', {
+      apiFetch<undefined>('/secvitals/capas/bulk', {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),

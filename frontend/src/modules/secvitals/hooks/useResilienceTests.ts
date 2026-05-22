@@ -55,9 +55,9 @@ export function useUpdateResilienceTest(id: string) {
 
 export function useDeleteResilienceTest() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secvitals/resilience-tests/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/resilience-tests/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'resilience-tests'] })
     },

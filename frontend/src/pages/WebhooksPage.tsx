@@ -133,7 +133,7 @@ function WebhookDialog({ open, onClose, initial }: WebhookDialogProps) {
             <Input
               id="wh-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); }}
               placeholder="z.B. Security-Slack"
             />
           </div>
@@ -146,7 +146,7 @@ function WebhookDialog({ open, onClose, initial }: WebhookDialogProps) {
             <Input
               id="wh-url"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => { setUrl(e.target.value); }}
               placeholder="https://hooks.example.com/…"
               required
             />
@@ -161,14 +161,14 @@ function WebhookDialog({ open, onClose, initial }: WebhookDialogProps) {
                   id="wh-secret"
                   type={showSecret ? 'text' : 'password'}
                   value={secret}
-                  onChange={(e) => setSecret(e.target.value)}
+                  onChange={(e) => { setSecret(e.target.value); }}
                   placeholder={isEdit ? '(unverändert)' : 'HMAC-Signatur-Secret'}
                   className="pr-9"
                 />
                 <button
                   type="button"
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary hover:text-primary"
-                  onClick={() => setShowSecret((s) => !s)}
+                  onClick={() => { setShowSecret((s) => !s); }}
                   aria-label={showSecret ? 'Secret verbergen' : 'Secret anzeigen'}
                 >
                   {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -189,7 +189,7 @@ function WebhookDialog({ open, onClose, initial }: WebhookDialogProps) {
                   <input
                     type="checkbox"
                     checked={events.includes(ev)}
-                    onChange={() => toggleEvent(ev)}
+                    onChange={() => { toggleEvent(ev); }}
                     className="rounded border-border w-4 h-4 accent-brand"
                   />
                   <span className="text-sm text-primary">{EVENT_LABELS[ev]}</span>
@@ -253,7 +253,7 @@ export default function WebhooksPage() {
   function handleDelete() {
     if (!deleteTarget) return
     deleteWebhook.mutate(deleteTarget.id, {
-      onSettled: () => setDeleteTarget(null),
+      onSettled: () => { setDeleteTarget(null); },
     })
   }
 
@@ -342,7 +342,7 @@ export default function WebhooksPage() {
                           variant="ghost"
                           className="h-7 w-7 p-0"
                           title="Test-Ping senden"
-                          onClick={() => testWebhook.mutate(wh.id)}
+                          onClick={() => { testWebhook.mutate(wh.id); }}
                           disabled={testWebhook.isPending}
                         >
                           <Zap className="w-3.5 h-3.5" aria-hidden="true" />
@@ -353,7 +353,7 @@ export default function WebhooksPage() {
                           variant="ghost"
                           className="h-7 w-7 p-0"
                           title="Bearbeiten"
-                          onClick={() => openEdit(wh)}
+                          onClick={() => { openEdit(wh); }}
                         >
                           <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
                           <span className="sr-only">Bearbeiten</span>
@@ -363,7 +363,7 @@ export default function WebhooksPage() {
                           variant="ghost"
                           className="h-7 w-7 p-0 text-secondary hover:text-red-500 hover:bg-red-500/10"
                           title="Löschen"
-                          onClick={() => setDeleteTarget(wh)}
+                          onClick={() => { setDeleteTarget(wh); }}
                         >
                           <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                           <span className="sr-only">Löschen</span>

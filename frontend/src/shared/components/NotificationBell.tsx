@@ -54,10 +54,10 @@ export function NotificationBell() {
         variant="ghost"
         size="icon"
         className="w-8 h-8 relative"
-        aria-label={unread > 0 ? `Benachrichtigungen (${unread} ungelesen)` : 'Benachrichtigungen'}
+        aria-label={unread > 0 ? `Benachrichtigungen (${String(unread)} ungelesen)` : 'Benachrichtigungen'}
         aria-expanded={open}
         aria-haspopup="true"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); }}
       >
         {/* WCAG 1.1.1: bell icons are decorative — label on button conveys state */}
         {unread > 0 ? <BellDot className="w-4 h-4 text-brand" aria-hidden="true" /> : <Bell className="w-4 h-4" aria-hidden="true" />}
@@ -71,7 +71,7 @@ export function NotificationBell() {
       {open && (
         <>
           {/* WCAG 2.1.1: backdrop is click-to-close only; panel can also be closed via the bell button (toggle) */}
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); }} aria-hidden="true" />
           <div className="absolute left-0 bottom-10 w-80 z-50 bg-surface border border-border rounded-xl shadow-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <span className="text-sm font-semibold">Benachrichtigungen</span>
@@ -80,7 +80,7 @@ export function NotificationBell() {
                   variant="ghost"
                   size="sm"
                   className="h-6 text-xs gap-1"
-                  onClick={() => markAll.mutate()}
+                  onClick={() => { markAll.mutate(); }}
                 >
                   <CheckCheck className="w-3 h-3" />
                   Alle gelesen
@@ -95,7 +95,7 @@ export function NotificationBell() {
                   <NotificationItem
                     key={n.id}
                     notification={n}
-                    onRead={() => markRead.mutate(n.id)}
+                    onRead={() => { markRead.mutate(n.id); }}
                   />
                 ))
               )}

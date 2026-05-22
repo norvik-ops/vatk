@@ -6,7 +6,7 @@ import type { PaginatedResponse } from '../../../shared/types/pagination'
 export function useVVT(page = 1, limit = 25) {
   const query = useQuery<PaginatedResponse<VVTEntry>>({
     queryKey: ['secprivacy', 'vvt', page, limit],
-    queryFn: () => apiFetch<PaginatedResponse<VVTEntry>>(`/secprivacy/vvt?page=${page}&limit=${limit}`),
+    queryFn: () => apiFetch<PaginatedResponse<VVTEntry>>(`/secprivacy/vvt?page=${String(page)}&limit=${String(limit)}`),
     staleTime: 5 * 60 * 1000,
   })
   return {
@@ -40,8 +40,8 @@ export function useUpdateVVT() {
 
 export function useDeleteVVT() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/secprivacy/vvt/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/secprivacy/vvt/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secprivacy', 'vvt'] })
     },

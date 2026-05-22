@@ -42,9 +42,9 @@ export function useCreateTargetGroup() {
 
 export function useDeleteTargetGroup() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`${BASE}/target-groups/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`${BASE}/target-groups/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secreflex', 'target-groups'] })
     },

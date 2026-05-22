@@ -111,14 +111,12 @@ export function useFormValidation<T extends Record<string, unknown>>(
   }
 
   const clearError = (field: keyof T) => {
-    setErrors((prev) => {
-      const next = { ...prev }
-      delete next[field]
-      return next
-    })
+    setErrors((prev) => Object.fromEntries(
+      Object.entries(prev).filter(([k]) => k !== (field as string))
+    ) as Partial<Record<keyof T, string>>)
   }
 
-  const clearAll = () => setErrors({})
+  const clearAll = () => { setErrors({}); }
 
   return { errors, validate, clearError, clearAll }
 }

@@ -30,7 +30,7 @@ export interface UpdateMeasureInput {
 export function useMeasures(controlId: string | undefined) {
   return useQuery<ControlMeasure[]>({
     queryKey: ['measures', controlId],
-    queryFn: () => apiFetch<ControlMeasure[]>(`/secvitals/controls/${controlId!}/measures`),
+    queryFn: () => apiFetch<ControlMeasure[]>(`/secvitals/controls/${controlId ?? ''}/measures`),
     enabled: !!controlId,
     staleTime: 5 * 60 * 1000,
   })
@@ -66,9 +66,9 @@ export function useUpdateMeasure(controlId: string) {
 
 export function useDeleteMeasure(controlId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (measureId) =>
-      apiFetch<void>(`/secvitals/controls/${controlId}/measures/${measureId}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/controls/${controlId}/measures/${measureId}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['measures', controlId] })
     },

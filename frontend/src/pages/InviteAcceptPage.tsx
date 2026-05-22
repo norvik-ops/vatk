@@ -121,7 +121,7 @@ export default function InviteAcceptPage() {
               type="text"
               placeholder="Vor- und Nachname"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); }}
               required
               minLength={2}
             />
@@ -133,7 +133,7 @@ export default function InviteAcceptPage() {
               type="password"
               placeholder="Mindestens 8 Zeichen"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); }}
               required
               minLength={8}
             />
@@ -145,7 +145,7 @@ export default function InviteAcceptPage() {
               type="password"
               placeholder="Passwort bestätigen"
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              onChange={(e) => { setConfirm(e.target.value); }}
               required
             />
           </div>

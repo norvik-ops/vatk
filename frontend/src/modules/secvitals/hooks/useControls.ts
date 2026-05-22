@@ -9,9 +9,9 @@ export interface BulkUpdateControlsInput {
 
 export function useBulkUpdateControls() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, BulkUpdateControlsInput>({
+  return useMutation<undefined, Error, BulkUpdateControlsInput>({
     mutationFn: (data) =>
-      apiFetch<void>('/secvitals/controls/bulk', {
+      apiFetch<undefined>('/secvitals/controls/bulk', {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
@@ -80,9 +80,9 @@ export function useUploadEvidence(controlId: string) {
 
 export function useCollectEvidence(controlId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error>({
+  return useMutation<undefined>({
     mutationFn: () =>
-      apiFetch<void>(`/secvitals/controls/${controlId}/collect`, { method: 'POST' }),
+      apiFetch<undefined>(`/secvitals/controls/${controlId}/collect`, { method: 'POST' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['secvitals', 'controls', controlId, 'evidence'],
@@ -111,7 +111,7 @@ export function useUpdateControl(frameworkId: string) {
 
 export function useExportControl(controlId: string) {
   return () => {
-    fetch(`/api/v1/secvitals/controls/${controlId}/export`, {
+    void fetch(`/api/v1/secvitals/controls/${controlId}/export`, {
       credentials: 'include',
     })
       .then((r) => r.blob())

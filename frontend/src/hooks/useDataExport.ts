@@ -16,7 +16,7 @@ export function useExportData() {
         credentials: 'include',
       })
       if (!res.ok) {
-        throw new Error(`Export fehlgeschlagen (${res.status})`)
+        throw new Error(`Export fehlgeschlagen (${String(res.status)})`)
       }
       const blob = await res.blob()
       const cd = res.headers.get('content-disposition') ?? ''

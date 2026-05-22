@@ -12,7 +12,7 @@ export function CopyButton({ value, className }: CopyButtonProps) {
   async function handleCopy() {
     await navigator.clipboard.writeText(value)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setTimeout(() => { setCopied(false); }, 2000)
   }
 
   return (

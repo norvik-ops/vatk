@@ -55,8 +55,8 @@ function CreateInviteDialog({ open, onClose }: CreateDialogProps) {
 
   useEffect(() => {
     if (!copied) return
-    const id = setTimeout(() => setCopied(false), 2000)
-    return () => clearTimeout(id)
+    const id = setTimeout(() => { setCopied(false); }, 2000)
+    return () => { clearTimeout(id); }
   }, [copied])
 
   function handleSave() {
@@ -87,7 +87,7 @@ function CreateInviteDialog({ open, onClose }: CreateDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { handleClose(); } }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Auditor einladen</DialogTitle>
@@ -122,7 +122,7 @@ function CreateInviteDialog({ open, onClose }: CreateDialogProps) {
                 type="email"
                 placeholder="auditor@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); }}
               />
             </div>
             <div className="space-y-1">
@@ -182,7 +182,7 @@ export default function AuditorSettingsPage() {
         title="Auditoren"
         description="Erteile externen Auditoren zeitlich begrenzten Read-only-Zugang zu Frameworks, Controls und Nachweisen."
         actions={
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={() => { setDialogOpen(true); }}>
             <Plus className="w-4 h-4 mr-2" />
             Auditor einladen
           </Button>
@@ -240,7 +240,7 @@ export default function AuditorSettingsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleRevoke(invite.id, invite.email)}
+                      onClick={() => { handleRevoke(invite.id, invite.email); }}
                       disabled={revoke.isPending}
                       className="text-red-500 hover:text-red-600 hover:bg-red-50"
                     >
@@ -254,7 +254,7 @@ export default function AuditorSettingsPage() {
         </Table>
       </div>
 
-      <CreateInviteDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <CreateInviteDialog open={dialogOpen} onClose={() => { setDialogOpen(false); }} />
 
       <AlertDialog open={revokeTarget !== null} onOpenChange={(open) => { if (!open) setRevokeTarget(null) }}>
         <AlertDialogContent>

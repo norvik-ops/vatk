@@ -141,7 +141,7 @@ export default function ResetPasswordPage() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); }}
                   placeholder={t('auth.resetPasswordNewPlaceholder')}
                   required
                   autoFocus
@@ -156,7 +156,7 @@ export default function ResetPasswordPage() {
                   id="password-confirm"
                   type="password"
                   value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  onChange={(e) => { setPasswordConfirm(e.target.value); }}
                   placeholder={t('auth.resetPasswordConfirmPlaceholder')}
                   required
                   aria-invalid={!!confirmValidation.error}

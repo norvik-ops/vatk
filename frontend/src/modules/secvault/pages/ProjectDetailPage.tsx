@@ -65,18 +65,18 @@ function SecretRow({
             className="h-7 text-xs w-40"
             placeholder="Neuer Wert…"
             value={newValue}
-            onChange={(e) => setNewValue(e.target.value)}
+            onChange={(e) => { setNewValue(e.target.value); }}
             autoFocus
           />
           <Button size="sm" onClick={handleSave} disabled={upsertSecret.isPending}>Speichern</Button>
-          <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Abbrechen</Button>
+          <Button size="sm" variant="outline" onClick={() => { setEditing(false); }}>Abbrechen</Button>
         </div>
       ) : (
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setReveal(!reveal)}
+            onClick={() => { setReveal(!reveal); }}
             className="h-7 w-7 p-0"
           >
             {reveal ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -84,7 +84,7 @@ function SecretRow({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setEditing(true)}
+            onClick={() => { setEditing(true); }}
             className="h-7 px-2 text-xs"
           >
             Bearbeiten
@@ -93,7 +93,7 @@ function SecretRow({
             variant="ghost"
             size="sm"
             className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
-            onClick={() => deleteSecret.mutate(secretKey)}
+            onClick={() => { deleteSecret.mutate(secretKey); }}
             disabled={deleteSecret.isPending}
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -134,7 +134,7 @@ function EnvTab({ projectId, env }: { projectId: string; env: Environment }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button size="sm" onClick={() => setAddOpen(true)}>
+        <Button size="sm" onClick={() => { setAddOpen(true); }}>
           <Plus className="w-4 h-4 mr-1" />
           Secret hinzufügen
         </Button>
@@ -157,7 +157,7 @@ function EnvTab({ projectId, env }: { projectId: string; env: Environment }) {
       <Dialog open={addOpen} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader><DialogTitle>Secret hinzufügen</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { void handleAdd(e) }}>
+          <form onSubmit={(e) => { handleAdd(e) }}>
             <div className="py-4 space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="secret-key">Key</Label>
@@ -165,8 +165,8 @@ function EnvTab({ projectId, env }: { projectId: string; env: Environment }) {
                   id="secret-key"
                   placeholder="DATABASE_URL"
                   value={newKey}
-                  onChange={(e) => setNewKey(e.target.value)}
-                  onBlur={() => setKeyTouched(true)}
+                  onChange={(e) => { setNewKey(e.target.value); }}
+                  onBlur={() => { setKeyTouched(true); }}
                   aria-invalid={keyTouched && !newKey.trim()}
                 />
                 {keyTouched && !newKey.trim() && (
@@ -175,11 +175,11 @@ function EnvTab({ projectId, env }: { projectId: string; env: Environment }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="secret-val">Value</Label>
-                <Input id="secret-val" type="password" placeholder="••••••" value={newValue} onChange={(e) => setNewValue(e.target.value)} />
+                <Input id="secret-val" type="password" placeholder="••••••" value={newValue} onChange={(e) => { setNewValue(e.target.value); }} />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Abbrechen</Button>
+              <Button type="button" variant="outline" onClick={() => { handleOpenChange(false); }}>Abbrechen</Button>
               <Button type="submit" disabled={upsertSecret.isPending}>{upsertSecret.isPending ? 'Wird gespeichert…' : 'Speichern'}</Button>
             </DialogFooter>
           </form>
@@ -238,7 +238,7 @@ export default function ProjectDetailPage() {
   if (error || !project) return (
     <div className="p-6">
       <p className="text-sm text-red-600">{error?.message ?? 'Project not found'}</p>
-      <Button variant="outline" className="mt-4" onClick={() => navigate('/secvault')}>
+      <Button variant="outline" className="mt-4" onClick={() => { navigate('/secvault'); }}>
         <ArrowLeft className="w-4 h-4 mr-1" />Back
       </Button>
     </div>
@@ -250,7 +250,7 @@ export default function ProjectDetailPage() {
         title={project.name}
         description={project.description}
         actions={
-          <Button variant="outline" size="sm" onClick={() => navigate('/secvault')}>
+          <Button variant="outline" size="sm" onClick={() => { navigate('/secvault'); }}>
             <ArrowLeft className="w-4 h-4 mr-1" />Back
           </Button>
         }
@@ -281,7 +281,7 @@ export default function ProjectDetailPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <CardTitle>Secrets nach Umgebung</CardTitle>
-            <Button size="sm" variant="outline" onClick={() => setEnvDialogOpen(true)}>
+            <Button size="sm" variant="outline" onClick={() => { setEnvDialogOpen(true); }}>
               <Plus className="w-4 h-4 mr-1" />
               Umgebung hinzufügen
             </Button>
@@ -357,7 +357,7 @@ export default function ProjectDetailPage() {
                       variant="outline"
                       size="sm"
                       disabled={logPage <= 1}
-                      onClick={() => setLogPage((p) => Math.max(1, p - 1))}
+                      onClick={() => { setLogPage((p) => Math.max(1, p - 1)); }}
                     >
                       Zurück
                     </Button>
@@ -368,7 +368,7 @@ export default function ProjectDetailPage() {
                       variant="outline"
                       size="sm"
                       disabled={logPage >= Math.ceil(accessLogData.total / LOG_LIMIT)}
-                      onClick={() => setLogPage((p) => p + 1)}
+                      onClick={() => { setLogPage((p) => p + 1); }}
                     >
                       Weiter
                     </Button>
@@ -386,7 +386,7 @@ export default function ProjectDetailPage() {
             <DialogTitle>Umgebung hinzufügen</DialogTitle>
             <DialogDescription>Umgebungen gruppieren Secrets nach Deployment-Kontext (z.B. Development, Staging, Production).</DialogDescription>
           </DialogHeader>
-          <form onSubmit={(e) => { void handleCreateEnv(e) }}>
+          <form onSubmit={(e) => { handleCreateEnv(e) }}>
             <div className="py-4 space-y-1.5">
               <Label htmlFor="env-name">Umgebungsname</Label>
               <Input
@@ -394,8 +394,8 @@ export default function ProjectDetailPage() {
                 className="mt-1.5"
                 placeholder="production"
                 value={envName}
-                onChange={(e) => setEnvName(e.target.value)}
-                onBlur={() => setEnvNameTouched(true)}
+                onChange={(e) => { setEnvName(e.target.value); }}
+                onBlur={() => { setEnvNameTouched(true); }}
                 aria-invalid={envNameTouched && !envName.trim()}
               />
               {envNameTouched && !envName.trim() && (
@@ -403,7 +403,7 @@ export default function ProjectDetailPage() {
               )}
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => handleEnvDialogChange(false)}>Abbrechen</Button>
+              <Button type="button" variant="outline" onClick={() => { handleEnvDialogChange(false); }}>Abbrechen</Button>
               <Button type="submit" disabled={createEnv.isPending}>{createEnv.isPending ? 'Wird erstellt…' : 'Erstellen'}</Button>
             </DialogFooter>
           </form>

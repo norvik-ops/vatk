@@ -32,14 +32,14 @@ export default function PhishReportsPage() {
 
   useEffect(() => {
     if (!copied) return
-    const id = setTimeout(() => setCopied(false), 2000)
-    return () => clearTimeout(id)
+    const id = setTimeout(() => { setCopied(false); }, 2000)
+    return () => { clearTimeout(id); }
   }, [copied])
 
 
   function handleRegenerate() {
     regenerate.mutate(undefined, {
-      onSuccess: (res) => setActiveToken(res.token),
+      onSuccess: (res) => { setActiveToken(res.token); },
     })
   }
 
@@ -150,7 +150,7 @@ export default function PhishReportsPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleCopy(activeToken)}
+                  onClick={() => { handleCopy(activeToken); }}
                 >
                   <Copy className="w-3.5 h-3.5 mr-1" />
                   {copied ? 'Kopiert!' : 'Kopieren'}

@@ -8,7 +8,7 @@ interface TermTooltipProps {
 }
 
 let _id = 0
-function nextId() { return `term-tooltip-${++_id}` }
+function nextId() { return `term-tooltip-${String(++_id)}` }
 
 export function TermTooltip({ term, explanation, children }: TermTooltipProps) {
   const [visible, setVisible] = useState(false)
@@ -20,10 +20,10 @@ export function TermTooltip({ term, explanation, children }: TermTooltipProps) {
       tabIndex={0}
       role="button"
       aria-describedby={tooltipId}
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
-      onFocus={() => setVisible(true)}
-      onBlur={() => setVisible(false)}
+      onMouseEnter={() => { setVisible(true); }}
+      onMouseLeave={() => { setVisible(false); }}
+      onFocus={() => { setVisible(true); }}
+      onBlur={() => { setVisible(false); }}
     >
       {children ?? term}
       <HelpCircle className="w-3 h-3 text-slate-500 shrink-0" aria-hidden="true" />

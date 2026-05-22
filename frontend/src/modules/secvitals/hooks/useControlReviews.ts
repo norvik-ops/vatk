@@ -20,7 +20,7 @@ export interface RecordReviewPayload {
 export function useControlReviews(controlId: string | undefined) {
   return useQuery<ControlReview[]>({
     queryKey: ['secvitals', 'controls', controlId, 'reviews'],
-    queryFn: () => apiFetch<ControlReview[]>(`/secvitals/controls/${controlId}/reviews`),
+    queryFn: () => apiFetch<ControlReview[]>(`/secvitals/controls/${controlId ?? ''}/reviews`),
     enabled: !!controlId,
     staleTime: 2 * 60 * 1000,
   })

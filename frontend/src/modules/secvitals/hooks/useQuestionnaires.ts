@@ -65,9 +65,9 @@ export function useUpdateQuestionnaire(id: string) {
 
 export function useDeleteQuestionnaire() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secvitals/questionnaires/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/questionnaires/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'questionnaires'] })
     },

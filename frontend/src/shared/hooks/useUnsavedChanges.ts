@@ -22,17 +22,16 @@ interface UseUnsavedChangesReturn {
 export function useUnsavedChanges(): UseUnsavedChangesReturn {
   const [isDirty, setIsDirty] = useState(false)
 
-  const markDirty = useCallback(() => setIsDirty(true), [])
-  const markClean = useCallback(() => setIsDirty(false), [])
+  const markDirty = useCallback(() => { setIsDirty(true); }, [])
+  const markClean = useCallback(() => { setIsDirty(false); }, [])
 
   useEffect(() => {
     if (!isDirty) return
     function handleBeforeUnload(e: BeforeUnloadEvent) {
       e.preventDefault()
-      e.returnValue = ''
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    return () => { window.removeEventListener('beforeunload', handleBeforeUnload); }
   }, [isDirty])
 
   const blocker = useBlocker(isDirty)

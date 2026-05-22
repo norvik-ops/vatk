@@ -12,9 +12,9 @@ export function useAuditorLinks() {
 
 export function useRevokeAuditorLink() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id: string) =>
-      apiFetch<void>(`/secvitals/auditor-links/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/auditor-links/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'auditor-links'] })
     },

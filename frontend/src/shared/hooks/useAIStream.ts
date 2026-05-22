@@ -94,9 +94,9 @@ export function useAIStream() {
 
       if (!res.ok) {
         // Backend gibt JSON-Error bei 4xx/5xx zurück (Quota, RateLimit, …).
-        const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-        const code = (errBody as { code?: string }).code ?? `HTTP_${res.status}`
-        const msg = (errBody as { error?: string }).error ?? `HTTP ${res.status}`
+        const errBody = await res.json().catch(() => ({ error: `HTTP ${String(res.status)}` })) as { code?: string; error?: string }
+        const code = errBody.code ?? `HTTP_${String(res.status)}`
+        const msg = errBody.error ?? `HTTP ${String(res.status)}`
         const e = new Error(msg) as Error & { code?: string }
         e.code = code
         throw e
@@ -112,9 +112,10 @@ export function useAIStream() {
       let buffer = ''
       let total = ''
 
-      while (true) {
+       
+      for (;;) {
         const { value, done } = await reader.read()
-        if (done) break
+        if (done) { break }
         buffer += decoder.decode(value, { stream: true })
 
         // SSE-Frames sind doppelt-newline-separiert.

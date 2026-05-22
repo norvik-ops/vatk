@@ -62,6 +62,6 @@ export function useKeyboardNav(
 
   useEffect(() => {
     document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
+    return () => { document.removeEventListener('keydown', handleKey); }
   }, [handleKey])
 }

@@ -49,7 +49,7 @@ export function useSavedFilters<T extends object>(
   const setFilters = useCallback(
     (v: T | ((prev: T) => T)) => {
       setFiltersState((prev) => {
-        const next = typeof v === 'function' ? (v as (p: T) => T)(prev) : v
+        const next = typeof v === 'function' ? (v)(prev) : v
         persistFilters(next)
         return next
       })

@@ -76,7 +76,7 @@ export default function TISAXMappingPage() {
         title="TISAX ↔ ISO 27001 Abgleich"
         description="Zeigt für jede TISAX-Maßnahme die entsprechende ISO 27001-Kontrolle und ob sie bereits abgedeckt ist."
         actions={
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="outline" size="sm" onClick={() => { navigate(-1); }}>
             <ArrowLeft className="w-4 h-4 mr-1" />
             Zurück
           </Button>
@@ -114,7 +114,7 @@ export default function TISAXMappingPage() {
             type="button"
             role="switch"
             aria-checked={gapsOnly}
-            onClick={() => setGapsOnly((v) => !v)}
+            onClick={() => { setGapsOnly((v) => !v); }}
             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               gapsOnly ? 'bg-brand' : 'bg-border'
             }`}
@@ -127,7 +127,7 @@ export default function TISAXMappingPage() {
           </button>
           <label
             className="text-sm cursor-pointer select-none"
-            onClick={() => setGapsOnly((v) => !v)}
+            onClick={() => { setGapsOnly((v) => !v); }}
           >
             Nur Lücken anzeigen
           </label>

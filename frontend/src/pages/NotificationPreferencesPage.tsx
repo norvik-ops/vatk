@@ -182,7 +182,7 @@ export default function NotificationPreferencesPage() {
               label="Wöchentlicher Sicherheits-Digest (Mo)"
               description="Zusammenfassung deiner Compliance-Lage, offener Findings und anstehender Controls."
               checked={prefs.email_weekly_digest}
-              onCheckedChange={() => toggle('email_weekly_digest')}
+              onCheckedChange={() => { toggle('email_weekly_digest'); }}
             />
 
             <div className="flex items-start justify-between gap-4">
@@ -196,7 +196,7 @@ export default function NotificationPreferencesPage() {
               </div>
               <Select
                 value={prefs.email_findings_severity}
-                onValueChange={(v) => setSeverity(v as FindingSeverityFilter)}
+                onValueChange={(v) => { setSeverity(v as FindingSeverityFilter); }}
               >
                 <SelectTrigger className="w-36 h-8 text-xs">
                   <SelectValue />
@@ -215,7 +215,7 @@ export default function NotificationPreferencesPage() {
               label="Neue Vorfälle"
               description="Benachrichtigung wenn ein neuer Sicherheitsvorfall angelegt wird."
               checked={prefs.email_new_incidents}
-              onCheckedChange={() => toggle('email_new_incidents')}
+              onCheckedChange={() => { toggle('email_new_incidents'); }}
             />
 
             <ToggleRow
@@ -223,7 +223,7 @@ export default function NotificationPreferencesPage() {
               label="Überfällige Controls"
               description="Tägliche Erinnerung wenn Controls ihr Review-Datum überschritten haben."
               checked={prefs.email_overdue_controls}
-              onCheckedChange={() => toggle('email_overdue_controls')}
+              onCheckedChange={() => { toggle('email_overdue_controls'); }}
             />
 
             <ToggleRow
@@ -231,7 +231,7 @@ export default function NotificationPreferencesPage() {
               label="Evidence-Ablauf (30 Tage vorher)"
               description="Erinnerung wenn ein Nachweis in 30 Tagen abläuft."
               checked={prefs.email_evidence_expiry}
-              onCheckedChange={() => toggle('email_evidence_expiry')}
+              onCheckedChange={() => { toggle('email_evidence_expiry'); }}
             />
           </PreferenceSection>
 
@@ -242,7 +242,7 @@ export default function NotificationPreferencesPage() {
               label="Neue Kommentare auf eigene Items"
               description="Wenn jemand einen Kommentar auf ein von dir erstelltes Element hinterlässt."
               checked={prefs.inapp_comments}
-              onCheckedChange={() => toggle('inapp_comments')}
+              onCheckedChange={() => { toggle('inapp_comments'); }}
             />
 
             <ToggleRow
@@ -250,7 +250,7 @@ export default function NotificationPreferencesPage() {
               label="Genehmigungsanfragen"
               description="Wenn eine Richtlinie oder ein Control deine Genehmigung benötigt."
               checked={prefs.inapp_approvals}
-              onCheckedChange={() => toggle('inapp_approvals')}
+              onCheckedChange={() => { toggle('inapp_approvals'); }}
             />
 
             <ToggleRow
@@ -258,7 +258,7 @@ export default function NotificationPreferencesPage() {
               label="System-Updates"
               description="Hinweise auf neue Vakt-Versionen und Plattform-Änderungen."
               checked={prefs.inapp_system_updates}
-              onCheckedChange={() => toggle('inapp_system_updates')}
+              onCheckedChange={() => { toggle('inapp_system_updates'); }}
             />
           </PreferenceSection>
 

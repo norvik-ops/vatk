@@ -18,7 +18,7 @@ export function LanguageSwitcher() {
     : 'de') as SupportedLang
 
   function switchTo(lang: SupportedLang) {
-    i18n.changeLanguage(lang)
+    void i18n.changeLanguage(lang)
     localStorage.setItem(LANG_STORAGE_KEY, lang)
   }
 
@@ -33,7 +33,7 @@ export function LanguageSwitcher() {
           )}
           <button
             key={lang.code}
-            onClick={() => switchTo(lang.code)}
+            onClick={() => { switchTo(lang.code); }}
             className={
               currentLang === lang.code
                 ? 'text-[12px] font-semibold text-brand'

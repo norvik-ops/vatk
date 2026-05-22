@@ -34,8 +34,8 @@ export function useUpdateAVV() {
 
 export function useDeleteAVV() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/secprivacy/avvs/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/secprivacy/avvs/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secprivacy', 'avvs'] })
     },

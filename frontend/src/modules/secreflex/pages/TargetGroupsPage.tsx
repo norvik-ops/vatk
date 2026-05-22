@@ -38,7 +38,7 @@ function TargetGroupRow({ group, onDelete }: { group: TargetGroup; onDelete: () 
     <div className="border border-border rounded-lg bg-surface overflow-x-auto">
       <div
         className="flex items-center gap-4 p-4 cursor-pointer hover:bg-surface2"
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => { setExpanded(!expanded); }}
       >
         <Users className="w-4 h-4 text-secondary shrink-0" />
         <span className="font-medium text-sm flex-1">{group.name}</span>
@@ -94,29 +94,29 @@ function TargetGroupRow({ group, onDelete }: { group: TargetGroup; onDelete: () 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Ziel hinzufügen</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { void handleAdd(e) }}>
+          <form onSubmit={(e) => { handleAdd(e) }}>
             <div className="py-4 space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="target-email">E-Mail</Label>
-                <Input id="target-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input id="target-email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); }} required />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="target-fname">Vorname</Label>
-                  <Input id="target-fname" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                  <Input id="target-fname" value={firstName} onChange={(e) => { setFirstName(e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="target-lname">Nachname</Label>
-                  <Input id="target-lname" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                  <Input id="target-lname" value={lastName} onChange={(e) => { setLastName(e.target.value); }} />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="target-dept">Abteilung</Label>
-                <Input id="target-dept" value={department} onChange={(e) => setDepartment(e.target.value)} />
+                <Input id="target-dept" value={department} onChange={(e) => { setDepartment(e.target.value); }} />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>Abbrechen</Button>
+              <Button type="button" variant="outline" onClick={() => { setAddOpen(false); }}>Abbrechen</Button>
               <Button type="submit" disabled={addTarget.isPending}>
                 {addTarget.isPending ? 'Adding…' : 'Add Target'}
               </Button>
@@ -154,7 +154,7 @@ export default function TargetGroupsPage() {
         title="Target Groups"
         description="Zielgruppen für Phishing-Simulationen verwalten."
         actions={
-          <Button onClick={() => setOpen(true)}>
+          <Button onClick={() => { setOpen(true); }}>
             <Plus className="w-4 h-4 mr-1" />New Group
           </Button>
         }
@@ -170,14 +170,14 @@ export default function TargetGroupsPage() {
             icon={Users}
             title="Noch keine Zielgruppen vorhanden"
             description="Erstellen Sie eine Zielgruppe, um festzulegen, wer Phishing-Simulationen erhält."
-            action={<Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-1" />New Group</Button>}
+            action={<Button onClick={() => { setOpen(true); }}><Plus className="w-4 h-4 mr-1" />New Group</Button>}
           />
         ) : (
           groups.map((g) => (
             <TargetGroupRow
               key={g.id}
               group={g}
-              onDelete={() => setDeleteId(g.id)}
+              onDelete={() => { setDeleteId(g.id); }}
             />
           ))
         )}
@@ -186,19 +186,19 @@ export default function TargetGroupsPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Neue Zielgruppe</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { void handleCreate(e) }}>
+          <form onSubmit={(e) => { handleCreate(e) }}>
             <div className="py-4 space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="group-name">Group Name</Label>
-                <Input id="group-name" placeholder="All Employees" value={name} onChange={(e) => setName(e.target.value)} required />
+                <Input id="group-name" placeholder="All Employees" value={name} onChange={(e) => { setName(e.target.value); }} required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="group-source">Source (optional)</Label>
-                <Input id="group-source" placeholder="manual, csv, ldap…" value={source} onChange={(e) => setSource(e.target.value)} />
+                <Input id="group-source" placeholder="manual, csv, ldap…" value={source} onChange={(e) => { setSource(e.target.value); }} />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Abbrechen</Button>
+              <Button type="button" variant="outline" onClick={() => { setOpen(false); }}>Abbrechen</Button>
               <Button type="submit" disabled={createGroup.isPending}>
                 {createGroup.isPending ? 'Creating…' : 'Create Group'}
               </Button>
@@ -207,15 +207,15 @@ export default function TargetGroupsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <Dialog open={!!deleteId} onOpenChange={(open) => { if (!open) { setDeleteId(null); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Zielgruppe löschen</DialogTitle></DialogHeader>
           <p className="text-sm text-secondary py-2">This will permanently delete the group and all its targets.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => { setDeleteId(null); }}>Abbrechen</Button>
             <Button
               variant="destructive"
-              onClick={() => deleteGroup.mutate(deleteId!, { onSuccess: () => setDeleteId(null) })}
+              onClick={() => { deleteGroup.mutate(deleteId!, { onSuccess: () => { setDeleteId(null); } }); }}
               disabled={deleteGroup.isPending}
             >
               {deleteGroup.isPending ? 'Deleting…' : 'Delete'}

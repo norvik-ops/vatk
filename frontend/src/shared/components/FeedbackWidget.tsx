@@ -64,7 +64,7 @@ export function FeedbackWidget() {
       {/* Floating trigger button */}
       {state === 'closed' && (
         <button
-          onClick={() => setState('open')}
+          onClick={() => { setState('open'); }}
           aria-label="Feedback geben"
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-brand text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg hover:bg-brand/90 transition-all duration-200 hover:scale-105"
         >
@@ -79,7 +79,7 @@ export function FeedbackWidget() {
           <CheckCircle className="w-10 h-10 text-green-400" />
           <p className="font-semibold text-primary">Danke für Ihr Feedback!</p>
           <p className="text-sm text-secondary">Ihr Feedback hilft uns, Vakt besser zu machen.</p>
-          <Button size="sm" variant="outline" onClick={() => setState('closed')}>Schließen</Button>
+          <Button size="sm" variant="outline" onClick={() => { setState('closed'); }}>Schließen</Button>
         </div>
       )}
 
@@ -104,10 +104,10 @@ export function FeedbackWidget() {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHover(star)}
-                    onMouseLeave={() => setHover(0)}
-                    aria-label={`${star} Stern${star !== 1 ? 'e' : ''}`}
+                    onClick={() => { setRating(star); }}
+                    onMouseEnter={() => { setHover(star); }}
+                    onMouseLeave={() => { setHover(0); }}
+                    aria-label={`${String(star)} Stern${star !== 1 ? 'e' : ''}`}
                     className="transition-transform hover:scale-110"
                   >
                     <Star
@@ -129,7 +129,7 @@ export function FeedbackWidget() {
             <div>
               <textarea
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => { setMessage(e.target.value); }}
                 placeholder="Was hat Ihnen gefallen? Was fehlt noch?"
                 rows={3}
                 className="w-full text-sm rounded-lg border border-border bg-bg px-3 py-2 text-primary placeholder:text-secondary resize-none focus:outline-none focus:ring-1 focus:ring-brand/50"
@@ -140,13 +140,13 @@ export function FeedbackWidget() {
             <div className="grid grid-cols-2 gap-2">
               <input
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); }}
                 placeholder="Name (optional)"
                 className="text-xs rounded-lg border border-border bg-bg px-3 py-2 text-primary placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-brand/50"
               />
               <input
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); }}
                 placeholder="E-Mail (optional)"
                 type="email"
                 className="text-xs rounded-lg border border-border bg-bg px-3 py-2 text-primary placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-brand/50"

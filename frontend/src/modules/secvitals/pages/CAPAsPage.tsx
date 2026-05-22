@@ -122,7 +122,7 @@ function CreateDialog({ open, onClose, prefillSourceType, prefillSourceId }: Cre
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Quelltyp</Label>
-              <Select value={form.source_type} onValueChange={(v) => setForm((f) => ({ ...f, source_type: v as CAPA['source_type'] }))}>
+              <Select value={form.source_type} onValueChange={(v) => { setForm((f) => ({ ...f, source_type: v as CAPA['source_type'] })); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="audit">Audit</SelectItem>
@@ -134,7 +134,7 @@ function CreateDialog({ open, onClose, prefillSourceType, prefillSourceId }: Cre
             </div>
             <div className="space-y-1.5">
               <Label>Priorität</Label>
-              <Select value={form.priority ?? 'medium'} onValueChange={(v) => setForm((f) => ({ ...f, priority: v as CAPA['priority'] }))}>
+              <Select value={form.priority ?? 'medium'} onValueChange={(v) => { setForm((f) => ({ ...f, priority: v as CAPA['priority'] })); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">Niedrig</SelectItem>
@@ -147,16 +147,16 @@ function CreateDialog({ open, onClose, prefillSourceType, prefillSourceId }: Cre
           </div>
           <div className="space-y-1.5">
             <Label>Beschreibung</Label>
-            <Textarea rows={3} value={form.description ?? ''} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Optionale Beschreibung …" />
+            <Textarea rows={3} value={form.description ?? ''} onChange={(e) => { setForm((f) => ({ ...f, description: e.target.value })); }} placeholder="Optionale Beschreibung …" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Verantwortlicher (E-Mail)</Label>
-              <Input type="email" value={form.assignee_email ?? ''} onChange={(e) => setForm((f) => ({ ...f, assignee_email: e.target.value }))} placeholder="max@example.com" />
+              <Input type="email" value={form.assignee_email ?? ''} onChange={(e) => { setForm((f) => ({ ...f, assignee_email: e.target.value })); }} placeholder="max@example.com" />
             </div>
             <div className="space-y-1.5">
               <Label>Fälligkeitsdatum</Label>
-              <Input type="date" value={form.due_date ?? ''} onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value || null }))} />
+              <Input type="date" value={form.due_date ?? ''} onChange={(e) => { setForm((f) => ({ ...f, due_date: e.target.value || null })); }} />
             </div>
           </div>
         </div>
@@ -201,16 +201,16 @@ function CAPADetail({ capa, onClose }: { capa: CAPA; onClose: () => void }) {
     <div className="border-t border-border bg-muted/20 px-5 py-4 space-y-4">
       <div className="space-y-1.5">
         <Label className="text-xs">Ursachenanalyse</Label>
-        <Textarea rows={3} value={rootCause} onChange={(e) => setRootCause(e.target.value)} placeholder="Beschreiben Sie die Grundursache …" />
+        <Textarea rows={3} value={rootCause} onChange={(e) => { setRootCause(e.target.value); }} placeholder="Beschreiben Sie die Grundursache …" />
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">Maßnahmenplan</Label>
-        <Textarea rows={4} value={actionPlan} onChange={(e) => setActionPlan(e.target.value)} placeholder="Beschreiben Sie die geplanten Schritte …" />
+        <Textarea rows={4} value={actionPlan} onChange={(e) => { setActionPlan(e.target.value); }} placeholder="Beschreiben Sie die geplanten Schritte …" />
       </div>
       {capa.status === 'implemented' && (
         <div className="space-y-1.5">
           <Label className="text-xs">Verifikationsnotiz</Label>
-          <Textarea rows={2} value={verificationNote} onChange={(e) => setVerificationNote(e.target.value)} placeholder="Wie wurde die Umsetzung verifiziert?" />
+          <Textarea rows={2} value={verificationNote} onChange={(e) => { setVerificationNote(e.target.value); }} placeholder="Wie wurde die Umsetzung verifiziert?" />
         </div>
       )}
       <div className="flex items-center gap-2">
@@ -250,11 +250,11 @@ function CAPACard({
       {/* WCAG 2.1.1 + 4.1.2: interactive div replaced with button for keyboard + screen-reader support */}
       <div className="flex items-start gap-2 px-4 py-3">
         {/* Checkbox — stops propagation so it doesn't toggle the expand panel */}
-        <div className="pt-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="pt-0.5 shrink-0" onClick={(e) => { e.stopPropagation(); }}>
           <input
             type="checkbox"
             checked={selected}
-            onChange={() => onToggleSelect(capa.id)}
+            onChange={() => { onToggleSelect(capa.id); }}
             aria-label={`CAPA "${capa.title}" auswählen`}
             className="rounded"
           />
@@ -262,7 +262,7 @@ function CAPACard({
       <button
         type="button"
         className="flex-1 min-w-0 text-left flex items-start gap-3 cursor-pointer hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset rounded"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => { setExpanded((v) => !v); }}
         aria-expanded={expanded}
         aria-controls={`capa-detail-${capa.id}`}
       >
@@ -305,7 +305,7 @@ function CAPACard({
       </div>
       {expanded && (
         <div id={`capa-detail-${capa.id}`}>
-          <CAPADetail capa={capa} onClose={() => setExpanded(false)} />
+          <CAPADetail capa={capa} onClose={() => { setExpanded(false); }} />
         </div>
       )}
     </Card>
@@ -381,7 +381,7 @@ export default function CAPAsPage() {
                 {overdueCAPAs.length} überfällig
               </span>
             )}
-            <Button onClick={() => setCreateOpen(true)}>
+            <Button onClick={() => { setCreateOpen(true); }}>
               <Plus className="w-4 h-4 mr-1" />
               Neue Korrekturmaßnahme
             </Button>
@@ -397,7 +397,7 @@ export default function CAPAsPage() {
               key={tab.key}
               variant={activeTab === tab.key ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => { setActiveTab(tab.key); }}
             >
               {tab.label}
             </Button>
@@ -406,7 +406,7 @@ export default function CAPAsPage() {
 
         {/* Status stepper — shown when filter active */}
         {activeTab !== 'all' && (
-          <StatusStepper status={activeTab as CAPA['status']} />
+          <StatusStepper status={activeTab} />
         )}
 
         {/* List */}
@@ -420,7 +420,7 @@ export default function CAPAsPage() {
             title="Keine Korrekturmaßnahmen"
             description="Erstellen Sie eine CAPA aus einem Audit-Befund, einem Vorfall oder manuell."
             action={
-              <Button onClick={() => setCreateOpen(true)}>
+              <Button onClick={() => { setCreateOpen(true); }}>
                 <Plus className="w-4 h-4 mr-1" />
                 Neue Korrekturmaßnahme
               </Button>
@@ -445,11 +445,11 @@ export default function CAPAsPage() {
         />
       </div>
 
-      <CreateDialog open={createOpen} onClose={() => setCreateOpen(false)} />
+      <CreateDialog open={createOpen} onClose={() => { setCreateOpen(false); }} />
 
       <BulkActionBar
         selectedCount={selected.size}
-        onClearSelection={() => setSelected(new Set())}
+        onClearSelection={() => { setSelected(new Set()); }}
         actions={[
           {
             label: 'Abschließen',

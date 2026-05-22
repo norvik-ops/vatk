@@ -45,8 +45,8 @@ export function useApproveDPIA() {
 
 export function useDeleteDPIA() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/secprivacy/dpias/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/secprivacy/dpias/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secprivacy', 'dpias'] })
     },

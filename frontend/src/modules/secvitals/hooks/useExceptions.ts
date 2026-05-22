@@ -77,9 +77,9 @@ export function useUpdateControlException() {
 
 export function useDeleteControlException() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, { id: string; controlId: string }>({
+  return useMutation<undefined, Error, { id: string; controlId: string }>({
     mutationFn: ({ id }) =>
-      apiFetch<void>(`/secvitals/exceptions/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/exceptions/${id}`, { method: 'DELETE' }),
     onSuccess: (_data, { controlId }) => {
       void queryClient.invalidateQueries({
         queryKey: ['secvitals', 'exceptions', controlId],

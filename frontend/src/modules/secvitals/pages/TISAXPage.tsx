@@ -64,7 +64,7 @@ function DomainSection({
       <button
         type="button"
         className="w-full flex items-center justify-between px-4 py-2.5 bg-surface2 hover:bg-surface text-left"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); }}
       >
         <div className="flex items-center gap-3">
           <ChevronDown className={cn('w-4 h-4 text-secondary transition-transform', !open && '-rotate-90')} />
@@ -88,7 +88,7 @@ function DomainSection({
                 key={ctrl.id}
                 className="cursor-pointer hover:bg-surface2"
                 onClick={() =>
-                  navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`)
+                  { navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`); }
                 }
               >
                 <TableCell className="font-mono text-xs">{ctrl.control_id}</TableCell>
@@ -120,7 +120,7 @@ export default function TISAXPage() {
   function handleExportReport() {
     const url = `/api/v1/secvitals/frameworks/${frameworkId}/tisax-report-pdf?protection_level=${protectionLevel}&assessment_level=${assessmentLevel}`
     // Use fetch with credentials cookie and trigger browser download
-    fetch(url, { credentials: 'include' })
+    void fetch(url, { credentials: 'include' })
       .then((r) => r.blob())
       .then((blob) => {
         const objectUrl = URL.createObjectURL(blob)
@@ -166,7 +166,7 @@ export default function TISAXPage() {
         description="VDA ISA Fragenkatalog mit Reifegradskala — gefiltert nach Schutzbedarfsstufe."
         actions={
           <div className="flex items-center gap-2">
-            <Select value={assessmentLevel} onValueChange={(v) => setAssessmentLevel(v as AssessmentLevel)}>
+            <Select value={assessmentLevel} onValueChange={(v) => { setAssessmentLevel(v as AssessmentLevel); }}>
               <SelectTrigger className="h-8 w-44 text-xs" aria-label="Assessment Level">
                 <SelectValue />
               </SelectTrigger>
@@ -180,10 +180,10 @@ export default function TISAXPage() {
               <Download className="w-4 h-4 mr-1" />
               Bereitschaftsbericht exportieren
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/secvitals/tisax-mapping')}>
+            <Button variant="secondary" size="sm" onClick={() => { navigate('/secvitals/tisax-mapping'); }}>
               ISO Abgleich
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate(`/secvitals/frameworks/${frameworkId}`)}>
+            <Button variant="outline" size="sm" onClick={() => { navigate(`/secvitals/frameworks/${frameworkId}`); }}>
               <ArrowLeft className="w-4 h-4 mr-1" />
               Zurück zum Framework
             </Button>
@@ -195,7 +195,7 @@ export default function TISAXPage() {
         {/* Protection level tabs */}
         <Tabs
           value={protectionLevel}
-          onValueChange={(v) => setProtectionLevel(v as ProtectionLevel)}
+          onValueChange={(v) => { setProtectionLevel(v as ProtectionLevel); }}
         >
           <TabsList>
             {(Object.entries(PROTECTION_LEVEL_LABELS) as [ProtectionLevel, string][]).map(

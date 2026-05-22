@@ -45,9 +45,9 @@ export function useToggleControlTask(controlId: string) {
 
 export function useDeleteControlTask(controlId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (taskId) =>
-      apiFetch<void>(`/secvitals/controls/${controlId}/tasks/${taskId}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/controls/${controlId}/tasks/${taskId}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['secvitals', 'controls', controlId, 'tasks'],

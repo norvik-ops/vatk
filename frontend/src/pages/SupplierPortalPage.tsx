@@ -191,10 +191,10 @@ export default function SupplierPortalPage() {
 
   const saveMutation = useMutation({
     mutationFn: (ans: AnswerInput[]) => saveAnswers(token!, ans),
-    onMutate: () => setSaveStatus('saving'),
+    onMutate: () => { setSaveStatus('saving'); },
     onSuccess: () => {
       setSaveStatus('saved')
-      saveStatusTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000)
+      saveStatusTimerRef.current = setTimeout(() => { setSaveStatus('idle'); }, 2000)
     },
     onError: (err: Error) => {
       if (err.message === 'EXPIRED_OR_SUBMITTED') setExpiredError(true)
@@ -204,7 +204,7 @@ export default function SupplierPortalPage() {
 
   const submitMutation = useMutation({
     mutationFn: (ans: AnswerInput[]) => submitAnswers(token!, ans),
-    onSuccess: () => setSubmitted(true),
+    onSuccess: () => { setSubmitted(true); },
     onError: (err: Error) => {
       if (err.message === 'EXPIRED_OR_SUBMITTED') setExpiredError(true)
     },
@@ -352,7 +352,7 @@ export default function SupplierPortalPage() {
                     type="radio"
                     name={`yesno-${current.id}`}
                     checked={ans.answer_bool === val}
-                    onChange={() => updateAnswer(current.id, { question_id: current.id, answer_bool: val })}
+                    onChange={() => { updateAnswer(current.id, { question_id: current.id, answer_bool: val }); }}
                     className="accent-blue-600"
                   />
                   <span className="text-sm">{val ? t('yesLabel') : t('noLabel')}</span>
@@ -391,7 +391,7 @@ export default function SupplierPortalPage() {
               className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               rows={5}
               value={ans.answer_text ?? ''}
-              onChange={(e) => updateAnswer(current.id, { question_id: current.id, answer_text: e.target.value })}
+              onChange={(e) => { updateAnswer(current.id, { question_id: current.id, answer_text: e.target.value }); }}
             />
           )}
 
@@ -425,14 +425,14 @@ export default function SupplierPortalPage() {
         <div className="flex items-center gap-2">
           <button
             disabled={currentStep === 0}
-            onClick={() => setCurrentStep((s) => s - 1)}
+            onClick={() => { setCurrentStep((s) => s - 1); }}
             className="px-4 py-2 text-sm rounded-lg border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
           >
             {t('back')}
           </button>
           {currentStep < total - 1 && (
             <button
-              onClick={() => setCurrentStep((s) => s + 1)}
+              onClick={() => { setCurrentStep((s) => s + 1); }}
               className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
             >
               {t('next')}
@@ -460,7 +460,7 @@ export default function SupplierPortalPage() {
           {/* Submit — only on last step */}
           {currentStep === total - 1 && (
             <button
-              onClick={() => setShowConfirm(true)}
+              onClick={() => { setShowConfirm(true); }}
               disabled={submitMutation.isPending}
               className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-40"
             >
@@ -478,7 +478,7 @@ export default function SupplierPortalPage() {
             <p className="text-sm text-gray-600">{t('submitConfirmBody')}</p>
             <div className="flex gap-3 justify-end">
               <button
-                onClick={() => setShowConfirm(false)}
+                onClick={() => { setShowConfirm(false); }}
                 className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
               >
                 {t('submitConfirmNo')}

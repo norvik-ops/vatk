@@ -49,7 +49,7 @@ function MeasureRow({
       <button
         type="button"
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface2 transition-colors"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => { setExpanded((v) => !v); }}
       >
         {expanded ? (
           <ChevronDown className="w-4 h-4 text-secondary shrink-0" />
@@ -126,7 +126,7 @@ function AddMeasureForm({
         <Input
           id="measure-title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => { setTitle(e.target.value); }}
           placeholder="z.B. Backup-Konzept erstellen"
           required
           minLength={3}
@@ -141,7 +141,7 @@ function AddMeasureForm({
           rows={3}
           className="w-full rounded-md border border-border bg-surface text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand resize-none"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => { setDescription(e.target.value); }}
           placeholder="Konkrete Schritte, Hilfsmittel, Nachweistypen …"
           maxLength={2000}
         />
@@ -150,7 +150,7 @@ function AddMeasureForm({
         <Label>Schwierigkeitsgrad</Label>
         <Select
           value={difficulty}
-          onValueChange={(v) => setDifficulty(v as CreateMeasureInput['difficulty'])}
+          onValueChange={(v) => { setDifficulty(v as CreateMeasureInput['difficulty']); }}
         >
           <SelectTrigger className="h-8 text-sm w-40">
             <SelectValue />
@@ -198,7 +198,7 @@ export function MeasuresList({ controlId }: { controlId: string }) {
             )}
           </CardTitle>
           {!addOpen && (
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAddOpen(true)}>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setAddOpen(true); }}>
               <Plus className="w-3.5 h-3.5 mr-1" />
               Maßnahme hinzufügen
             </Button>
@@ -224,7 +224,7 @@ export function MeasuresList({ controlId }: { controlId: string }) {
               </p>
             ) : null}
             {addOpen && (
-              <AddMeasureForm controlId={controlId} onCancel={() => setAddOpen(false)} />
+              <AddMeasureForm controlId={controlId} onCancel={() => { setAddOpen(false); }} />
             )}
           </>
         )}

@@ -118,7 +118,7 @@ function DeadlineRow({
           variant="outline"
           className="text-xs h-7"
           disabled={mark.isPending}
-          onClick={() => mark.mutate({ deadline: deadlineKey })}
+          onClick={() => { mark.mutate({ deadline: deadlineKey }); }}
           data-testid={`deadline-mark-reported-${deadlineKey}`}
         >
           Als gemeldet markieren
@@ -197,7 +197,7 @@ export default function IncidentDetailPage() {
       ...form,
       affected_systems: rawSystems.split(',').map((s) => s.trim()).filter(Boolean),
     }
-    update.mutate(payload, { onSuccess: () => setDirty(false) })
+    update.mutate(payload, { onSuccess: () => { setDirty(false); } })
   }
 
   const ds = incident?.deadline_status
@@ -223,14 +223,14 @@ export default function IncidentDetailPage() {
         description={`Entdeckt: ${formatDate(incident.discovered_at)}`}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/secvitals/incidents')}>
+            <Button variant="outline" onClick={() => { navigate('/secvitals/incidents'); }}>
               <ArrowLeft className="w-4 h-4 mr-1" />
               Zurück
             </Button>
             {incident?.incident_type === 'dora' && (
               <Button
                 variant="outline"
-                onClick={handleDownloadPDF}
+                onClick={() => { void handleDownloadPDF(); }}
                 data-testid="download-pdf-button"
               >
                 <FileDown className="w-4 h-4 mr-1" />
@@ -241,7 +241,7 @@ export default function IncidentDetailPage() {
               <>
                 <Button
                   variant="outline"
-                  onClick={() => setWizardOpen(true)}
+                  onClick={() => { setWizardOpen(true); }}
                   data-testid="assess-reportability-btn"
                 >
                   <ShieldAlert className="w-4 h-4 mr-1" />
@@ -249,7 +249,7 @@ export default function IncidentDetailPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setClassifyWizardOpen(true)}
+                  onClick={() => { setClassifyWizardOpen(true); }}
                   data-testid="classify-reporting-btn"
                 >
                   <ShieldAlert className="w-4 h-4 mr-1" />
@@ -273,7 +273,7 @@ export default function IncidentDetailPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Bezeichnung</Label>
-                  <Input value={form.title} onChange={(e) => set('title', e.target.value)} />
+                  <Input value={form.title} onChange={(e) => { set('title', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -281,10 +281,10 @@ export default function IncidentDetailPage() {
                     <AISuggestActionsButton
                       summary={form.description}
                       type={incident.incident_type}
-                      onAppend={(guide) => set('description', `${form.description}\n\n--- KI-Sofortmaßnahmen ---\n${guide}`)}
+                      onAppend={(guide) => { set('description', `${form.description}\n\n--- KI-Sofortmaßnahmen ---\n${guide}`); }}
                     />
                   </div>
-                  <Textarea rows={4} value={form.description} onChange={(e) => set('description', e.target.value)} />
+                  <Textarea rows={4} value={form.description} onChange={(e) => { set('description', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Betroffene Systeme (kommagetrennt)</Label>
@@ -338,7 +338,7 @@ export default function IncidentDetailPage() {
                         size="sm"
                         variant="outline"
                         disabled={generateReport.isPending}
-                        onClick={() => generateReport.mutate({ report_type: rt })}
+                        onClick={() => { generateReport.mutate({ report_type: rt }); }}
                         data-testid={`generate-report-btn-${rt}`}
                       >
                         Meldung {rt} erstellen
@@ -395,7 +395,7 @@ export default function IncidentDetailPage() {
                       min={0}
                       placeholder="Anzahl betroffener Kunden"
                       value={form.affected_customers ?? ''}
-                      onChange={(e) => set('affected_customers', e.target.value ? Number(e.target.value) : undefined)}
+                      onChange={(e) => { set('affected_customers', e.target.value ? Number(e.target.value) : undefined); }}
                       data-testid="affected-customers-input"
                     />
                   </div>
@@ -406,7 +406,7 @@ export default function IncidentDetailPage() {
                       rows={2}
                       placeholder="z.B. ca. 500.000 EUR"
                       value={form.financial_impact_estimate ?? ''}
-                      onChange={(e) => set('financial_impact_estimate', e.target.value)}
+                      onChange={(e) => { set('financial_impact_estimate', e.target.value); }}
                       data-testid="financial-impact-textarea"
                     />
                   </div>
@@ -416,7 +416,7 @@ export default function IncidentDetailPage() {
                       type="checkbox"
                       className="w-4 h-4 accent-primary cursor-pointer"
                       checked={form.is_major_incident ?? false}
-                      onChange={(e) => set('is_major_incident', e.target.checked)}
+                      onChange={(e) => { set('is_major_incident', e.target.checked); }}
                       data-testid="is-major-incident-checkbox"
                     />
                     <Label htmlFor="is-major-incident" className="cursor-pointer">
@@ -453,7 +453,7 @@ export default function IncidentDetailPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Schweregrad</Label>
-                  <Select value={form.severity} onValueChange={(v) => set('severity', v as Incident['severity'])}>
+                  <Select value={form.severity} onValueChange={(v) => { set('severity', v as Incident['severity']); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {(Object.keys(SEVERITY_LABELS) as Incident['severity'][]).map((k) => (
@@ -469,7 +469,7 @@ export default function IncidentDetailPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Status</Label>
-                  <Select value={form.status} onValueChange={(v) => set('status', v as Incident['status'])}>
+                  <Select value={form.status} onValueChange={(v) => { set('status', v as Incident['status']); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {(Object.keys(STATUS_LABELS) as Incident['status'][]).map((k) => (
@@ -489,7 +489,7 @@ export default function IncidentDetailPage() {
               <CardContent className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>Vorfalltyp</Label>
-                  <Select value={form.incident_type ?? 'general'} onValueChange={(v) => set('incident_type', v as Incident['incident_type'])}>
+                  <Select value={form.incident_type ?? 'general'} onValueChange={(v) => { set('incident_type', v as Incident['incident_type']); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(INCIDENT_TYPE_LABELS).map(([k, label]) => (
@@ -500,7 +500,7 @@ export default function IncidentDetailPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Meldepflicht</Label>
-                  <Select value={form.reporting_obligation ?? 'unknown'} onValueChange={(v) => set('reporting_obligation', v as Incident['reporting_obligation'])}>
+                  <Select value={form.reporting_obligation ?? 'unknown'} onValueChange={(v) => { set('reporting_obligation', v as Incident['reporting_obligation']); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(OBLIGATION_LABELS).map(([k, label]) => (
@@ -514,7 +514,7 @@ export default function IncidentDetailPage() {
                   <Input
                     placeholder="z.B. BSI, BaFin, BNetzA"
                     value={form.notification_authority ?? ''}
-                    onChange={(e) => set('notification_authority', e.target.value)}
+                    onChange={(e) => { set('notification_authority', e.target.value); }}
                   />
                 </div>
               </CardContent>
@@ -535,14 +535,14 @@ export default function IncidentDetailPage() {
         <ReportabilityWizard
           incidentId={id}
           open={wizardOpen}
-          onClose={() => setWizardOpen(false)}
+          onClose={() => { setWizardOpen(false); }}
         />
       )}
       {id && (
         <ClassifyReportingWizard
           incidentId={id}
           open={classifyWizardOpen}
-          onClose={() => setClassifyWizardOpen(false)}
+          onClose={() => { setClassifyWizardOpen(false); }}
         />
       )}
       <ProGate error={pdfError}>{null}</ProGate>

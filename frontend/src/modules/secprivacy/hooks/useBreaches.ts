@@ -6,7 +6,7 @@ import type { PaginatedResponse } from '../../../shared/types/pagination'
 export function useBreaches(page = 1, limit = 25) {
   const query = useQuery<PaginatedResponse<Breach>>({
     queryKey: ['secprivacy', 'breaches', page, limit],
-    queryFn: () => apiFetch<PaginatedResponse<Breach>>(`/secprivacy/breaches?page=${page}&limit=${limit}`),
+    queryFn: () => apiFetch<PaginatedResponse<Breach>>(`/secprivacy/breaches?page=${String(page)}&limit=${String(limit)}`),
     staleTime: 5 * 60 * 1000,
   })
   return {
@@ -40,8 +40,8 @@ export function useUpdateBreach() {
 
 export function useDeleteBreach() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/secprivacy/breaches/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/secprivacy/breaches/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secprivacy', 'breaches'] })
     },
@@ -50,9 +50,9 @@ export function useDeleteBreach() {
 
 export function useMarkAuthorityNotified() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secprivacy/breaches/${id}/notify-authority`, { method: 'POST' }),
+      apiFetch<undefined>(`/secprivacy/breaches/${id}/notify-authority`, { method: 'POST' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secprivacy', 'breaches'] })
     },

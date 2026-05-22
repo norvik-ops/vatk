@@ -272,7 +272,7 @@ function NotApplicableDialog({
               rows={3}
               className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => { setReason(e.target.value); }}
               placeholder={t('secvitals.controlDetailPage.naPlaceholder')}
             />
           </div>
@@ -451,7 +451,7 @@ export default function ControlDetailPage() {
   function handleAddTask(e: React.FormEvent) {
     e.preventDefault()
     if (!newTaskText.trim()) return
-    createTask.mutate({ text: newTaskText.trim() }, { onSuccess: () => setNewTaskText('') })
+    createTask.mutate({ text: newTaskText.trim() }, { onSuccess: () => { setNewTaskText(''); } })
   }
 
   // Evidence form
@@ -612,11 +612,11 @@ export default function ControlDetailPage() {
               <Download className="w-4 h-4 mr-1" />
               {t('secvitals.controlDetailPage.export')}
             </Button>
-            <Button size="sm" onClick={() => setAddOpen(true)}>
+            <Button size="sm" onClick={() => { setAddOpen(true); }}>
               <Plus className="w-4 h-4 mr-1" />
               {t('secvitals.controlDetailPage.addEvidence')}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate(backTo)}>
+            <Button variant="outline" size="sm" onClick={() => { navigate(backTo); }}>
               <ArrowLeft className="w-4 h-4 mr-1" />
               {t('secvitals.controlDetailPage.back')}
             </Button>
@@ -667,7 +667,7 @@ export default function ControlDetailPage() {
                       type="button"
                       data-testid={`maturity-radio-${score}`}
                       disabled={updateControl.isPending}
-                      onClick={() => handleMaturityChange(score)}
+                      onClick={() => { handleMaturityChange(score); }}
                       className={cn(
                         'px-2.5 py-1 text-xs rounded-md border transition-colors',
                         (control?.maturity_score ?? 0) === score
@@ -732,7 +732,7 @@ export default function ControlDetailPage() {
                 <div className="flex items-center gap-2 flex-1">
                   <Input
                     value={ownerDraft}
-                    onChange={(e) => setOwnerDraft(e.target.value)}
+                    onChange={(e) => { setOwnerDraft(e.target.value); }}
                     placeholder="E-Mail oder Name"
                     className="h-7 text-sm flex-1"
                     autoFocus
@@ -749,7 +749,7 @@ export default function ControlDetailPage() {
                     size="sm"
                     variant="ghost"
                     className="h-7 px-2 text-xs"
-                    onClick={() => setOwnerEditing(false)}
+                    onClick={() => { setOwnerEditing(false); }}
                   >
                     <X className="w-3.5 h-3.5" />
                   </Button>
@@ -780,7 +780,7 @@ export default function ControlDetailPage() {
                   type="date"
                   className="text-[12px] bg-surface border border-border rounded px-2 py-1 text-primary focus:outline-none focus:ring-1 focus:ring-brand"
                   value={dueDateDraft}
-                  onChange={(e) => setDueDateDraft(e.target.value)}
+                  onChange={(e) => { setDueDateDraft(e.target.value); }}
                   onBlur={saveDueDate}
                 />
                 {(() => {
@@ -824,9 +824,9 @@ export default function ControlDetailPage() {
                         key={sub.id}
                         className="cursor-pointer hover:bg-surface2"
                         onClick={() =>
-                          navigate(
+                          { navigate(
                             `/secvitals/controls/${sub.id}${frameworkId ? `?frameworkId=${frameworkId}` : ''}`,
-                          )
+                          ); }
                         }
                       >
                         <TableCell className="font-mono text-xs">{sub.control_id}</TableCell>
@@ -872,7 +872,7 @@ export default function ControlDetailPage() {
                           ? 'bg-green-500 border-green-500 text-white'
                           : 'border-border hover:border-green-400',
                       )}
-                      onClick={() => toggleTask.mutate({ taskId: task.id, completed: !task.completed })}
+                      onClick={() => { toggleTask.mutate({ taskId: task.id, completed: !task.completed }); }}
                       title={task.completed ? t('secvitals.controlDetailPage.markOpen') : t('secvitals.controlDetailPage.markDone')}
                     >
                       {task.completed && <CheckCircle2 className="w-3 h-3" />}
@@ -883,7 +883,7 @@ export default function ControlDetailPage() {
                     <button
                       type="button"
                       className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                      onClick={() => deleteTask.mutate(task.id)}
+                      onClick={() => { deleteTask.mutate(task.id); }}
                       title={t('secvitals.controlDetailPage.deleteStep')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -897,7 +897,7 @@ export default function ControlDetailPage() {
               <Input
                 placeholder={t('secvitals.controlDetailPage.addStep')}
                 value={newTaskText}
-                onChange={(e) => setNewTaskText(e.target.value)}
+                onChange={(e) => { setNewTaskText(e.target.value); }}
                 className="flex-1 h-8 text-sm"
               />
               <Button type="submit" size="sm" disabled={!newTaskText.trim() || createTask.isPending} className="h-8">
@@ -935,7 +935,7 @@ export default function ControlDetailPage() {
                 <ShieldAlert className="w-4 h-4" />
                 Ausnahmen / Ausnahmegenehmigungen
               </CardTitle>
-              <Button size="sm" variant="outline" onClick={() => setExceptionOpen(true)}>
+              <Button size="sm" variant="outline" onClick={() => { setExceptionOpen(true); }}>
                 <Plus className="w-3.5 h-3.5 mr-1" />
                 Neue Ausnahme
               </Button>
@@ -969,7 +969,7 @@ export default function ControlDetailPage() {
                           type="button"
                           className="text-secondary hover:text-destructive transition-colors shrink-0"
                           title="Ausnahme löschen"
-                          onClick={() => deleteException.mutate({ id: ex.id, controlId: controlId })}
+                          onClick={() => { deleteException.mutate({ id: ex.id, controlId: controlId }); }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1042,7 +1042,7 @@ export default function ControlDetailPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => openReview(ev.id)}
+                              onClick={() => { openReview(ev.id); }}
                             >
                               {t('secvitals.controlDetailPage.review')}
                             </Button>
@@ -1052,7 +1052,7 @@ export default function ControlDetailPage() {
                             size="sm"
                             className="text-secondary hover:text-primary"
                             title="Verlauf anzeigen"
-                            onClick={() => openHistory(ev.id, ev.title)}
+                            onClick={() => { openHistory(ev.id, ev.title); }}
                           >
                             <History className="w-3.5 h-3.5" aria-hidden="true" />
                           </Button>
@@ -1103,7 +1103,7 @@ export default function ControlDetailPage() {
           control={control}
           frameworkId={frameworkId}
           open={naOpen}
-          onClose={() => setNaOpen(false)}
+          onClose={() => { setNaOpen(false); }}
         />
       )}
 
@@ -1112,7 +1112,7 @@ export default function ControlDetailPage() {
         evidenceId={historyEvidenceId}
         evidenceTitle={historyEvidenceTitle}
         open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
+        onClose={() => { setHistoryOpen(false); }}
       />
 
       {/* 4-Augen: Approval Request Dialog */}
@@ -1141,7 +1141,7 @@ export default function ControlDetailPage() {
               <Label className="text-xs">{t('secvitals.controlDetailPage.approvalComment')}</Label>
               <Textarea
                 value={approvalComment}
-                onChange={(e) => setApprovalComment(e.target.value)}
+                onChange={(e) => { setApprovalComment(e.target.value); }}
                 placeholder={t('secvitals.controlDetailPage.approvalPlaceholder')}
                 rows={3}
               />
@@ -1169,14 +1169,14 @@ export default function ControlDetailPage() {
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('secvitals.controlDetailPage.addEvidenceTitle')}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { void handleAdd(e) }}>
+          <form onSubmit={(e) => { handleAdd(e) }}>
             <div className="py-4 space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="ev-title">{t('secvitals.controlDetailPage.evidenceLabelTitle')}</Label>
                 <Input
                   id="ev-title"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => { setTitle(e.target.value); }}
                   placeholder={t('secvitals.controlDetailPage.evidencePlaceholderTitle')}
                   required
                 />
@@ -1202,7 +1202,7 @@ export default function ControlDetailPage() {
                     id="ev-file"
                     type="file"
                     className="w-full text-sm text-primary file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-border file:bg-surface2 file:text-xs file:font-medium file:text-primary hover:file:bg-surface cursor-pointer"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    onChange={(e) => { setFile(e.target.files?.[0] ?? null); }}
                   />
                   {file && <p className="text-xs text-secondary">{file.name} ({(file.size / 1024).toFixed(1)} KB)</p>}
                 </div>
@@ -1219,7 +1219,7 @@ export default function ControlDetailPage() {
                       size="sm"
                       variant="outline"
                       className="mt-2 h-6 text-xs"
-                      onClick={() => collectEvidence.mutate()}
+                      onClick={() => { collectEvidence.mutate(); }}
                       disabled={collectEvidence.isPending}
                     >
                       <RefreshCw className="w-3 h-3 mr-1" />
@@ -1236,7 +1236,7 @@ export default function ControlDetailPage() {
                   rows={3}
                   className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e) => { setNotes(e.target.value); }}
                   placeholder={t('secvitals.controlDetailPage.evidencePlaceholderNotes')}
                 />
               </div>
@@ -1247,7 +1247,7 @@ export default function ControlDetailPage() {
                   id="ev-expires-at"
                   type="date"
                   value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
+                  onChange={(e) => { setExpiresAt(e.target.value); }}
                   min={new Date().toISOString().split('T')[0]}
                 />
                 <p className="text-xs text-secondary">
@@ -1256,7 +1256,7 @@ export default function ControlDetailPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>{t('common.cancel')}</Button>
+              <Button type="button" variant="outline" onClick={() => { setAddOpen(false); }}>{t('common.cancel')}</Button>
               <Button
                 type="submit"
                 disabled={
@@ -1276,11 +1276,11 @@ export default function ControlDetailPage() {
       <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('secvitals.controlDetailPage.reviewTitle')}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { void handleReview(e) }}>
+          <form onSubmit={(e) => { handleReview(e) }}>
             <div className="py-4 space-y-4">
               <div className="space-y-1.5">
                 <Label>{t('secvitals.controlDetailPage.reviewDecision')}</Label>
-                <Select value={reviewStatus} onValueChange={(v) => setReviewStatus(v as 'approved' | 'rejected')}>
+                <Select value={reviewStatus} onValueChange={(v) => { setReviewStatus(v as 'approved' | 'rejected'); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -1297,13 +1297,13 @@ export default function ControlDetailPage() {
                   rows={3}
                   className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
                   value={reviewNotes}
-                  onChange={(e) => setReviewNotes(e.target.value)}
+                  onChange={(e) => { setReviewNotes(e.target.value); }}
                   placeholder={t('secvitals.controlDetailPage.reviewPlaceholderNotes')}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setReviewOpen(false)}>{t('common.cancel')}</Button>
+              <Button type="button" variant="outline" onClick={() => { setReviewOpen(false); }}>{t('common.cancel')}</Button>
               <Button type="submit" disabled={review.isPending}>
                 {review.isPending ? t('secvitals.controlDetailPage.reviewSaving') : t('secvitals.controlDetailPage.reviewComplete')}
               </Button>
@@ -1318,14 +1318,14 @@ export default function ControlDetailPage() {
           <DialogHeader>
             <DialogTitle>Neue Ausnahme anlegen</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { void handleExceptionSubmit(e) }}>
+          <form onSubmit={(e) => { handleExceptionSubmit(e) }}>
             <div className="py-4 space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="ex-title">Titel <span className="text-red-500">*</span></Label>
                 <Input
                   id="ex-title"
                   value={exForm.title}
-                  onChange={(e) => setExForm((f) => ({ ...f, title: e.target.value }))}
+                  onChange={(e) => { setExForm((f) => ({ ...f, title: e.target.value })); }}
                   placeholder="Kurze Beschreibung der Ausnahme"
                   required
                 />
@@ -1337,7 +1337,7 @@ export default function ControlDetailPage() {
                   rows={3}
                   className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
                   value={exForm.reason}
-                  onChange={(e) => setExForm((f) => ({ ...f, reason: e.target.value }))}
+                  onChange={(e) => { setExForm((f) => ({ ...f, reason: e.target.value })); }}
                   placeholder="Warum wird diese Ausnahme beantragt?"
                   required
                 />
@@ -1355,7 +1355,7 @@ export default function ControlDetailPage() {
                   rows={2}
                   className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
                   value={exForm.risk_accepted}
-                  onChange={(e) => setExForm((f) => ({ ...f, risk_accepted: e.target.value }))}
+                  onChange={(e) => { setExForm((f) => ({ ...f, risk_accepted: e.target.value })); }}
                   placeholder="Welches Risiko wird bewusst akzeptiert?"
                   required
                 />
@@ -1365,7 +1365,7 @@ export default function ControlDetailPage() {
                 <Input
                   id="ex-approved-by"
                   value={exForm.approved_by ?? ''}
-                  onChange={(e) => setExForm((f) => ({ ...f, approved_by: e.target.value }))}
+                  onChange={(e) => { setExForm((f) => ({ ...f, approved_by: e.target.value })); }}
                   placeholder="E-Mail oder Name des Genehmigenden"
                 />
               </div>
@@ -1375,7 +1375,7 @@ export default function ControlDetailPage() {
                   id="ex-expires-at"
                   type="date"
                   value={typeof exForm.expires_at === 'string' ? exForm.expires_at : ''}
-                  onChange={(e) => setExForm((f) => ({ ...f, expires_at: e.target.value || null }))}
+                  onChange={(e) => { setExForm((f) => ({ ...f, expires_at: e.target.value || null })); }}
                   min={new Date().toISOString().split('T')[0]}
                 />
               </div>

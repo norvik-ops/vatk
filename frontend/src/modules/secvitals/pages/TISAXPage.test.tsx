@@ -94,7 +94,7 @@ describe('TISAXPage', () => {
     expect(btn).toBeTruthy()
   })
 
-  it('click on "Bereitschaftsbericht exportieren" triggers fetch to tisax-report-pdf endpoint', async () => {
+  it('click on "Bereitschaftsbericht exportieren" triggers fetch to tisax-report-pdf endpoint', () => {
     // Mock fetch to capture the URL called
     const mockBlob = new Blob(['%PDF'], { type: 'application/pdf' })
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({

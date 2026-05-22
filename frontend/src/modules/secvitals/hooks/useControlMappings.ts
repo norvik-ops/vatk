@@ -25,7 +25,7 @@ export function useControlMappings(controlId: string | undefined) {
   return useQuery<ControlMapping[]>({
     queryKey: ['secvitals', 'controls', controlId, 'mappings'],
     queryFn: () =>
-      apiFetch<ControlMappingsResponse>(`/secvitals/controls/${controlId!}/mappings`).then(
+      apiFetch<ControlMappingsResponse>(`/secvitals/controls/${controlId ?? ''}/mappings`).then(
         (res) => res.mappings,
       ),
     enabled: !!controlId,

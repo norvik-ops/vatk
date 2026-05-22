@@ -127,8 +127,8 @@ function CopyButton({ text }: { text: string }) {
 
   useEffect(() => {
     if (!copied) return
-    const id = setTimeout(() => setCopied(false), 2000)
-    return () => clearTimeout(id)
+    const id = setTimeout(() => { setCopied(false); }, 2000)
+    return () => { clearTimeout(id); }
   }, [copied])
 
   function handleCopy() {
@@ -236,7 +236,7 @@ function AuditorLinksTab({ frameworkId }: { frameworkId: string }) {
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
-                        onClick={() => revokeLink.mutate(link.id)}
+                        onClick={() => { revokeLink.mutate(link.id); }}
                         disabled={revokeLink.isPending}
                         aria-label={`Auditor-Link ${link.label ?? link.id} widerrufen`}
                       >
@@ -276,7 +276,7 @@ function AuditorLinksTab({ frameworkId }: { frameworkId: string }) {
                   id="link-label"
                   placeholder="z.B. Externes Audit Q3 2026"
                   value={label}
-                  onChange={(e) => setLabel(e.target.value)}
+                  onChange={(e) => { setLabel(e.target.value); }}
                 />
               </div>
               <div className="space-y-1.5">
@@ -296,7 +296,7 @@ function AuditorLinksTab({ frameworkId }: { frameworkId: string }) {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+            <Button variant="outline" onClick={() => { setCreateOpen(false); }}>
               {createdUrl ? 'Schließen' : 'Abbrechen'}
             </Button>
             {!createdUrl && (
@@ -353,7 +353,7 @@ function NotApplicableDialog({
               rows={3}
               className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => { setReason(e.target.value); }}
               placeholder="z.B. Trifft auf unsere Organisation nicht zu, da kein Supply-Chain-Risiko besteht."
             />
           </div>
@@ -443,17 +443,17 @@ const ControlRow = React.memo(function ControlRow({
 
   return (
     <TableRow className={cn(ctrl.not_applicable && 'opacity-50', selected && 'bg-brand/5')}>
-      <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+      <TableCell className="w-10" onClick={(e) => { e.stopPropagation(); }}>
         <input
           type="checkbox"
           checked={selected}
-          onChange={() => onToggleSelect(ctrl.id)}
+          onChange={() => { onToggleSelect(ctrl.id); }}
           className="rounded"
         />
       </TableCell>
       <TableCell
         className="font-mono text-xs cursor-pointer"
-        onClick={() => navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`)}
+        onClick={() => { navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`); }}
         style={{ paddingLeft: depth > 0 ? `${depth * 1.5 + 1}rem` : undefined }}
       >
         {depth > 0 && <span className="mr-1 text-border">└</span>}
@@ -461,11 +461,11 @@ const ControlRow = React.memo(function ControlRow({
       </TableCell>
       <TableCell
         className={cn('cursor-pointer', ctrl.not_applicable && 'line-through text-secondary')}
-        onClick={() => navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`)}
+        onClick={() => { navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`); }}
       >
         {ctrl.title}
       </TableCell>
-      <TableCell onClick={(e) => e.stopPropagation()}>
+      <TableCell onClick={(e) => { e.stopPropagation(); }}>
         <Select value={status} onValueChange={handleChange} disabled={updateControl.isPending}>
           <SelectTrigger className="h-7 text-xs w-44 gap-1">
             <StatusIndicator status={status} />
@@ -484,7 +484,7 @@ const ControlRow = React.memo(function ControlRow({
       </TableCell>
       <TableCell
         className="text-secondary cursor-pointer"
-        onClick={() => navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`)}
+        onClick={() => { navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`); }}
       >
         <ChevronRight className="w-4 h-4" />
       </TableCell>
@@ -526,7 +526,7 @@ function DomainSection({
       <button
         type="button"
         className="w-full flex items-center justify-between px-4 py-2.5 bg-surface2 hover:bg-surface text-left"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); }}
       >
         <div className="flex items-center gap-3">
           <ChevronDown className={cn('w-4 h-4 text-secondary transition-transform', !open && '-rotate-90')} />
@@ -549,9 +549,9 @@ function DomainSection({
                   ref={(el) => {
                     if (el) el.indeterminate = someSelected && !allSelected
                   }}
-                  onChange={(e) => onToggleDomain(allIds, e.target.checked)}
+                  onChange={(e) => { onToggleDomain(allIds, e.target.checked); }}
                   className="rounded"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); }}
                 />
               </TableHead>
               <TableHead className="w-32">ID</TableHead>
@@ -642,7 +642,7 @@ function ControlsTab({
     try {
       await bulkUpdateControls.mutateAsync({
         ids,
-        status: apiStatus as 'implemented' | 'in_progress' | 'not_implemented' | 'not_applicable',
+        status: apiStatus,
       })
       setSelected(new Set())
       setStatusDialogOpen(false)
@@ -715,7 +715,7 @@ function ControlsTab({
             <p className="text-sm text-secondary">
               Neuen Status für {selected.size} ausgewählte{selected.size === 1 ? 's Control' : ' Controls'} setzen:
             </p>
-            <Select value={pendingStatus} onValueChange={(v) => setPendingStatus(v as ControlStatusChoice)}>
+            <Select value={pendingStatus} onValueChange={(v) => { setPendingStatus(v as ControlStatusChoice); }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -728,7 +728,7 @@ function ControlsTab({
             </Select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => { setStatusDialogOpen(false); }}>Abbrechen</Button>
             <Button onClick={() => { void handleBulkStatusApply() }} disabled={bulkUpdateControls.isPending}>
               {bulkUpdateControls.isPending ? 'Wird gespeichert…' : 'Anwenden'}
             </Button>
@@ -786,19 +786,19 @@ function ControlsTab({
             control={naDialog}
             frameworkId={frameworkId}
             open
-            onClose={() => setNaDialog(null)}
+            onClose={() => { setNaDialog(null); }}
           />
         )}
       </div>
 
       <BulkActionBar
         selectedCount={selected.size}
-        onClearSelection={() => setSelected(new Set())}
+        onClearSelection={() => { setSelected(new Set()); }}
         actions={[
           {
             label: 'Status setzen',
             icon: RefreshCw,
-            onClick: () => setStatusDialogOpen(true),
+            onClick: () => { setStatusDialogOpen(true); },
           },
           {
             label: 'Exportieren',
@@ -853,7 +853,7 @@ export default function FrameworkDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/secvitals/frameworks/${frameworkId}/tisax`)}
+                onClick={() => { navigate(`/secvitals/frameworks/${frameworkId}/tisax`); }}
               >
                 TISAX-Ansicht öffnen
               </Button>
@@ -862,7 +862,7 @@ export default function FrameworkDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate('/secvitals/cis-controls')}
+                onClick={() => { navigate('/secvitals/cis-controls'); }}
               >
                 CIS Controls v8 öffnen
               </Button>
@@ -890,11 +890,11 @@ export default function FrameworkDetailPage() {
               <FileDown className="w-4 h-4 mr-1" />
               RTF Export
             </Button>
-            <Button variant="outline" size="sm" onClick={() => downloadPDF(frameworkId, framework?.name)}>
+            <Button variant="outline" size="sm" onClick={() => { downloadPDF(frameworkId, framework?.name); }}>
               <FileDown className="w-4 h-4 mr-1" />
               PDF Export
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate('/secvitals/frameworks')}>
+            <Button variant="outline" size="sm" onClick={() => { navigate('/secvitals/frameworks'); }}>
               <ArrowLeft className="w-4 h-4 mr-1" />
               Zurück
             </Button>

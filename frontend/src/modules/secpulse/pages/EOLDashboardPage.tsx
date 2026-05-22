@@ -112,7 +112,7 @@ export default function EOLDashboardPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => { setActiveTab(tab.key); }}
                 className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
                   activeTab === tab.key
                     ? 'border-brand text-brand'
@@ -136,7 +136,7 @@ export default function EOLDashboardPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 p-4">Fehler: {(error as Error).message}</p>
+            <p className="text-sm text-red-600 p-4">Fehler: {(error).message}</p>
           )}
 
           {!error && filtered.length === 0 && (
@@ -150,7 +150,7 @@ export default function EOLDashboardPage() {
               }
               action={
                 activeTab === 'all' ? (
-                  <Button size="sm" onClick={() => navigate('/secpulse/assets')}>
+                  <Button size="sm" onClick={() => { navigate('/secpulse/assets'); }}>
                     Assets konfigurieren
                   </Button>
                 ) : undefined

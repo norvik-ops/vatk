@@ -96,7 +96,7 @@ export function AVVTemplatePickerDialog({
   }
 
   const allVarsFilled = selected
-    ? selected.variables.every((v) => vars[v]?.trim())
+    ? selected.variables.every((v) => vars[v].trim())
     : false
 
   return (
@@ -104,7 +104,7 @@ export function AVVTemplatePickerDialog({
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {step === 'pick' ? 'Vorlage auswählen' : `Vorlage ausfüllen — ${selected?.title}`}
+            {step === 'pick' ? 'Vorlage auswählen' : `Vorlage ausfüllen — ${selected?.title ?? ''}`}
           </DialogTitle>
         </DialogHeader>
 
@@ -120,7 +120,7 @@ export function AVVTemplatePickerDialog({
                 key={tpl.id}
                 type="button"
                 className="w-full text-left flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors group"
-                onClick={() => handleSelectTemplate(tpl)}
+                onClick={() => { handleSelectTemplate(tpl); }}
               >
                 <FileText className="w-5 h-5 mt-0.5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -144,7 +144,7 @@ export function AVVTemplatePickerDialog({
                 <Input
                   placeholder={VAR_LABELS[v] ?? v}
                   value={vars[v] ?? ''}
-                  onChange={(e) => setVars((prev) => ({ ...prev, [v]: e.target.value }))}
+                  onChange={(e) => { setVars((prev) => ({ ...prev, [v]: e.target.value })); }}
                 />
               </div>
             ))}
@@ -157,7 +157,7 @@ export function AVVTemplatePickerDialog({
               Zurück
             </Button>
           )}
-          <Button variant="outline" onClick={() => handleClose(false)}>
+          <Button variant="outline" onClick={() => { handleClose(false); }}>
             Abbrechen
           </Button>
           {step === 'fill' && (

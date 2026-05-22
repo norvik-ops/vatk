@@ -77,11 +77,11 @@ function InlineStatusCell({ finding }: { finding: Finding }) {
       >
         <SelectTrigger
           className="h-7 text-xs w-36"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); }}
         >
           <SelectValue />
         </SelectTrigger>
-        <SelectContent onClick={(e) => e.stopPropagation()}>
+        <SelectContent onClick={(e) => { e.stopPropagation(); }}>
           <SelectItem value="open">{t('secpulse.status.open')}</SelectItem>
           <SelectItem value="in_progress">{t('secpulse.status.in_progress')}</SelectItem>
           <SelectItem value="accepted_risk">{t('secpulse.status.accepted_risk')}</SelectItem>
@@ -153,11 +153,11 @@ function InlineSeverityCell({ finding }: { finding: Finding }) {
       >
         <SelectTrigger
           className="h-7 text-xs w-28"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); }}
         >
           <SelectValue />
         </SelectTrigger>
-        <SelectContent onClick={(e) => e.stopPropagation()}>
+        <SelectContent onClick={(e) => { e.stopPropagation(); }}>
           <SelectItem value="critical">{t('secpulse.severity.critical')}</SelectItem>
           <SelectItem value="high">{t('secpulse.severity.high')}</SelectItem>
           <SelectItem value="medium">{t('secpulse.severity.medium')}</SelectItem>
@@ -308,7 +308,7 @@ export default function FindingsPage() {
       />
       <CSVImportDialog
         open={csvImportOpen}
-        onClose={() => setCsvImportOpen(false)}
+        onClose={() => { setCsvImportOpen(false); }}
         endpoint="/api/v1/secpulse/findings/import/csv"
         entityLabel="Findings"
         columns={['title', 'severity', 'description', 'asset', 'status']}
@@ -328,7 +328,7 @@ export default function FindingsPage() {
                 suffix: selected.size === 1 ? 'n' : '',
               })}
             </p>
-            <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v as Finding['status'])}>
+            <Select value={bulkStatus} onValueChange={(v) => { setBulkStatus(v as Finding['status']); }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -342,7 +342,7 @@ export default function FindingsPage() {
             </Select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setStatusDialogOpen(false); }}>{t('common.cancel')}</Button>
             <Button onClick={() => { void handleBulkUpdate() }} disabled={bulkUpdate.isPending}>
               {bulkUpdate.isPending ? t('secpulse.findingsPage.saving') : t('secpulse.findingsPage.apply')}
             </Button>
@@ -365,7 +365,7 @@ export default function FindingsPage() {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setDeleteDialogOpen(false); }}>{t('common.cancel')}</Button>
             <Button
               variant="destructive"
               onClick={() => { void handleBulkDelete() }}
@@ -382,15 +382,15 @@ export default function FindingsPage() {
         description={data ? t('secpulse.findingsPage.total', { count: data.pagination.total }) : undefined}
         actions={
           <>
-            <Button variant="outline" size="sm" onClick={() => setCsvImportOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => { setCsvImportOpen(true); }}>
               <Upload className="w-4 h-4 mr-1" />
               CSV importieren
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => { setImportOpen(true); }}>
               <Upload className="w-4 h-4 mr-1" />
               {t('common.import')}
             </Button>
-            <Button variant="outline" size="sm" onClick={exportFindingsCsv}>
+            <Button variant="outline" size="sm" onClick={() => { void exportFindingsCsv(); }}>
               <Download className="w-4 h-4 mr-1" />
               Export CSV
             </Button>
@@ -486,7 +486,7 @@ export default function FindingsPage() {
                   ...(f.cve_id ? [{ label: 'CVE', value: f.cve_id }] : []),
                   ...(f.cvss_score != null ? [{ label: 'CVSS', value: f.cvss_score.toFixed(1) }] : []),
                 ]}
-                onClick={() => navigate(`/secpulse/findings/${f.id}`)}
+                onClick={() => { navigate(`/secpulse/findings/${f.id}`); }}
               />
             ))}
           </div>
@@ -571,18 +571,18 @@ export default function FindingsPage() {
                     )}
                     onClick={() => { setFocusedIndex(index); setTableKeyIdx(index) }}
                   >
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell onClick={(e) => { e.stopPropagation(); }}>
                       <input
                         type="checkbox"
                         checked={selected.has(f.id)}
-                        onChange={() => toggleSelect(f.id)}
+                        onChange={() => { toggleSelect(f.id); }}
                         aria-label={`Befund "${f.title}" auswählen`}
                         className="rounded"
                       />
                     </TableCell>
                     <TableCell
                       className="font-medium max-w-xs"
-                      onClick={() => navigate(`/secpulse/findings/${f.id}`)}
+                      onClick={() => { navigate(`/secpulse/findings/${f.id}`); }}
                     >
                       <span className="truncate block">{f.title}</span>
                       {f.sla_due_at && new Date(f.sla_due_at) < new Date() && (
@@ -591,22 +591,22 @@ export default function FindingsPage() {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell onClick={(e) => { e.stopPropagation(); }}>
                       <InlineSeverityCell finding={f} />
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell onClick={(e) => { e.stopPropagation(); }}>
                       <InlineStatusCell finding={f} />
                     </TableCell>
-                    <TableCell className="text-sm text-secondary" onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
+                    <TableCell className="text-sm text-secondary" onClick={() => { navigate(`/secpulse/findings/${f.id}`); }}>
                       {f.asset_name ?? '—'}
                     </TableCell>
-                    <TableCell className="font-mono text-xs" onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
+                    <TableCell className="font-mono text-xs" onClick={() => { navigate(`/secpulse/findings/${f.id}`); }}>
                       {f.cve_id ?? '—'}
                     </TableCell>
-                    <TableCell onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
+                    <TableCell onClick={() => { navigate(`/secpulse/findings/${f.id}`); }}>
                       {f.cvss_score != null ? f.cvss_score.toFixed(1) : '—'}
                     </TableCell>
-                    <TableCell className="text-sm text-secondary" onClick={() => navigate(`/secpulse/findings/${f.id}`)}>
+                    <TableCell className="text-sm text-secondary" onClick={() => { navigate(`/secpulse/findings/${f.id}`); }}>
                       {new Date(f.created_at).toLocaleDateString(formatLocale())}
                     </TableCell>
                   </TableRow>
@@ -625,12 +625,12 @@ export default function FindingsPage() {
 
       <BulkActionBar
         selectedCount={selected.size}
-        onClearSelection={() => setSelected(new Set())}
+        onClearSelection={() => { setSelected(new Set()); }}
         actions={[
           {
             label: t('secpulse.bulk.changeStatus'),
             icon: RefreshCw,
-            onClick: () => setStatusDialogOpen(true),
+            onClick: () => { setStatusDialogOpen(true); },
           },
           {
             label: t('secpulse.bulk.exportSelected'),
@@ -641,7 +641,7 @@ export default function FindingsPage() {
             label: t('secpulse.bulk.delete'),
             icon: Trash2,
             variant: 'destructive' as const,
-            onClick: () => setDeleteDialogOpen(true),
+            onClick: () => { setDeleteDialogOpen(true); },
             disabled: deleteFinding.isPending,
           },
         ]}

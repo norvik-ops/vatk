@@ -224,7 +224,7 @@ export default function PoliciesPage() {
     if (!aiPolicyType) return
     generateDraft.mutate(
       { policy_type: aiPolicyType, framework_id: aiFrameworkId || undefined, custom_context: aiCustomContext || undefined },
-      { onSuccess: (data) => setAiDraft(data.draft) },
+      { onSuccess: (data) => { setAiDraft(data.draft); } },
     )
   }
 
@@ -261,11 +261,11 @@ export default function PoliciesPage() {
               label="Exportieren"
               format="xlsx"
             />
-            <Button variant="outline" size="sm" onClick={() => window.print()} className="no-print">
+            <Button variant="outline" size="sm" onClick={() => { window.print(); }} className="no-print">
               <Printer className="w-4 h-4 mr-1" />
               Drucken
             </Button>
-            <Button variant="outline" onClick={() => setTemplateOpen(true)} aria-haspopup="dialog">
+            <Button variant="outline" onClick={() => { setTemplateOpen(true); }} aria-haspopup="dialog">
               <LayoutTemplate className="w-4 h-4 mr-1" />
               {t('secvitals.policiesPage.fromTemplate')}
             </Button>
@@ -290,8 +290,8 @@ export default function PoliciesPage() {
               const isActive = sortKey === opt.key
               return (
                 <button
-                  key={String(opt.key)}
-                  onClick={() => toggleSort(opt.key)}
+                  key={opt.key}
+                  onClick={() => { toggleSort(opt.key); }}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border transition-colors ${
                     isActive
                       ? 'border-brand/50 bg-brand/10 text-brand'
@@ -325,7 +325,7 @@ export default function PoliciesPage() {
         )}
         {!isLoading && !isError && policies && policies.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedPolicies.map((p) => <PolicyCard key={p.id} policy={p} onClick={() => navigate(`/secvitals/policies/${p.id}`)} />)}
+            {sortedPolicies.map((p) => <PolicyCard key={p.id} policy={p} onClick={() => { navigate(`/secvitals/policies/${p.id}`); }} />)}
           </div>
         )}
         <Pagination
@@ -350,7 +350,7 @@ export default function PoliciesPage() {
                 key={tpl.id}
                 className="w-full text-left p-4 rounded-lg border border-border hover:border-brand/50 hover:bg-accent transition-colors disabled:opacity-50"
                 disabled={applyTemplate.isPending}
-                onClick={() => applyTemplate.mutate(tpl.id)}
+                onClick={() => { applyTemplate.mutate(tpl.id); }}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -366,7 +366,7 @@ export default function PoliciesPage() {
             ))}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTemplateOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setTemplateOpen(false); }}>{t('common.cancel')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -418,7 +418,7 @@ export default function PoliciesPage() {
                   rows={3}
                   placeholder={t('secvitals.policiesPage.aiContextPlaceholder')}
                   value={aiCustomContext}
-                  onChange={(e) => setAiCustomContext(e.target.value)}
+                  onChange={(e) => { setAiCustomContext(e.target.value); }}
                 />
               </div>
 
@@ -446,7 +446,7 @@ export default function PoliciesPage() {
               <Textarea
                 rows={18}
                 value={aiDraft}
-                onChange={(e) => setAiDraft(e.target.value)}
+                onChange={(e) => { setAiDraft(e.target.value); }}
                 className="font-mono text-xs"
               />
             </div>
@@ -455,7 +455,7 @@ export default function PoliciesPage() {
           <DialogFooter>
             {!aiDraft ? (
               <>
-                <Button variant="outline" onClick={() => setAiDraftOpen(false)}>{t('common.cancel')}</Button>
+                <Button variant="outline" onClick={() => { setAiDraftOpen(false); }}>{t('common.cancel')}</Button>
                 <Button
                   onClick={handleGenerateDraft}
                   disabled={!aiPolicyType || generateDraft.isPending}
@@ -478,7 +478,7 @@ export default function PoliciesPage() {
                 <Button variant="outline" onClick={() => { setAiDraft(''); generateDraft.reset() }}>
                   {t('secvitals.policiesPage.regenerate')}
                 </Button>
-                <Button variant="outline" onClick={() => setAiDraftOpen(false)}>{t('common.cancel')}</Button>
+                <Button variant="outline" onClick={() => { setAiDraftOpen(false); }}>{t('common.cancel')}</Button>
                 <Button
                   onClick={handleSaveDraftAsPolicy}
                   disabled={createPolicy.isPending}
@@ -504,24 +504,24 @@ export default function PoliciesPage() {
             <div className="space-y-1.5">
               <Label htmlFor="pol-category">{t('secvitals.policiesPage.labelCategory')}</Label>
               <Input id="pol-category" placeholder={t('secvitals.policiesPage.placeholderCategory')} value={form.category ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, category: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pol-desc">{t('secvitals.policiesPage.labelDescription')}</Label>
               <Textarea id="pol-desc" rows={3} placeholder={t('secvitals.policiesPage.placeholderDescription')} value={form.description ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, description: e.target.value })); }} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="pol-version">{t('secvitals.policiesPage.labelVersion')}</Label>
                 <Input id="pol-version" placeholder="1.0" value={form.version ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, version: e.target.value }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, version: e.target.value })); }} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('secvitals.policiesPage.labelOwner')}</Label>
                 <UserPicker
                   value={form.owner ?? undefined}
-                  onChange={(name) => setForm((f) => ({ ...f, owner: name ?? '' }))}
+                  onChange={(name) => { setForm((f) => ({ ...f, owner: name ?? '' })); }}
                 />
               </div>
             </div>
@@ -529,17 +529,17 @@ export default function PoliciesPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="pol-effective">{t('secvitals.policiesPage.labelEffectiveDate')}</Label>
                 <Input id="pol-effective" type="date" value={form.effective_date ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, effective_date: e.target.value || undefined }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, effective_date: e.target.value || undefined })); }} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pol-review">{t('secvitals.policiesPage.labelReviewDate')}</Label>
                 <Input id="pol-review" type="date" value={form.review_date ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, review_date: e.target.value || undefined }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, review_date: e.target.value || undefined })); }} />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>{t('common.cancel')}</Button>
             <Button onClick={handleSubmit} disabled={createPolicy.isPending}>
               {createPolicy.isPending ? t('secvitals.policiesPage.saving') : t('secvitals.policiesPage.createPolicy')}
             </Button>

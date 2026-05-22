@@ -32,8 +32,8 @@ export default function FindingDetailPage() {
 
   useEffect(() => {
     if (!saved) return
-    const id = setTimeout(() => setSaved(false), 2000)
-    return () => clearTimeout(id)
+    const id = setTimeout(() => { setSaved(false); }, 2000)
+    return () => { clearTimeout(id); }
   }, [saved])
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function FindingDetailPage() {
   async function handleSave() {
     if (!id) return
     await patch.mutateAsync({
-      ...(status ? { status: status as Finding['status'] } : {}),
+      ...(status ? { status: status } : {}),
       notes: notes || undefined,
     })
     setSaved(true)
@@ -62,7 +62,7 @@ export default function FindingDetailPage() {
   if (error || !finding) return (
     <div className="p-6">
       <p className="text-sm text-red-600">{error?.message ?? t('secpulse.findingDetail.notFound')}</p>
-      <Button variant="outline" className="mt-4" onClick={() => navigate('/secpulse/findings')}>
+      <Button variant="outline" className="mt-4" onClick={() => { navigate('/secpulse/findings'); }}>
         <ArrowLeft className="w-4 h-4 mr-1" />{t('secpulse.findingDetail.back')}
       </Button>
     </div>
@@ -78,7 +78,7 @@ export default function FindingDetailPage() {
       <PageHeader
         title={finding.title}
         actions={
-          <Button variant="outline" onClick={() => navigate('/secpulse/findings')}>
+          <Button variant="outline" onClick={() => { navigate('/secpulse/findings'); }}>
             <ArrowLeft className="w-4 h-4 mr-1" />{t('secpulse.findingDetail.back')}
           </Button>
         }
@@ -100,7 +100,7 @@ export default function FindingDetailPage() {
                 <Label>{t('secpulse.findingDetail.status')}</Label>
                 <Select
                   value={currentStatus()}
-                  onValueChange={(v) => setStatus(v as Finding['status'])}
+                  onValueChange={(v) => { setStatus(v as Finding['status']); }}
                 >
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder={t('secpulse.findingDetail.statusPlaceholder')} />
@@ -123,7 +123,7 @@ export default function FindingDetailPage() {
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand"
                   placeholder={t('secpulse.findingDetail.notesPlaceholder')}
                   defaultValue={finding.notes ?? ''}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e) => { setNotes(e.target.value); }}
                 />
               </div>
 

@@ -130,7 +130,7 @@ function CampaignCard({ campaign }: { campaign: PolicyAcceptanceCampaign }) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => { setOpen((v) => !v); }}
             className="flex items-center gap-1 text-xs"
           >
             Details {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -222,7 +222,7 @@ function CreateCampaignDialog({ policyId, policyTitle, open, onClose }: CreateDi
             <Input
               id="camp-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); }}
               placeholder="z. B. Jährliche Bestätigung 2025"
               className="mt-1"
             />
@@ -233,7 +233,7 @@ function CreateCampaignDialog({ policyId, policyTitle, open, onClose }: CreateDi
             <Textarea
               id="camp-message"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => { setMessage(e.target.value); }}
               placeholder="Zusätzliche Informationen für die Empfänger..."
               rows={3}
               className="mt-1"
@@ -246,7 +246,7 @@ function CreateCampaignDialog({ policyId, policyTitle, open, onClose }: CreateDi
               id="camp-deadline"
               type="date"
               value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
+              onChange={(e) => { setDeadline(e.target.value); }}
               className="mt-1"
             />
           </div>
@@ -259,7 +259,7 @@ function CreateCampaignDialog({ policyId, policyTitle, open, onClose }: CreateDi
             <Textarea
               id="camp-emails"
               value={emailsRaw}
-              onChange={(e) => setEmailsRaw(e.target.value)}
+              onChange={(e) => { setEmailsRaw(e.target.value); }}
               placeholder={"max.muster@beispiel.de,Max Muster\nanna.schmidt@beispiel.de"}
               rows={5}
               className="mt-1 font-mono text-xs"
@@ -304,7 +304,7 @@ export default function PolicyAcceptancePage() {
         title="Richtlinien-Akzeptanz"
         description={`Akzeptanzkampagnen für: ${policyTitle}`}
         actions={
-          <Button size="sm" onClick={() => setDialogOpen(true)}>
+          <Button size="sm" onClick={() => { setDialogOpen(true); }}>
             <Plus size={14} className="mr-1" /> Neue Kampagne
           </Button>
         }
@@ -322,7 +322,7 @@ export default function PolicyAcceptancePage() {
           title="Noch keine Akzeptanzkampagne"
           description="Erstellen Sie eine Kampagne, um Mitarbeiter um Bestätigung dieser Richtlinie zu bitten."
           action={
-            <Button size="sm" onClick={() => setDialogOpen(true)}>
+            <Button size="sm" onClick={() => { setDialogOpen(true); }}>
               <Plus size={14} className="mr-1" />
               Neue Kampagne
             </Button>
@@ -343,7 +343,7 @@ export default function PolicyAcceptancePage() {
           policyId={policyId}
           policyTitle={policyTitle}
           open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
+          onClose={() => { setDialogOpen(false); }}
         />
       )}
     </div>

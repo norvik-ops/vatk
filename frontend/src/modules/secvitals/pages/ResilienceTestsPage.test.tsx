@@ -54,6 +54,7 @@ vi.mock('../hooks/useResilienceTests', () => ({
   useUpdateResilienceTest: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteResilienceTest: () => ({ mutate: vi.fn(), isPending: false }),
   useUploadResilienceTestAttachment: () => ({ mutate: vi.fn(), isPending: false }),
+  useLinkResilienceTestAsEvidence: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 import { useResilienceTests } from '../hooks/useResilienceTests'

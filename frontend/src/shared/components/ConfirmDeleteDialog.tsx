@@ -63,14 +63,14 @@ export function ConfirmDeleteDialog({
             <Input
               id="confirm-delete-input"
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => { setInputValue(e.target.value); }}
               placeholder={resourceName}
               autoComplete="off"
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
+          <Button variant="outline" onClick={() => { handleOpenChange(false); }} disabled={isPending}>
             Abbrechen
           </Button>
           <Button

@@ -6,7 +6,7 @@ import type { PaginatedResponse } from '../../../shared/types/pagination'
 export function useIncidents(page = 1, limit = 25) {
   const query = useQuery<PaginatedResponse<Incident>>({
     queryKey: ['secvitals', 'incidents', page, limit],
-    queryFn: () => apiFetch<PaginatedResponse<Incident>>(`/secvitals/incidents?page=${page}&limit=${limit}`),
+    queryFn: () => apiFetch<PaginatedResponse<Incident>>(`/secvitals/incidents?page=${String(page)}&limit=${String(limit)}`),
     staleTime: 5 * 60 * 1000,
   })
   return {

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { History, Check, X, ShieldAlert } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
+
 import { apiFetch } from '../../api/client'
 import { formatLocale } from '../utils/locale'
 
@@ -40,7 +40,6 @@ function uaShort(ua: string): string {
 }
 
 export function LoginHistorySection() {
-  const { t: _t } = useTranslation()
   const { data, isLoading } = useQuery<LoginEntry[]>({
     queryKey: ['account', 'login-history'],
     queryFn: () => apiFetch<LoginEntry[]>('/account/login-history'),

@@ -30,7 +30,7 @@ export function PWAInstallPrompt() {
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    return () => { window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt); }
   }, [])
 
   async function handleInstall() {
@@ -65,7 +65,7 @@ export function PWAInstallPrompt() {
         <p className="text-xs text-secondary truncate">Schnellzugriff ohne Browser</p>
       </div>
       <button
-        onClick={handleInstall}
+        onClick={() => { void handleInstall() }}
         className="flex-shrink-0 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white
           hover:bg-brand/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >

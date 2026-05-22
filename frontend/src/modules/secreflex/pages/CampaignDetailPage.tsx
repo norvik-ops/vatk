@@ -42,7 +42,7 @@ export default function CampaignDetailPage() {
   if (error || !campaign) return (
     <div className="p-6">
       <p className="text-sm text-red-600">{error?.message ?? 'Campaign not found'}</p>
-      <Button variant="outline" className="mt-4" onClick={() => navigate('/secreflex/campaigns')}>
+      <Button variant="outline" className="mt-4" onClick={() => { navigate('/secreflex/campaigns'); }}>
         <ArrowLeft className="w-4 h-4 mr-1" />Back
       </Button>
     </div>
@@ -56,24 +56,24 @@ export default function CampaignDetailPage() {
         actions={
           <div className="flex items-center gap-2">
             {campaign.status === 'draft' && (
-              <Button onClick={() => launch.mutate()} disabled={launch.isPending}>
+              <Button onClick={() => { launch.mutate(); }} disabled={launch.isPending}>
                 <Play className="w-4 h-4 mr-1" />
                 {launch.isPending ? 'Launching…' : 'Launch'}
               </Button>
             )}
             {campaign.status === 'running' && (
-              <Button variant="destructive" onClick={() => abort.mutate()} disabled={abort.isPending}>
+              <Button variant="destructive" onClick={() => { abort.mutate(); }} disabled={abort.isPending}>
                 <Square className="w-4 h-4 mr-1" />
                 {abort.isPending ? 'Aborting…' : 'Abort'}
               </Button>
             )}
             {(campaign.status === 'completed' || campaign.status === 'running') && (
-              <Button variant="outline" size="sm" onClick={() => downloadReport(campaignId, campaign.name)}>
+              <Button variant="outline" size="sm" onClick={() => { downloadReport(campaignId, campaign.name); }}>
                 <FileDown className="w-4 h-4 mr-1" />
                 PDF
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => navigate('/secreflex/campaigns')}>
+            <Button variant="outline" size="sm" onClick={() => { navigate('/secreflex/campaigns'); }}>
               <ArrowLeft className="w-4 h-4 mr-1" />Back
             </Button>
           </div>

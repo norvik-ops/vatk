@@ -55,7 +55,7 @@ export default function AIReportPage() {
         setAvailable(false)
       }
     }
-    checkStatus()
+    void checkStatus()
   }, [])
 
   const generate = async () => {
@@ -82,8 +82,8 @@ export default function AIReportPage() {
 
   useEffect(() => {
     if (!copied) return
-    const id = setTimeout(() => setCopied(false), 2000)
-    return () => clearTimeout(id)
+    const id = setTimeout(() => { setCopied(false); }, 2000)
+    return () => { clearTimeout(id); }
   }, [copied])
 
   const copyToClipboard = async () => {

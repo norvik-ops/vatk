@@ -106,7 +106,7 @@ function DPIACard({
               size="sm"
               variant="outline"
               className="text-xs border-green-500/40 text-green-400 hover:bg-green-500/10 h-7"
-              onClick={() => onApprove(dpia.id)}
+              onClick={() => { onApprove(dpia.id); }}
             >
               <ShieldCheck className="w-3.5 h-3.5 mr-1" />
               Freigeben
@@ -115,7 +115,7 @@ function DPIACard({
             <span />
           )}
           <div className="flex gap-1">
-            <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Bearbeiten" onClick={() => onEdit(dpia)}>
+            <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Bearbeiten" onClick={() => { onEdit(dpia); }}>
               <Pencil className="w-3.5 h-3.5" />
             </Button>
             <Button
@@ -123,7 +123,7 @@ function DPIACard({
               variant="ghost"
               className="h-7 w-7 text-destructive hover:text-destructive"
               aria-label="Löschen"
-              onClick={() => onDelete(dpia.id)}
+              onClick={() => { onDelete(dpia.id); }}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
@@ -149,7 +149,7 @@ function DPIAForm({
   errors?: Partial<Record<string, string>>
   onClearError?: (field: string) => void
 }) {
-  const set = (patch: Partial<DPIAFormState>) => onChange({ ...form, ...patch })
+  const set = (patch: Partial<DPIAFormState>) => { onChange({ ...form, ...patch }); }
 
   return (
     <div className="space-y-4 py-2">
@@ -168,7 +168,7 @@ function DPIAForm({
           <select
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={form.vvt_entry_id ?? ''}
-            onChange={(e) => set({ vvt_entry_id: e.target.value || undefined })}
+            onChange={(e) => { set({ vvt_entry_id: e.target.value || undefined }); }}
           >
             <option value="">— Keiner —</option>
             {vvtEntries.map((v) => (
@@ -183,7 +183,7 @@ function DPIAForm({
           placeholder="Allgemeine Beschreibung der Verarbeitung …"
           rows={2}
           value={form.description}
-          onChange={(e) => set({ description: e.target.value })}
+          onChange={(e) => { set({ description: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -192,7 +192,7 @@ function DPIAForm({
           placeholder="Warum ist diese Verarbeitung erforderlich und verhältnismäßig?"
           rows={2}
           value={form.necessity_assessment}
-          onChange={(e) => set({ necessity_assessment: e.target.value })}
+          onChange={(e) => { set({ necessity_assessment: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -201,7 +201,7 @@ function DPIAForm({
           placeholder="Identifizierte Risiken für die Rechte und Freiheiten der Betroffenen …"
           rows={3}
           value={form.risk_assessment}
-          onChange={(e) => set({ risk_assessment: e.target.value })}
+          onChange={(e) => { set({ risk_assessment: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -210,7 +210,7 @@ function DPIAForm({
           placeholder="Technische und organisatorische Maßnahmen zur Risikominderung …"
           rows={2}
           value={form.mitigation_measures}
-          onChange={(e) => set({ mitigation_measures: e.target.value })}
+          onChange={(e) => { set({ mitigation_measures: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -219,7 +219,7 @@ function DPIAForm({
           placeholder="Verbleibendes Restrisiko nach Maßnahmen …"
           rows={2}
           value={form.residual_risk}
-          onChange={(e) => set({ residual_risk: e.target.value })}
+          onChange={(e) => { set({ residual_risk: e.target.value }); }}
         />
       </div>
       <div className="flex items-center gap-2">
@@ -227,7 +227,7 @@ function DPIAForm({
           type="checkbox"
           id="dpia-dpo"
           checked={form.dpo_consultation}
-          onChange={(e) => set({ dpo_consultation: e.target.checked })}
+          onChange={(e) => { set({ dpo_consultation: e.target.checked }); }}
           className="w-4 h-4"
         />
         <Label htmlFor="dpia-dpo">Datenschutzbeauftragter wurde konsultiert</Label>
@@ -319,7 +319,7 @@ export default function DPIAPage() {
         residual_risk: form.residual_risk || undefined,
         dpo_consultation: form.dpo_consultation,
       }
-      updateDPIA.mutate({ id: editId, input: payload }, { onSuccess: () => setDialogMode(null) })
+      updateDPIA.mutate({ id: editId, input: payload }, { onSuccess: () => { setDialogMode(null); } })
     }
   }
 
@@ -392,7 +392,7 @@ export default function DPIAPage() {
         )}
       </div>
 
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>DSFA löschen?</AlertDialogTitle>
@@ -401,13 +401,13 @@ export default function DPIAPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setDeleteId(null); }}>Abbrechen</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Löschen</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && setDialogMode(null)}>
+      <Dialog open={dialogMode !== null} onOpenChange={(open) => { if (!open) setDialogMode(null) }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -423,7 +423,7 @@ export default function DPIAPage() {
             onClearError={clearDPIAError}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogMode(null)}>
+            <Button variant="outline" onClick={() => { setDialogMode(null); }}>
               Abbrechen
             </Button>
             <Button onClick={handleSubmit} disabled={isPending}>

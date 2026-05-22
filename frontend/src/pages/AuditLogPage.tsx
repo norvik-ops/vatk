@@ -97,7 +97,8 @@ function exportCsv(entries: AuditLogEntry[]) {
   ].map(escapeCsvCell).join(','))
 
   const csv = [headers.join(','), ...rows].join('\n')
-  const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' })
+  const bom = '\ufeff'
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -342,7 +343,7 @@ export default function AuditLogPage() {
                       size="sm"
                       className="h-7 text-xs px-2"
                       disabled={page === 0}
-                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      onClick={() => { setPage((p) => Math.max(0, p - 1)); }}
                     >
                       Zurück
                     </Button>
@@ -351,7 +352,7 @@ export default function AuditLogPage() {
                       size="sm"
                       className="h-7 text-xs px-2"
                       disabled={page >= totalPages - 1}
-                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                      onClick={() => { setPage((p) => Math.min(totalPages - 1, p + 1)); }}
                     >
                       Weiter
                     </Button>

@@ -85,7 +85,7 @@ function AddTaskForm({
         <Input
           id="task-title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => { setTitle(e.target.value); }}
           placeholder="Aufgabenbeschreibung …"
           required
           minLength={2}
@@ -100,7 +100,7 @@ function AddTaskForm({
             id="task-assignee"
             type="email"
             value={assigneeEmail}
-            onChange={(e) => setAssigneeEmail(e.target.value)}
+            onChange={(e) => { setAssigneeEmail(e.target.value); }}
             placeholder="name@company.com"
             className="h-8 text-sm"
           />
@@ -111,7 +111,7 @@ function AddTaskForm({
             id="task-due"
             type="date"
             value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
+            onChange={(e) => { setDueDate(e.target.value); }}
             className="h-8 text-sm"
           />
         </div>
@@ -120,7 +120,7 @@ function AddTaskForm({
         <Label>Priorität</Label>
         <Select
           value={priority}
-          onValueChange={(v) => setPriority(v as TaskPriority)}
+          onValueChange={(v) => { setPriority(v as TaskPriority); }}
         >
           <SelectTrigger className="h-8 text-sm w-40">
             <SelectValue />
@@ -219,7 +219,7 @@ function TaskRow({
       {/* Delete */}
       <button
         type="button"
-        onClick={() => deleteTask.mutate(task.id)}
+        onClick={() => { deleteTask.mutate(task.id); }}
         disabled={deleteTask.isPending}
         className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0"
         title="Aufgabe löschen"
@@ -257,7 +257,7 @@ export function TasksPanel({
             )}
           </CardTitle>
           {!addOpen && (
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAddOpen(true)}>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setAddOpen(true); }}>
               <Plus className="w-3.5 h-3.5 mr-1" />
               Aufgabe hinzufügen
             </Button>
@@ -286,7 +286,7 @@ export function TasksPanel({
               <AddTaskForm
                 entityType={entityType}
                 entityId={entityId}
-                onCancel={() => setAddOpen(false)}
+                onCancel={() => { setAddOpen(false); }}
               />
             )}
           </>

@@ -116,8 +116,8 @@ export function useNotifications() {
  */
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/dashboard/notifications/${id}/read`, { method: 'POST' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/dashboard/notifications/${id}/read`, { method: 'POST' }),
     onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ['dashboard', 'notifications'] }) },
   })
 }
@@ -128,8 +128,8 @@ export function useMarkNotificationRead() {
  */
 export function useMarkAllRead() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, void>({
-    mutationFn: () => apiFetch<void>('/dashboard/notifications/read-all', { method: 'POST' }),
+  return useMutation<undefined>({
+    mutationFn: () => apiFetch<undefined>('/dashboard/notifications/read-all', { method: 'POST' }),
     onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ['dashboard', 'notifications'] }) },
   })
 }

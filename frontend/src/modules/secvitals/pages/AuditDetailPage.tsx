@@ -52,7 +52,7 @@ export default function AuditDetailPage() {
 
   function handleSave() {
     if (!form) return
-    update.mutate(form, { onSuccess: () => setDirty(false) })
+    update.mutate(form, { onSuccess: () => { setDirty(false); } })
   }
 
   function handleCreateCAPA() {
@@ -79,11 +79,11 @@ export default function AuditDetailPage() {
         description={record.scope || 'Auditdetails'}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/secvitals/audits')}>
+            <Button variant="outline" onClick={() => { navigate('/secvitals/audits'); }}>
               <ArrowLeft className="w-4 h-4 mr-1" />
               Zurück
             </Button>
-            <Button variant="outline" onClick={() => setCAPADialogOpen(true)}>
+            <Button variant="outline" onClick={() => { setCAPADialogOpen(true); }}>
               <ClipboardCheck className="w-4 h-4 mr-1" />
               CAPA erstellen
             </Button>
@@ -103,20 +103,20 @@ export default function AuditDetailPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Titel</Label>
-                  <Input value={form.title} onChange={(e) => set('title', e.target.value)} />
+                  <Input value={form.title} onChange={(e) => { set('title', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Prüfumfang</Label>
-                  <Input value={form.scope ?? ''} placeholder="z.B. A.9 Zugangskontrolle" onChange={(e) => set('scope', e.target.value)} />
+                  <Input value={form.scope ?? ''} placeholder="z.B. A.9 Zugangskontrolle" onChange={(e) => { set('scope', e.target.value); }} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>Auditor</Label>
-                    <Input value={form.auditor ?? ''} onChange={(e) => set('auditor', e.target.value)} />
+                    <Input value={form.auditor ?? ''} onChange={(e) => { set('auditor', e.target.value); }} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Prüfdatum</Label>
-                    <Input type="date" value={form.audit_date} onChange={(e) => set('audit_date', e.target.value)} />
+                    <Input type="date" value={form.audit_date} onChange={(e) => { set('audit_date', e.target.value); }} />
                   </div>
                 </div>
               </CardContent>
@@ -127,11 +127,11 @@ export default function AuditDetailPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Feststellungen</Label>
-                  <Textarea rows={4} value={form.findings ?? ''} placeholder="Abweichungen und Beobachtungen …" onChange={(e) => set('findings', e.target.value)} />
+                  <Textarea rows={4} value={form.findings ?? ''} placeholder="Abweichungen und Beobachtungen …" onChange={(e) => { set('findings', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Empfehlungen</Label>
-                  <Textarea rows={3} value={form.recommendations ?? ''} placeholder="Empfohlene Maßnahmen …" onChange={(e) => set('recommendations', e.target.value)} />
+                  <Textarea rows={3} value={form.recommendations ?? ''} placeholder="Empfohlene Maßnahmen …" onChange={(e) => { set('recommendations', e.target.value); }} />
                 </div>
               </CardContent>
             </Card>
@@ -141,7 +141,7 @@ export default function AuditDetailPage() {
             <Card>
               <CardHeader><CardTitle className="text-sm">Status</CardTitle></CardHeader>
               <CardContent>
-                <Select value={form.status} onValueChange={(v) => set('status', v as AuditRecord['status'])}>
+                <Select value={form.status} onValueChange={(v) => { set('status', v as AuditRecord['status']); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {(Object.keys(STATUS_LABELS) as AuditRecord['status'][]).map((k) => (
@@ -163,7 +163,7 @@ export default function AuditDetailPage() {
       )}
 
       {/* CAPA quick-create dialog */}
-      <Dialog open={capaDialogOpen} onOpenChange={(v) => !v && setCAPADialogOpen(false)}>
+      <Dialog open={capaDialogOpen} onOpenChange={(v) => { if (!v) { setCAPADialogOpen(false); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>CAPA aus Audit erstellen</DialogTitle>
@@ -171,11 +171,11 @@ export default function AuditDetailPage() {
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
               <Label>Titel der Korrekturmaßnahme *</Label>
-              <Input value={capaTitle} onChange={(e) => setCAPATitle(e.target.value)} placeholder="Kurzbeschreibung der Maßnahme" />
+              <Input value={capaTitle} onChange={(e) => { setCAPATitle(e.target.value); }} placeholder="Kurzbeschreibung der Maßnahme" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCAPADialogOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => { setCAPADialogOpen(false); }}>Abbrechen</Button>
             <Button onClick={handleCreateCAPA} disabled={!capaTitle.trim() || createCAPA.isPending}>
               <Plus className="w-4 h-4 mr-1" />
               {createCAPA.isPending ? 'Erstellen …' : 'CAPA erstellen'}

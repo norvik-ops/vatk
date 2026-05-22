@@ -127,7 +127,7 @@ export default function AssetsPage() {
   useFirstAction('asset:first-created', (rawAssets?.length ?? 0) > 0)
   const assetsWithOrder: SortableAsset[] = (rawAssets ?? []).map((a) => ({
     ...a,
-    criticality_order: CRITICALITY_ORDER[a.criticality] ?? 0,
+    criticality_order: CRITICALITY_ORDER[a.criticality],
   }))
   const { sorted: sortedAssets } = useSortableTable<SortableAsset>(
     assetsWithOrder, { key: 'name', dir: 'asc' },
@@ -196,7 +196,7 @@ export default function AssetsPage() {
     <div className="flex flex-col h-full">
       <CSVImportDialog
         open={csvImportOpen}
-        onClose={() => setCsvImportOpen(false)}
+        onClose={() => { setCsvImportOpen(false); }}
         endpoint="/api/v1/secpulse/assets/import/csv"
         entityLabel="Assets"
         columns={['name', 'type', 'target', 'criticality', 'tags']}
@@ -207,7 +207,7 @@ export default function AssetsPage() {
         description={t('secpulse.assetsPage.description')}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setCsvImportOpen(true)}>
+            <Button variant="outline" onClick={() => { setCsvImportOpen(true); }}>
               <Upload className="w-4 h-4 mr-1" />
               {t('secpulse.assetsPage.csvImport')}
             </Button>
@@ -258,7 +258,7 @@ export default function AssetsPage() {
           <ResponsiveTable<SortableAsset>
             keyField="id"
             data={sortedAssetsForRender}
-            onRowClick={(asset) => navigate(`/secpulse/assets/${asset.id}`)}
+            onRowClick={(asset) => { navigate(`/secpulse/assets/${asset.id}`); }}
             columns={ASSET_COLUMNS(t)}
           />
         )}
@@ -303,7 +303,7 @@ export default function AssetsPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImportOpen(false)}>{t('common.close')}</Button>
+            <Button variant="outline" onClick={() => { setImportOpen(false); }}>{t('common.close')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -322,7 +322,7 @@ export default function AssetsPage() {
                   id="asset-name"
                   placeholder="My Web App"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) => { setForm({ ...form, name: e.target.value }); }}
                   required
                 />
               </div>
@@ -331,7 +331,7 @@ export default function AssetsPage() {
                 <Label htmlFor="asset-type">{t('secpulse.assetsPage.labelType')}</Label>
                 <Select
                   value={form.type}
-                  onValueChange={(val) => setForm({ ...form, type: val as Asset['type'] })}
+                  onValueChange={(val) => { setForm({ ...form, type: val as Asset['type'] }); }}
                 >
                   <SelectTrigger id="asset-type">
                     <SelectValue />
@@ -352,7 +352,7 @@ export default function AssetsPage() {
                   id="asset-target"
                   placeholder="https://example.com or 192.168.1.1"
                   value={form.target}
-                  onChange={(e) => setForm({ ...form, target: e.target.value })}
+                  onChange={(e) => { setForm({ ...form, target: e.target.value }); }}
                   required
                 />
               </div>
@@ -361,7 +361,7 @@ export default function AssetsPage() {
                 <Label htmlFor="asset-criticality">{t('secpulse.assetsPage.labelCriticality')}</Label>
                 <Select
                   value={form.criticality}
-                  onValueChange={(val) => setForm({ ...form, criticality: val as Asset['criticality'] })}
+                  onValueChange={(val) => { setForm({ ...form, criticality: val as Asset['criticality'] }); }}
                 >
                   <SelectTrigger id="asset-criticality">
                     <SelectValue />
@@ -381,7 +381,7 @@ export default function AssetsPage() {
                   id="asset-tags"
                   placeholder={t('secpulse.assetsPage.placeholderTags')}
                   value={tagsInput}
-                  onChange={(e) => setTagsInput(e.target.value)}
+                  onChange={(e) => { setTagsInput(e.target.value); }}
                 />
               </div>
 
@@ -391,7 +391,7 @@ export default function AssetsPage() {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => { setOpen(false); }}>
                 {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={createAsset.isPending}>

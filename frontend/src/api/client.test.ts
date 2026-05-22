@@ -22,7 +22,7 @@ describe('apiFetch — CSRF', () => {
     const spy = vi.fn().mockResolvedValue({
       ok: true, status: 200, headers: new Headers({ 'content-type': 'application/json' }),
       json: () => Promise.resolve({ ok: true }),
-    } as unknown as Response)
+    })
     globalThis.fetch = spy
 
     await apiFetch('/test', { method: 'POST', body: '{}' })
@@ -37,7 +37,7 @@ describe('apiFetch — CSRF', () => {
     const spy = vi.fn().mockResolvedValue({
       ok: true, status: 200, headers: new Headers({ 'content-type': 'application/json' }),
       json: () => Promise.resolve([]),
-    } as unknown as Response)
+    })
     globalThis.fetch = spy
 
     await apiFetch('/test')
@@ -94,7 +94,7 @@ describe('apiFetch — error mapping', () => {
       ok: false, status: 429,
       headers: new Headers({ 'Retry-After': '12' }),
       json: () => Promise.resolve({}),
-    } as unknown as Response)
+    })
 
     try {
       await apiFetch('/test', { method: 'POST', body: '{}' })
@@ -109,7 +109,7 @@ describe('apiFetch — error mapping', () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false, status: 402, headers: new Headers(),
       json: () => Promise.resolve({ feature: 'ai_advisor' }),
-    } as unknown as Response)
+    })
 
     try {
       await apiFetch('/test')
@@ -124,12 +124,12 @@ describe('apiFetch — error mapping', () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false, status: 403, headers: new Headers(),
       json: () => Promise.resolve({ code: 'MFA_REQUIRED' }),
-    } as unknown as Response)
+    })
     // jsdom: window.location.href is settable but reload would fire — stub it.
     const originalLocation = window.location
     Object.defineProperty(window, 'location', {
       configurable: true,
-      value: { ...originalLocation, href: '' },
+      value: { ...(originalLocation as unknown as Record<string, unknown>), href: '' },
     })
 
     try {

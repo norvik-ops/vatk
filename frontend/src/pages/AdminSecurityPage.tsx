@@ -219,7 +219,7 @@ export default function AdminSecurityPage() {
                                 variant="outline"
                                 size="sm"
                                 disabled={unlockMutation.isPending}
-                                onClick={() => unlockMutation.mutate(acc.email)}
+                                onClick={() => { unlockMutation.mutate(acc.email); }}
                               >
                                 <LockOpen className="w-3 h-3 mr-1.5" />
                                 {t('admin.security.unlock')}

@@ -11,7 +11,7 @@ interface VersionCheckResponse {
 async function fetchVersionCheck(): Promise<VersionCheckResponse> {
   const res = await fetch('/api/v1/version/check')
   if (!res.ok) throw new Error('version check failed')
-  return res.json()
+  return res.json() as Promise<VersionCheckResponse>
 }
 
 export function VersionBanner() {
@@ -43,7 +43,7 @@ export function VersionBanner() {
         </a>
       </span>
       <button
-        onClick={() => setDismissed(true)}
+        onClick={() => { setDismissed(true); }}
         className="text-amber-600 hover:text-amber-800 ml-4"
       >
         ✕

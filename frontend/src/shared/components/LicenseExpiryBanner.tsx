@@ -50,7 +50,7 @@ export function LicenseExpiryBanner() {
   const { data: lic } = useLicenseInfo()
   const [dismissed, setDismissed] = useState(false)
 
-  const isAdmin = user?.roles?.includes('admin') || user?.roles?.includes('owner')
+  const isAdmin = user?.roles.includes('admin') || user?.roles.includes('owner')
 
   // Only admins, only Pro licenses with an expiry, not already dismissed this session/day
   if (!isAdmin || !lic?.is_pro || !lic.expires_at) {
@@ -85,7 +85,7 @@ export function LicenseExpiryBanner() {
         <span className="text-red-800 dark:text-red-300">
           {isExpired
             ? 'Deine Pro-Lizenz ist abgelaufen. Features wurden deaktiviert.'
-            : `Deine Pro-Lizenz läuft am ${formattedDate} ab — noch ${days} Tag${days === 1 ? '' : 'e'}.`}
+            : `Deine Pro-Lizenz läuft am ${formattedDate} ab — noch ${String(days)} Tag${days === 1 ? '' : 'e'}.`}
           {' '}
           <a
             href={VAKT_LS_PORTAL_URL}

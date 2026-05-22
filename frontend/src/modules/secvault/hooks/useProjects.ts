@@ -51,9 +51,9 @@ export function useCreateProject() {
 
 export function useDeleteProject() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`${BASE}/projects/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`${BASE}/projects/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvault', 'projects'] })
     },

@@ -27,9 +27,9 @@ export interface AssignModuleInput {
 
 export function useAssignModule(moduleId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, AssignModuleInput>({
+  return useMutation<undefined, Error, AssignModuleInput>({
     mutationFn: (data) =>
-      apiFetch<void>(`${BASE}/training/${moduleId}/assign`, {
+      apiFetch<undefined>(`${BASE}/training/${moduleId}/assign`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),

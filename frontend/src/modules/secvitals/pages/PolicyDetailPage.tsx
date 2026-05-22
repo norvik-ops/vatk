@@ -90,7 +90,7 @@ export default function PolicyDetailPage() {
         description={`v${policy.version} · Revision ${policy.version_num}${policy.category ? ` · ${policy.category}` : ''}`}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/secvitals/policies')}>
+            <Button variant="outline" onClick={() => { navigate('/secvitals/policies'); }}>
               <ArrowLeft className="w-4 h-4 mr-1" />
               Zurück
             </Button>
@@ -110,15 +110,15 @@ export default function PolicyDetailPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Titel</Label>
-                  <Input value={form.title} onChange={(e) => set('title', e.target.value)} />
+                  <Input value={form.title} onChange={(e) => { set('title', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Kategorie</Label>
-                  <Input value={form.category ?? ''} placeholder="z.B. IT-Sicherheit, Datenschutz" onChange={(e) => set('category', e.target.value)} />
+                  <Input value={form.category ?? ''} placeholder="z.B. IT-Sicherheit, Datenschutz" onChange={(e) => { set('category', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Beschreibung / Zweck</Label>
-                  <Textarea rows={5} value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} />
+                  <Textarea rows={5} value={form.description ?? ''} onChange={(e) => { set('description', e.target.value); }} />
                 </div>
               </CardContent>
             </Card>
@@ -137,7 +137,7 @@ export default function PolicyDetailPage() {
                     rows={2}
                     placeholder="Kurze Beschreibung der Änderungen, z.B. 'Abschnitt 3 überarbeitet – neue BSI-Anforderungen'"
                     value={form.version_note ?? ''}
-                    onChange={(e) => set('version_note', e.target.value)}
+                    onChange={(e) => { set('version_note', e.target.value); }}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -147,7 +147,7 @@ export default function PolicyDetailPage() {
                       id="pol-updated-by"
                       placeholder="z.B. CISO oder E-Mail"
                       value={form.updated_by ?? ''}
-                      onChange={(e) => set('updated_by', e.target.value)}
+                      onChange={(e) => { set('updated_by', e.target.value); }}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -156,7 +156,7 @@ export default function PolicyDetailPage() {
                       id="pol-next-review"
                       type="date"
                       value={form.next_review_due ?? ''}
-                      onChange={(e) => set('next_review_due', e.target.value)}
+                      onChange={(e) => { set('next_review_due', e.target.value); }}
                     />
                   </div>
                 </div>
@@ -173,7 +173,7 @@ export default function PolicyDetailPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Status</Label>
-                  <Select value={form.status} onValueChange={(v) => set('status', v as Policy['status'])}>
+                  <Select value={form.status} onValueChange={(v) => { set('status', v as Policy['status']); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {(Object.keys(STATUS_LABELS) as Policy['status'][]).map((k) => (
@@ -184,19 +184,19 @@ export default function PolicyDetailPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Versionsbezeichnung</Label>
-                  <Input value={form.version ?? ''} onChange={(e) => set('version', e.target.value)} placeholder="z.B. 1.0, 2.1" />
+                  <Input value={form.version ?? ''} onChange={(e) => { set('version', e.target.value); }} placeholder="z.B. 1.0, 2.1" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Verantwortlicher</Label>
-                  <Input value={form.owner ?? ''} onChange={(e) => set('owner', e.target.value)} />
+                  <Input value={form.owner ?? ''} onChange={(e) => { set('owner', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Gültig ab</Label>
-                  <Input type="date" value={form.effective_date ?? ''} onChange={(e) => set('effective_date', e.target.value)} />
+                  <Input type="date" value={form.effective_date ?? ''} onChange={(e) => { set('effective_date', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Review-Datum</Label>
-                  <Input type="date" value={form.review_date ?? ''} onChange={(e) => set('review_date', e.target.value)} />
+                  <Input type="date" value={form.review_date ?? ''} onChange={(e) => { set('review_date', e.target.value); }} />
                 </div>
               </CardContent>
             </Card>

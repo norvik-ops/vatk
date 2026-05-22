@@ -251,7 +251,7 @@ export default function BSIGrundschutzPage() {
             key={cat.category}
             cat={cat}
             expanded={expanded[cat.category] ?? true}
-            onToggle={() => toggle(cat.category)}
+            onToggle={() => { toggle(cat.category); }}
           />
         ))}
       </div>

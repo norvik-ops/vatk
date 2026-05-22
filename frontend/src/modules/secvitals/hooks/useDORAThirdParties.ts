@@ -41,9 +41,9 @@ export function useUpdateDORAThirdParty(id: string) {
 
 export function useDeleteDORAThirdParty() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secvitals/dora/third-parties/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/dora/third-parties/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'dora-third-parties'] })
     },

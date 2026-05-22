@@ -12,7 +12,7 @@ export interface GeneratePolicyDraftInput {
 export function usePolicies(page = 1, limit = 25) {
   const query = useQuery<PaginatedResponse<Policy>>({
     queryKey: ['secvitals', 'policies', page, limit],
-    queryFn: () => apiFetch<PaginatedResponse<Policy>>(`/secvitals/policies?page=${page}&limit=${limit}`),
+    queryFn: () => apiFetch<PaginatedResponse<Policy>>(`/secvitals/policies?page=${String(page)}&limit=${String(limit)}`),
     staleTime: 5 * 60 * 1000,
   })
   return {

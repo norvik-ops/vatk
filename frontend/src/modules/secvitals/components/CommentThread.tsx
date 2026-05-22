@@ -41,7 +41,7 @@ export function CommentThread({
     if (!body.trim()) return
     createComment.mutate(
       { body: body.trim(), author_email: authorEmail.trim() || undefined },
-      { onSuccess: () => setBody('') },
+      { onSuccess: () => { setBody(''); } },
     )
   }
 
@@ -88,7 +88,7 @@ export function CommentThread({
                 </div>
                 <button
                   type="button"
-                  onClick={() => deleteComment.mutate(comment.id)}
+                  onClick={() => { deleteComment.mutate(comment.id); }}
                   disabled={deleteComment.isPending}
                   className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0 mt-0.5"
                   title="Kommentar löschen"
@@ -111,7 +111,7 @@ export function CommentThread({
               type="email"
               placeholder="Deine E-Mail (optional)"
               value={authorEmail}
-              onChange={(e) => setAuthorEmail(e.target.value)}
+              onChange={(e) => { setAuthorEmail(e.target.value); }}
               className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-brand"
             />
           )}
@@ -119,7 +119,7 @@ export function CommentThread({
             rows={3}
             placeholder="Kommentar schreiben …"
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={(e) => { setBody(e.target.value); }}
             maxLength={5000}
             className="w-full rounded-md border border-border bg-surface2 text-primary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand resize-none"
           />

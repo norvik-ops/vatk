@@ -135,7 +135,7 @@ export function ControlReviewPanel({
               <Input
                 id="cr-reviewer"
                 value={reviewedBy}
-                onChange={(e) => setReviewedBy(e.target.value)}
+                onChange={(e) => { setReviewedBy(e.target.value); }}
                 placeholder="Name oder E-Mail"
                 className="h-8 text-xs"
                 required
@@ -146,7 +146,7 @@ export function ControlReviewPanel({
               <Textarea
                 id="cr-note"
                 value={reviewNote}
-                onChange={(e) => setReviewNote(e.target.value)}
+                onChange={(e) => { setReviewNote(e.target.value); }}
                 placeholder="Ergebnis der Überprüfung..."
                 className="text-xs resize-none h-20"
               />
@@ -159,7 +159,7 @@ export function ControlReviewPanel({
                 id="cr-interval"
                 type="number"
                 value={intervalDays}
-                onChange={(e) => setIntervalDays(e.target.value)}
+                onChange={(e) => { setIntervalDays(e.target.value); }}
                 placeholder={String(reviewIntervalDays ?? 365)}
                 min={30}
                 max={3650}
@@ -175,7 +175,7 @@ export function ControlReviewPanel({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowForm(false)}
+                onClick={() => { setShowForm(false); }}
                 className="h-7 text-xs"
               >
                 Abbrechen
@@ -186,7 +186,7 @@ export function ControlReviewPanel({
           <Button
             variant={isOverdue ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setShowForm(true)}
+            onClick={() => { setShowForm(true); }}
             className="h-7 text-xs w-full"
           >
             <CalendarClock className="w-3 h-3 mr-1" />
@@ -197,7 +197,7 @@ export function ControlReviewPanel({
         {/* Review history toggle */}
         <button
           type="button"
-          onClick={() => setShowHistory(!showHistory)}
+          onClick={() => { setShowHistory(!showHistory); }}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}

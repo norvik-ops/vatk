@@ -24,7 +24,7 @@ export function SortableHeader<T>({
     <th
       scope="col"
       className={`cursor-pointer select-none whitespace-nowrap ${className ?? ''}`}
-      onClick={() => onSort(sortKey)}
+      onClick={() => { onSort(sortKey); }}
     >
       <span className="inline-flex items-center gap-1">
         {label}

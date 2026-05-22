@@ -107,14 +107,14 @@ export function AIClassificationWizard({ systemId, systemName, open, onClose }: 
               <Button
                 className="flex-1"
                 variant="outline"
-                onClick={() => handleAnswer(false)}
+                onClick={() => { handleAnswer(false); }}
                 data-testid="wizard-no-btn"
               >
                 Nein
               </Button>
               <Button
                 className="flex-1"
-                onClick={() => handleAnswer(true)}
+                onClick={() => { handleAnswer(true); }}
                 data-testid="wizard-yes-btn"
               >
                 Ja
@@ -150,7 +150,7 @@ export function AIClassificationWizard({ systemId, systemName, open, onClose }: 
               <Input
                 placeholder="Name der verantwortlichen Person"
                 value={classifiedBy}
-                onChange={(e) => setClassifiedBy(e.target.value)}
+                onChange={(e) => { setClassifiedBy(e.target.value); }}
                 data-testid="wizard-classified-by"
               />
             </div>

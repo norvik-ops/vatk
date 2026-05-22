@@ -59,6 +59,7 @@ vi.mock('../hooks/useIncidents', () => ({
   useAssessReportability: () => ({ mutate: vi.fn(), isPending: false }),
   useIncidentReports: () => ({ data: [], isLoading: false }),
   useGenerateIncidentReport: () => ({ mutate: vi.fn(), isPending: false }),
+  useClassifyReportingObligation: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 vi.mock('../../secprivacy/hooks/useBreaches', () => ({

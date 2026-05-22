@@ -64,9 +64,9 @@ export function usePatchFinding(id: string) {
 
 export function useBulkUpdateFindings() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, BulkUpdateInput>({
+  return useMutation<undefined, Error, BulkUpdateInput>({
     mutationFn: (data) =>
-      apiFetch<void>('/secpulse/findings/bulk', {
+      apiFetch<undefined>('/secpulse/findings/bulk', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -78,9 +78,9 @@ export function useBulkUpdateFindings() {
 
 export function useDeleteFinding() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secpulse/findings/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secpulse/findings/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secpulse', 'findings'] })
     },

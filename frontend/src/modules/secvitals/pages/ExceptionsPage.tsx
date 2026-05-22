@@ -104,7 +104,7 @@ export default function ExceptionsPage() {
           title="Keine Ausnahmen"
           description="Ausnahmen werden direkt am Control erstellt, wenn eine Anforderung formal nicht erfüllbar ist."
           action={
-            <Button size="sm" variant="outline" onClick={() => navigate('/secvitals/frameworks')}>
+            <Button size="sm" variant="outline" onClick={() => { navigate('/secvitals/frameworks'); }}>
               Controls anzeigen
             </Button>
           }
@@ -119,8 +119,8 @@ export default function ExceptionsPage() {
               key={e.id}
               exception={e}
               isAdmin={isAdmin}
-              onNavigate={() => navigate(`/secvitals/controls/${e.control_id}`)}
-              onDelete={() => setConfirmDelete(e)}
+              onNavigate={() => { navigate(`/secvitals/controls/${e.control_id}`); }}
+              onDelete={() => { setConfirmDelete(e); }}
             />
           ))}
         </div>
@@ -134,15 +134,15 @@ export default function ExceptionsPage() {
               key={e.id}
               exception={e}
               isAdmin={isAdmin}
-              onNavigate={() => navigate(`/secvitals/controls/${e.control_id}`)}
-              onDelete={() => setConfirmDelete(e)}
+              onNavigate={() => { navigate(`/secvitals/controls/${e.control_id}`); }}
+              onDelete={() => { setConfirmDelete(e); }}
             />
           ))}
         </div>
       )}
 
       {/* Delete confirm dialog — kept intentionally: exceptions are important compliance records */}
-      <Dialog open={!!confirmDelete} onOpenChange={() => setConfirmDelete(null)}>
+      <Dialog open={!!confirmDelete} onOpenChange={() => { setConfirmDelete(null); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ausnahme löschen</DialogTitle>
@@ -151,7 +151,7 @@ export default function ExceptionsPage() {
             Soll die Ausnahme „{confirmDelete?.title}" gelöscht werden? Die Aktion kann innerhalb von 5 Sekunden rückgängig gemacht werden.
           </p>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>Abbrechen</Button>
+            <Button variant="ghost" onClick={() => { setConfirmDelete(null); }}>Abbrechen</Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>
               Löschen
             </Button>

@@ -47,7 +47,7 @@ describe('useResilienceTests', () => {
       wrapper: createWrapper(),
     })
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    await waitFor(() => { expect(result.current.isSuccess).toBe(true); })
 
     expect(result.current.data).toBeDefined()
     expect(result.current.data?.tests).toHaveLength(1)
@@ -63,7 +63,7 @@ describe('useResilienceTests', () => {
       wrapper: createWrapper(),
     })
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    await waitFor(() => { expect(result.current.isSuccess).toBe(true); })
 
     expect(result.current.data?.tlpt_overdue_warning).toBe(true)
   })

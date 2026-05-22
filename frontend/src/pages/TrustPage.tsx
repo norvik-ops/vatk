@@ -87,7 +87,7 @@ function PolicyItem({ policy }: { policy: PublicPolicy }) {
   return (
     <div className="bg-white rounded-xl border overflow-hidden">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { setOpen(!open); }}
         className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ export default function TrustPage() {
   const [activeTab, setActiveTab] = useState<TabId>('frameworks')
 
   useEffect(() => {
-    fetch(`/api/v1/trust/${slug}`)
+    void fetch(`/api/v1/trust/${slug}`)
       .then(res => {
         if (!res.ok) { setNotFound(true); return null }
         return res.json()
@@ -128,7 +128,7 @@ export default function TrustPage() {
           else if (d.subprocessors_md) setActiveTab('subprocessors')
         }
       })
-      .finally(() => setLoading(false))
+      .finally(() => { setLoading(false); })
   }, [slug])
 
   if (loading) {
@@ -216,7 +216,7 @@ export default function TrustPage() {
               <TabButton
                 key={tab.id}
                 active={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); }}
               >
                 {tab.label}
               </TabButton>

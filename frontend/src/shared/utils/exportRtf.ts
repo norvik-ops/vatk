@@ -8,7 +8,7 @@ function escapeRtf(text: string): string {
     .replace(/\\/g, '\\\\')
     .replace(/\{/g, '\\{')
     .replace(/\}/g, '\\}')
-    .replace(/[^\x00-\x7F]/g, (char) => {
+    .replace(/[^ -~]/g, (char) => {
       const code = char.charCodeAt(0)
       return `\\'${code.toString(16).padStart(2, '0')}`
     })

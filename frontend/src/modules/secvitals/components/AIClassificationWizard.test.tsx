@@ -71,10 +71,10 @@ describe('AIClassificationWizard', () => {
     // Step 1: step_prohibited → "No" → step_high_risk
     fireEvent.click(screen.getByTestId('wizard-no-btn'))
     // Step 2: step_high_risk → "No" → step_transparency
-    await waitFor(() => expect(screen.getByTestId('wizard-no-btn')).toBeTruthy())
+    await waitFor(() => { expect(screen.getByTestId('wizard-no-btn')).toBeTruthy(); })
     fireEvent.click(screen.getByTestId('wizard-no-btn'))
     // Step 3: step_transparency → "No" → minimal result
-    await waitFor(() => expect(screen.getByTestId('wizard-no-btn')).toBeTruthy())
+    await waitFor(() => { expect(screen.getByTestId('wizard-no-btn')).toBeTruthy(); })
     fireEvent.click(screen.getByTestId('wizard-no-btn'))
     await waitFor(() => {
       expect(screen.getByTestId('wizard-result')).toBeTruthy()

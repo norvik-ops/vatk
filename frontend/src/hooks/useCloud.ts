@@ -92,7 +92,7 @@ export function useSaveAWSConfig() {
 }
 
 export function useTestAWSConnection() {
-  return useMutation<CloudTestResult, Error>({
+  return useMutation<CloudTestResult>({
     mutationFn: () =>
       apiFetch<CloudTestResult>(`${BASE}/aws/test`, { method: 'POST' }),
   })
@@ -100,7 +100,7 @@ export function useTestAWSConnection() {
 
 export function useSyncAWS() {
   const qc = useQueryClient()
-  return useMutation<CloudSyncResult, Error>({
+  return useMutation<CloudSyncResult>({
     mutationFn: () =>
       apiFetch<CloudSyncResult>(`${BASE}/aws/sync`, { method: 'POST' }),
     onSuccess: () => {
@@ -150,7 +150,7 @@ export function useSaveAzureConfig() {
 }
 
 export function useTestAzureConnection() {
-  return useMutation<CloudTestResult, Error>({
+  return useMutation<CloudTestResult>({
     mutationFn: () =>
       apiFetch<CloudTestResult>(`${BASE}/azure/test`, { method: 'POST' }),
   })
@@ -158,7 +158,7 @@ export function useTestAzureConnection() {
 
 export function useSyncAzure() {
   const qc = useQueryClient()
-  return useMutation<CloudSyncResult, Error>({
+  return useMutation<CloudSyncResult>({
     mutationFn: () =>
       apiFetch<CloudSyncResult>(`${BASE}/azure/sync`, { method: 'POST' }),
     onSuccess: () => {

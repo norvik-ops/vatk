@@ -99,14 +99,14 @@ function EditorBody({ userId, initial }: EditorBodyProps) {
               <td className="py-3 px-4 text-center">
                 <Switch
                   checked={row.can_read}
-                  onCheckedChange={(v) => setRead(row.module, v)}
+                  onCheckedChange={(v) => { setRead(row.module, v); }}
                   aria-label={`${MODULE_LABELS[row.module]} Lesen`}
                 />
               </td>
               <td className="py-3 px-4 text-center">
                 <Switch
                   checked={row.can_write}
-                  onCheckedChange={(v) => setWrite(row.module, v)}
+                  onCheckedChange={(v) => { setWrite(row.module, v); }}
                   aria-label={`${MODULE_LABELS[row.module]} Schreiben`}
                 />
               </td>

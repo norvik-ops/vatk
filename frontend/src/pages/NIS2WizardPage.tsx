@@ -201,7 +201,7 @@ export default function NIS2WizardPage() {
           <textarea
             placeholder="Kommentar (optional)"
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(e) => { setComment(e.target.value); }}
             className="w-full mt-2 text-sm border border-gray-200 rounded-md px-3 py-2"
             rows={2}
           />
@@ -209,7 +209,7 @@ export default function NIS2WizardPage() {
 
         <div className="flex justify-between mt-6">
           <button
-            onClick={() => setStepIdx((i) => Math.max(i - 1, 0))}
+            onClick={() => { setStepIdx((i) => Math.max(i - 1, 0)); }}
             disabled={stepIdx === 0}
             className="text-sm text-gray-600 disabled:text-gray-300 inline-flex items-center gap-1"
           >

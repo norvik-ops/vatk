@@ -122,7 +122,7 @@ function CheckResultsPanel({ integrationId }: { integrationId: string }) {
               </p>
             )}
             {!!cr.details?.error && (
-              <p className="text-[11px] text-red-500 mt-0.5">{String(cr.details.error)}</p>
+              <p className="text-[11px] text-red-500 mt-0.5">{typeof cr.details.error === 'string' ? cr.details.error : JSON.stringify(cr.details.error)}</p>
             )}
           </div>
           <CheckStatusBadge status={cr.status} />
@@ -177,7 +177,7 @@ function IntegrationRow({ integration }: { integration: GitHubIntegration }) {
             <RefreshCw className={`w-4 h-4 ${syncIntegration.isPending ? 'animate-spin' : ''}`} />
           </button>
           <button
-            onClick={() => setExpanded((v) => !v)}
+            onClick={() => { setExpanded((v) => !v); }}
             title="Details anzeigen"
             className="p-1.5 rounded-md text-secondary hover:text-primary hover:bg-bg transition-colors"
           >
@@ -221,8 +221,8 @@ function AddIntegrationDialog({ onClose }: { onClose: () => void }) {
     addIntegration.mutate(
       { repo_owner: owner.trim(), repo_name: repo.trim(), access_token: token.trim() },
       {
-        onSuccess: () => onClose(),
-        onError: (err) => setError(err.message),
+        onSuccess: () => { onClose(); },
+        onError: (err) => { setError(err.message); },
       },
     )
   }
@@ -237,7 +237,7 @@ function AddIntegrationDialog({ onClose }: { onClose: () => void }) {
             <input
               type="text"
               value={owner}
-              onChange={(e) => setOwner(e.target.value)}
+              onChange={(e) => { setOwner(e.target.value); }}
               placeholder="z.B. my-org"
               className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
@@ -247,7 +247,7 @@ function AddIntegrationDialog({ onClose }: { onClose: () => void }) {
             <input
               type="text"
               value={repo}
-              onChange={(e) => setRepo(e.target.value)}
+              onChange={(e) => { setRepo(e.target.value); }}
               placeholder="z.B. my-repo"
               className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
@@ -257,7 +257,7 @@ function AddIntegrationDialog({ onClose }: { onClose: () => void }) {
             <input
               type="password"
               value={token}
-              onChange={(e) => setToken(e.target.value)}
+              onChange={(e) => { setToken(e.target.value); }}
               placeholder="ghp_..."
               className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
@@ -316,7 +316,7 @@ function GitHubTab() {
           </p>
         </div>
         <button
-          onClick={() => setShowDialog(true)}
+          onClick={() => { setShowDialog(true); }}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand text-white rounded-md hover:bg-brand/90 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -340,7 +340,7 @@ function GitHubTab() {
         </div>
       )}
 
-      {showDialog && <AddIntegrationDialog onClose={() => setShowDialog(false)} />}
+      {showDialog && <AddIntegrationDialog onClose={() => { setShowDialog(false); }} />}
     </div>
   )
 }
@@ -534,7 +534,7 @@ function AWSTab() {
           <input
             type="text"
             value={accessKeyID}
-            onChange={(e) => setAccessKeyID(e.target.value)}
+            onChange={(e) => { setAccessKeyID(e.target.value); }}
             placeholder="AKIA..."
             className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 font-mono"
             required
@@ -545,7 +545,7 @@ function AWSTab() {
           <input
             type="password"
             value={secretAccessKey}
-            onChange={(e) => setSecretAccessKey(e.target.value)}
+            onChange={(e) => { setSecretAccessKey(e.target.value); }}
             placeholder={cfg?.is_configured ? '****' : 'Secret Access Key eingeben'}
             className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 font-mono"
             required
@@ -558,7 +558,7 @@ function AWSTab() {
           <label className="block text-xs font-medium text-secondary mb-1">Region</label>
           <select
             value={region}
-            onChange={(e) => setRegion(e.target.value)}
+            onChange={(e) => { setRegion(e.target.value); }}
             className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
           >
             {AWS_REGIONS.map((r) => (
@@ -571,7 +571,7 @@ function AWSTab() {
           <input
             type="text"
             value={accountID}
-            onChange={(e) => setAccountID(e.target.value)}
+            onChange={(e) => { setAccountID(e.target.value); }}
             placeholder="123456789012"
             className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 font-mono"
           />
@@ -724,7 +724,7 @@ function AzureTab() {
           <input
             type="text"
             value={tenantID}
-            onChange={(e) => setTenantID(e.target.value)}
+            onChange={(e) => { setTenantID(e.target.value); }}
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 font-mono"
             required
@@ -735,7 +735,7 @@ function AzureTab() {
           <input
             type="text"
             value={clientID}
-            onChange={(e) => setClientID(e.target.value)}
+            onChange={(e) => { setClientID(e.target.value); }}
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 font-mono"
             required
@@ -746,7 +746,7 @@ function AzureTab() {
           <input
             type="password"
             value={clientSecret}
-            onChange={(e) => setClientSecret(e.target.value)}
+            onChange={(e) => { setClientSecret(e.target.value); }}
             placeholder={cfg?.is_configured ? '****' : 'Client Secret eingeben'}
             className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 font-mono"
             required
@@ -760,7 +760,7 @@ function AzureTab() {
           <input
             type="text"
             value={subscriptionID}
-            onChange={(e) => setSubscriptionID(e.target.value)}
+            onChange={(e) => { setSubscriptionID(e.target.value); }}
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             className="w-full border border-border rounded-md px-3 py-2 text-sm bg-bg text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 font-mono"
             required
@@ -833,7 +833,7 @@ export default function IntegrationsPage() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => { setActiveTab(tab.id); }}
             className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
               activeTab === tab.id
                 ? 'border-brand text-brand'

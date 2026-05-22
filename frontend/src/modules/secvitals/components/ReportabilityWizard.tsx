@@ -78,7 +78,7 @@ export function ReportabilityWizard({ incidentId, open, onClose, onResult }: Pro
   const cfg = result ? OBLIGATION_CONFIG[result.obligation] : null
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { handleClose(); } }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Meldepflicht prüfen (NIS2)</DialogTitle>
@@ -95,7 +95,7 @@ export function ReportabilityWizard({ incidentId, open, onClose, onResult }: Pro
                 variant="outline"
                 className="flex-1"
                 disabled={assess.isPending}
-                onClick={() => handleAnswer(true)}
+                onClick={() => { handleAnswer(true); }}
                 data-testid="reportability-yes-btn"
               >
                 Ja
@@ -104,7 +104,7 @@ export function ReportabilityWizard({ incidentId, open, onClose, onResult }: Pro
                 variant="outline"
                 className="flex-1"
                 disabled={assess.isPending}
-                onClick={() => handleAnswer(false)}
+                onClick={() => { handleAnswer(false); }}
                 data-testid="reportability-no-btn"
               >
                 Nein

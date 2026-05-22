@@ -105,12 +105,12 @@ function AVVCard({
               variant="ghost"
               className="h-7 w-7"
               title={t('common.export')}
-              onClick={() => onDownloadPDF(avv.id)}
+              onClick={() => { onDownloadPDF(avv.id); }}
             >
               <FileDown className="w-3.5 h-3.5" />
             </Button>
           )}
-          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('common.edit')} onClick={() => onEdit(avv)}>
+          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('common.edit')} onClick={() => { onEdit(avv); }}>
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           <Button
@@ -118,7 +118,7 @@ function AVVCard({
             variant="ghost"
             className="h-7 w-7 text-destructive hover:text-destructive"
             aria-label={t('common.delete')}
-            onClick={() => onDelete(avv.id)}
+            onClick={() => { onDelete(avv.id); }}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
@@ -138,7 +138,7 @@ function AVVForm({
   showStatus: boolean
 }) {
   const { t } = useTranslation()
-  const set = (patch: Partial<AVVFormState>) => onChange({ ...form, ...patch })
+  const set = (patch: Partial<AVVFormState>) => { onChange({ ...form, ...patch }); }
 
   return (
     <div className="space-y-4 py-2">
@@ -147,7 +147,7 @@ function AVVForm({
         <Input
           placeholder={t('secprivacy.avvPage.placeholderProcessor')}
           value={form.processor_name}
-          onChange={(e) => set({ processor_name: e.target.value })}
+          onChange={(e) => { set({ processor_name: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -156,7 +156,7 @@ function AVVForm({
           placeholder={t('secprivacy.avvPage.placeholderService')}
           rows={3}
           value={form.service_description}
-          onChange={(e) => set({ service_description: e.target.value })}
+          onChange={(e) => { set({ service_description: e.target.value }); }}
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -165,7 +165,7 @@ function AVVForm({
           <Input
             type="date"
             value={form.contract_date}
-            onChange={(e) => set({ contract_date: e.target.value })}
+            onChange={(e) => { set({ contract_date: e.target.value }); }}
           />
         </div>
         <div className="space-y-1.5">
@@ -173,14 +173,14 @@ function AVVForm({
           <Input
             type="date"
             value={form.review_date}
-            onChange={(e) => set({ review_date: e.target.value })}
+            onChange={(e) => { set({ review_date: e.target.value }); }}
           />
         </div>
       </div>
       {showStatus && (
         <div className="space-y-1.5">
           <Label>{t('secprivacy.avvPage.labelStatus')}</Label>
-          <Select value={form.status} onValueChange={(v) => set({ status: v as AVV['status'] })}>
+          <Select value={form.status} onValueChange={(v) => { set({ status: v as AVV['status'] }); }}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -198,7 +198,7 @@ function AVVForm({
           placeholder={t('secprivacy.avvPage.placeholderNotes')}
           rows={2}
           value={form.notes}
-          onChange={(e) => set({ notes: e.target.value })}
+          onChange={(e) => { set({ notes: e.target.value }); }}
         />
       </div>
     </div>
@@ -259,7 +259,7 @@ export default function AVVPage() {
         review_date: form.review_date || undefined,
         notes: form.notes || undefined,
       }
-      createAVV.mutate(payload, { onSuccess: () => setDialogMode(null) })
+      createAVV.mutate(payload, { onSuccess: () => { setDialogMode(null); } })
     } else if (dialogMode === 'edit' && editId) {
       const payload: UpdateAVVInput = {
         processor_name: form.processor_name,
@@ -269,7 +269,7 @@ export default function AVVPage() {
         status: form.status,
         notes: form.notes || undefined,
       }
-      updateAVV.mutate({ id: editId, input: payload }, { onSuccess: () => setDialogMode(null) })
+      updateAVV.mutate({ id: editId, input: payload }, { onSuccess: () => { setDialogMode(null); } })
     }
   }
 
@@ -283,7 +283,7 @@ export default function AVVPage() {
         description={t('secprivacy.avvPage.description')}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setTemplatePickerOpen(true)}>
+            <Button variant="outline" onClick={() => { setTemplatePickerOpen(true); }}>
               <LayoutTemplate className="w-4 h-4 mr-1" />
               {t('secprivacy.avvPage.fromTemplate')}
             </Button>
@@ -322,7 +322,7 @@ export default function AVVPage() {
             description={t('secprivacy.avvPage.noAVVsDesc')}
             action={
               <div className="flex gap-2 justify-center">
-                <Button variant="outline" onClick={() => setTemplatePickerOpen(true)}>
+                <Button variant="outline" onClick={() => { setTemplatePickerOpen(true); }}>
                   <LayoutTemplate className="w-4 h-4 mr-1" />
                   {t('secprivacy.avvPage.fromTemplate')}
                 </Button>
@@ -343,14 +343,14 @@ export default function AVVPage() {
                 avv={a}
                 onEdit={openEdit}
                 onDelete={handleDelete}
-                onDownloadPDF={handleDownloadPDF}
+                onDownloadPDF={(id) => { void handleDownloadPDF(id) }}
               />
             ))}
           </div>
         )}
       </div>
 
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('secprivacy.avvPage.deleteDialogTitle')}</AlertDialogTitle>
@@ -359,13 +359,13 @@ export default function AVVPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setDeleteId(null); }}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('common.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && setDialogMode(null)}>
+      <Dialog open={dialogMode !== null} onOpenChange={(open) => { if (!open) setDialogMode(null) }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -374,7 +374,7 @@ export default function AVVPage() {
           </DialogHeader>
           <AVVForm form={form} onChange={setForm} showStatus={dialogMode === 'edit'} />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogMode(null)}>
+            <Button variant="outline" onClick={() => { setDialogMode(null); }}>
               {t('common.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={!canSubmit}>

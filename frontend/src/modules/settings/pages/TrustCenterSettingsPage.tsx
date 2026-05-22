@@ -145,7 +145,7 @@ function Toggle({
         id={id}
         type="checkbox"
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onChange={(e) => { onChange(e.target.checked); }}
         className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
       />
       <div>
@@ -172,7 +172,7 @@ function GeneralSection({
       <Toggle
         id="tc-enabled"
         checked={settings.enabled}
-        onChange={(v) => onChange({ ...settings, enabled: v })}
+        onChange={(v) => { onChange({ ...settings, enabled: v }); }}
         label="Trust Center öffentlich aktivieren"
         description="Aktiviert die öffentliche Trust Center-Seite unter /trust/<slug>"
       />
@@ -184,7 +184,7 @@ function GeneralSection({
           maxLength={300}
           placeholder="Kurze Beschreibung deines Sicherheitsprogramms..."
           value={settings.description}
-          onChange={(e) => onChange({ ...settings, description: e.target.value })}
+          onChange={(e) => { onChange({ ...settings, description: e.target.value }); }}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
         />
         <p className="text-xs text-muted-foreground text-right">{settings.description.length}/300</p>
@@ -196,7 +196,7 @@ function GeneralSection({
           type="email"
           placeholder="security@example.com"
           value={settings.contact}
-          onChange={(e) => onChange({ ...settings, contact: e.target.value })}
+          onChange={(e) => { onChange({ ...settings, contact: e.target.value }); }}
         />
       </div>
       <div className="space-y-1.5">
@@ -206,7 +206,7 @@ function GeneralSection({
           type="url"
           placeholder="https://example.com/logo.png"
           value={settings.logo_url}
-          onChange={(e) => onChange({ ...settings, logo_url: e.target.value })}
+          onChange={(e) => { onChange({ ...settings, logo_url: e.target.value }); }}
         />
         <p className="text-xs text-muted-foreground">Erscheint im Header der Trust Center-Seite.</p>
       </div>
@@ -226,21 +226,21 @@ function VisibilitySection({
       <Toggle
         id="show-frameworks"
         checked={settings.show_frameworks}
-        onChange={(v) => onChange({ ...settings, show_frameworks: v })}
+        onChange={(v) => { onChange({ ...settings, show_frameworks: v }); }}
         label="Compliance-Frameworks anzeigen"
         description="Zeigt den Compliance-Status deiner Frameworks öffentlich."
       />
       <Toggle
         id="show-certs"
         checked={settings.show_certs}
-        onChange={(v) => onChange({ ...settings, show_certs: v })}
+        onChange={(v) => { onChange({ ...settings, show_certs: v }); }}
         label="Zertifikate anzeigen"
         description="Zeigt die hinterlegten Zertifikate und Auditbestätigungen."
       />
       <Toggle
         id="show-policies"
         checked={settings.show_policies}
-        onChange={(v) => onChange({ ...settings, show_policies: v })}
+        onChange={(v) => { onChange({ ...settings, show_policies: v }); }}
         label="Policies anzeigen"
         description="Zeigt veröffentlichte Richtlinien für Kunden und Partner."
       />
@@ -263,7 +263,7 @@ function SubprocessorsSection({
         rows={8}
         placeholder="Liste der Unterauftragnehmer und eingesetzten Dienste..."
         value={settings.subprocessors_md}
-        onChange={(e) => onChange({ ...settings, subprocessors_md: e.target.value })}
+        onChange={(e) => { onChange({ ...settings, subprocessors_md: e.target.value }); }}
         className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y"
       />
       <p className="text-xs text-muted-foreground">
@@ -325,7 +325,7 @@ function CertificatesSection() {
             </div>
           </div>
           <button
-            onClick={() => deleteCert.mutate(cert.id)}
+            onClick={() => { deleteCert.mutate(cert.id); }}
             disabled={deleteCert.isPending}
             className="p-1.5 rounded text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
           >
@@ -343,7 +343,7 @@ function CertificatesSection() {
                 id="cert-name"
                 placeholder="ISO 27001 Zertifikat"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -352,7 +352,7 @@ function CertificatesSection() {
                 id="cert-issuer"
                 placeholder="TÜV SÜD"
                 value={issuer}
-                onChange={(e) => setIssuer(e.target.value)}
+                onChange={(e) => { setIssuer(e.target.value); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -361,7 +361,7 @@ function CertificatesSection() {
                 id="cert-issued"
                 type="date"
                 value={issuedAt}
-                onChange={(e) => setIssuedAt(e.target.value)}
+                onChange={(e) => { setIssuedAt(e.target.value); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -370,7 +370,7 @@ function CertificatesSection() {
                 id="cert-expires"
                 type="date"
                 value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
+                onChange={(e) => { setExpiresAt(e.target.value); }}
               />
             </div>
           </div>
@@ -382,7 +382,7 @@ function CertificatesSection() {
             >
               {createCert.isPending ? 'Wird gespeichert…' : 'Hinzufügen'}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>
+            <Button size="sm" variant="outline" onClick={() => { setShowForm(false); }}>
               Abbrechen
             </Button>
           </div>
@@ -393,7 +393,7 @@ function CertificatesSection() {
       )}
 
       {!showForm && (
-        <Button size="sm" variant="outline" onClick={() => setShowForm(true)} className="mt-2">
+        <Button size="sm" variant="outline" onClick={() => { setShowForm(true); }} className="mt-2">
           <Plus className="h-3.5 w-3.5 mr-1.5" />
           Zertifikat hinzufügen
         </Button>
@@ -460,7 +460,7 @@ function PoliciesSection() {
               <input
                 type="checkbox"
                 checked={isPublished}
-                onChange={() => togglePublish(policy.id, isPublished)}
+                onChange={() => { togglePublish(policy.id, isPublished); }}
                 disabled={publishPolicy.isPending || unpublishPolicy.isPending}
                 className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
               />
@@ -501,8 +501,8 @@ export default function TrustCenterSettingsPage() {
   function handleSave() {
     setSaved(false)
     updateSettings.mutate(settings, {
-      onSuccess: () => setSaved(true),
-      onError: () => setSaved(false),
+      onSuccess: () => { setSaved(true); },
+      onError: () => { setSaved(false); },
     })
   }
 

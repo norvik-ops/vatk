@@ -44,7 +44,7 @@ export function useMilestoneToast(score: number | undefined) {
       ) {
         seen.add(m.threshold)
         localStorage.setItem(STORAGE_KEY, JSON.stringify([...seen]))
-        toast(`${m.emoji} ${m.label} — Compliance-Score: ${Math.round(score)}%`, {
+        toast(`${m.emoji} ${m.label} — Compliance-Score: ${String(Math.round(score))}%`, {
           variant: 'success',
           duration: 6000,
         })

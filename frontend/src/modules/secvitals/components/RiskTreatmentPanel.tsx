@@ -114,7 +114,7 @@ function LinkControlDialog({ riskId, open, onClose }: { riskId: string; open: bo
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { handleClose(); } }}>
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Control verknüpfen</DialogTitle>
@@ -138,7 +138,7 @@ function LinkControlDialog({ riskId, open, onClose }: { riskId: string; open: bo
               <Input
                 placeholder="Controls durchsuchen …"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); }}
               />
               <div className="overflow-y-auto flex-1 space-y-1 pr-1">
                 {filtered.length === 0 && (
@@ -148,7 +148,7 @@ function LinkControlDialog({ riskId, open, onClose }: { riskId: string; open: bo
                   <button
                     key={c.id}
                     className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm flex items-start gap-2 group"
-                    onClick={() => handleLink(c)}
+                    onClick={() => { handleLink(c); }}
                     disabled={link.isPending}
                   >
                     <span className="font-mono text-xs text-muted-foreground shrink-0 mt-0.5">{c.control_id}</span>
@@ -212,7 +212,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
   }
 
   function handleSave() {
-    updateTreatment.mutate(form, { onSuccess: () => setDirty(false) })
+    updateTreatment.mutate(form, { onSuccess: () => { setDirty(false); } })
   }
 
   const residualScore =
@@ -233,7 +233,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => set('treatment_option', opt.value)}
+                onClick={() => { set('treatment_option', opt.value); }}
                 className={`flex items-start gap-2 rounded-lg border p-3 text-left transition-colors text-sm ${
                   form.treatment_option === opt.value
                     ? opt.color + ' ring-1 ring-current'
@@ -255,7 +255,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
               rows={4}
               placeholder="Konkrete Maßnahmen, Verantwortlichkeiten und Zeitplan …"
               value={form.treatment_plan ?? ''}
-              onChange={(e) => set('treatment_plan', e.target.value)}
+              onChange={(e) => { set('treatment_plan', e.target.value); }}
             />
           </div>
 
@@ -265,7 +265,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
               <Input
                 placeholder="z.B. Max Mustermann"
                 value={form.treatment_owner ?? ''}
-                onChange={(e) => set('treatment_owner', e.target.value)}
+                onChange={(e) => { set('treatment_owner', e.target.value); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -273,7 +273,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
               <Input
                 type="date"
                 value={form.treatment_due_date ?? ''}
-                onChange={(e) => set('treatment_due_date', e.target.value || null)}
+                onChange={(e) => { set('treatment_due_date', e.target.value || null); }}
               />
             </div>
           </div>
@@ -282,7 +282,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
             <Label>Behandlungsstatus</Label>
             <Select
               value={form.treatment_status ?? 'pending'}
-              onValueChange={(v) => set('treatment_status', v as TreatmentStatus)}
+              onValueChange={(v) => { set('treatment_status', v as TreatmentStatus); }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -318,7 +318,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
                 step={1}
                 className="w-full accent-primary"
                 value={form.residual_likelihood ?? 3}
-                onChange={(e) => set('residual_likelihood', parseInt(e.target.value, 10))}
+                onChange={(e) => { set('residual_likelihood', parseInt(e.target.value, 10)); }}
               />
               <div className="flex justify-between text-[10px] text-muted-foreground">
                 <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
@@ -338,7 +338,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
                 step={1}
                 className="w-full accent-primary"
                 value={form.residual_impact ?? 3}
-                onChange={(e) => set('residual_impact', parseInt(e.target.value, 10))}
+                onChange={(e) => { set('residual_impact', parseInt(e.target.value, 10)); }}
               />
               <div className="flex justify-between text-[10px] text-muted-foreground">
                 <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
@@ -365,7 +365,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm">Verknüpfte Controls</CardTitle>
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setLinkDialogOpen(true)}>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setLinkDialogOpen(true); }}>
               <Plus className="w-3.5 h-3.5 mr-1" />
               Control verknüpfen
             </Button>
@@ -385,7 +385,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
                 size="icon"
                 variant="ghost"
                 className="h-6 w-6 shrink-0 text-destructive opacity-0 group-hover:opacity-100"
-                onClick={() => unlink.mutate(c.id)}
+                onClick={() => { unlink.mutate(c.id); }}
                 title="Verknüpfung aufheben"
               >
                 <Unlink className="w-3 h-3" />
@@ -406,7 +406,7 @@ const RiskTreatmentPanel: React.FC<Props> = ({ riskId, risk }) => {
       <LinkControlDialog
         riskId={riskId}
         open={linkDialogOpen}
-        onClose={() => setLinkDialogOpen(false)}
+        onClose={() => { setLinkDialogOpen(false); }}
       />
     </div>
   )

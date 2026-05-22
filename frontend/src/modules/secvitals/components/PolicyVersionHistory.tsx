@@ -139,7 +139,7 @@ export default function PolicyVersionHistory({ policyId, currentVersion }: Props
                     variant="ghost"
                     size="sm"
                     className="shrink-0 h-7 px-2 text-xs"
-                    onClick={() => setSelected(v)}
+                    onClick={() => { setSelected(v); }}
                   >
                     <Eye className="w-3 h-3 mr-1" />
                     Anzeigen
@@ -151,7 +151,7 @@ export default function PolicyVersionHistory({ policyId, currentVersion }: Props
         )}
       </CardContent>
 
-      <VersionDetailDialog version={selected} onClose={() => setSelected(null)} />
+      <VersionDetailDialog version={selected} onClose={() => { setSelected(null); }} />
     </Card>
   )
 }

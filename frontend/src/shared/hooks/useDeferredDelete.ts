@@ -60,7 +60,7 @@ export function useDeferredDelete<T>({
         },
       })
 
-      timerRef.current = setTimeout(async () => {
+      timerRef.current = setTimeout(() => { void (async () => {
         timerRef.current = null
         if (cancelledRef.current) return
         dismissToast(toastId)
@@ -69,7 +69,7 @@ export function useDeferredDelete<T>({
         } catch {
           toast('Fehler beim Löschen', 'error')
         }
-      }, delayMs)
+      })() }, delayMs)
     },
     [onDelete, onUndo, getLabel, delayMs],
   )

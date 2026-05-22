@@ -48,7 +48,7 @@ export default function ProjectsPage() {
   function handleDelete() {
     if (!deleteId) return
     deleteProject.mutate(deleteId, {
-      onSuccess: () => setDeleteId(null),
+      onSuccess: () => { setDeleteId(null); },
     })
   }
 
@@ -58,7 +58,7 @@ export default function ProjectsPage() {
         title={t('secvault.projectsPage.title')}
         description={t('secvault.projectsPage.description')}
         actions={
-          <Button onClick={() => setShowCreate(true)}>
+          <Button onClick={() => { setShowCreate(true); }}>
             <Plus className="w-4 h-4" />
             {t('secvault.projectsPage.newProject')}
           </Button>
@@ -76,7 +76,7 @@ export default function ProjectsPage() {
             title={t('secvault.projectsPage.noProjects')}
             description={t('secvault.projectsPage.noProjectsDesc')}
             action={
-              <Button onClick={() => setShowCreate(true)}>
+              <Button onClick={() => { setShowCreate(true); }}>
                 <Plus className="w-4 h-4 mr-1" />
                 {t('secvault.projectsPage.newProject')}
               </Button>
@@ -88,7 +88,7 @@ export default function ProjectsPage() {
               <Card
                 key={project.id}
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => navigate(`/secvault/projects/${project.id}`)}
+                onClick={() => { navigate(`/secvault/projects/${project.id}`); }}
               >
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-semibold truncate max-w-[160px]">
@@ -141,8 +141,8 @@ export default function ProjectsPage() {
                 id="project-name"
                 placeholder="my-service"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                onChange={(e) => { setName(e.target.value); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { handleCreate(); } }}
               />
             </div>
             <div className="space-y-1.5">
@@ -151,12 +151,12 @@ export default function ProjectsPage() {
                 id="project-desc"
                 placeholder={t('secvault.projectsPage.placeholderDescription')}
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => { setDescription(e.target.value); }}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>
+            <Button variant="outline" onClick={() => { setShowCreate(false); }}>
               {t('common.cancel')}
             </Button>
             <Button onClick={handleCreate} disabled={!name.trim() || createProject.isPending}>
@@ -167,7 +167,7 @@ export default function ProjectsPage() {
       </Dialog>
 
       {/* Delete confirmation dialog */}
-      <Dialog open={Boolean(deleteId)} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <Dialog open={Boolean(deleteId)} onOpenChange={(open) => { if (!open) { setDeleteId(null); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('secvault.projectsPage.deleteDialogTitle')}</DialogTitle>
@@ -176,7 +176,7 @@ export default function ProjectsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
+            <Button variant="outline" onClick={() => { setDeleteId(null); }}>
               {t('common.cancel')}
             </Button>
             <Button

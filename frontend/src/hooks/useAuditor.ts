@@ -52,9 +52,9 @@ export function useCreateAuditorInvite() {
 
 export function useRevokeAuditorInvite() {
   const qc = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/auditor/invites/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/auditor/invites/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['auditor', 'invites'] })
     },

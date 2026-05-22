@@ -208,7 +208,7 @@ function LicenseSection() {
   const [activateSuccess, setActivateSuccess] = useState(false)
   const licTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
-  useEffect(() => () => clearTimeout(licTimerRef.current), [])
+  useEffect(() => () => { clearTimeout(licTimerRef.current); }, [])
 
   if (isLoading) return (
     <SectionCard title={t('settingsPage.licenseTitle')} icon={Sparkles}>
@@ -227,7 +227,7 @@ function LicenseSection() {
       onSuccess: () => {
         setActivateSuccess(true)
         setLicKey('')
-        licTimerRef.current = setTimeout(() => setActivateSuccess(false), 5000)
+        licTimerRef.current = setTimeout(() => { setActivateSuccess(false); }, 5000)
       },
     })
   }
@@ -787,7 +787,7 @@ function NotificationsSection() {
                 <button
                   onClick={() => {
                     setDeletingChannelId(ch.id)
-                    deleteChannel.mutate(ch.id, { onSettled: () => setDeletingChannelId(null) })
+                    deleteChannel.mutate(ch.id, { onSettled: () => { setDeletingChannelId(null); } })
                   }}
                   disabled={deletingChannelId === ch.id}
                   className={cn('p-1 rounded text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors', deletingChannelId === ch.id && 'opacity-50')}
@@ -799,7 +799,7 @@ function NotificationsSection() {
           )
         })}
         <div className="pt-1">
-          <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)} className="h-7 text-xs">
+          <Button size="sm" variant="outline" onClick={() => { setCreateOpen(true); }} className="h-7 text-xs">
             <Plus className="w-3 h-3 mr-1" />
             {t('settingsPage.addChannel')}
           </Button>
@@ -812,7 +812,7 @@ function NotificationsSection() {
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
               <Label>{t('settingsPage.channelType')}</Label>
-              <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
+              <Select value={type} onValueChange={(v) => { setType(v as typeof type); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="slack">Slack Webhook</SelectItem>
@@ -826,8 +826,8 @@ function NotificationsSection() {
               <Input
                 placeholder={t('settingsPage.channelNamePlaceholder')}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() => setFieldTouched((prev) => ({ ...prev, name: true }))}
+                onChange={(e) => { setName(e.target.value); }}
+                onBlur={() => { setFieldTouched((prev) => ({ ...prev, name: true })); }}
                 aria-invalid={fieldTouched.name && !name.trim()}
               />
               {fieldTouched.name && !name.trim() && (
@@ -839,8 +839,8 @@ function NotificationsSection() {
               <Input
                 placeholder={type === 'slack' ? 'https://hooks.slack.com/…' : type === 'email' ? 'team@example.com' : 'https://webhook.example.com'}
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onBlur={() => setFieldTouched((prev) => ({ ...prev, url: true }))}
+                onChange={(e) => { setUrl(e.target.value); }}
+                onBlur={() => { setFieldTouched((prev) => ({ ...prev, url: true })); }}
                 aria-invalid={fieldTouched.url && !url.trim()}
               />
               {fieldTouched.url && !url.trim() && (
@@ -852,7 +852,7 @@ function NotificationsSection() {
             <p className="text-xs text-red-500 px-1">{t('settingsPage.channelError')}</p>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => handleDialogClose(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { handleDialogClose(false); }}>{t('common.cancel')}</Button>
             <Button onClick={handleCreate} disabled={createChannel.isPending}>
               {createChannel.isPending ? t('settingsPage.channelSaving') : t('settingsPage.channelAdd')}
             </Button>
@@ -893,7 +893,7 @@ function useUpdateSIEMConfig() {
 }
 
 function useTestSIEM() {
-  return useMutation<void, Error>({
+  return useMutation<void>({
     mutationFn: () => apiFetch<void>('/admin/org/siem/test', { method: 'POST' }),
   })
 }
@@ -929,7 +929,7 @@ function SIEMSection() {
         onSuccess: () => {
           setSaved(true)
           setToken('')
-          setTimeout(() => setSaved(false), 2500)
+          setTimeout(() => { setSaved(false); }, 2500)
         },
       },
     )
@@ -939,7 +939,7 @@ function SIEMSection() {
     setTestResult('idle')
     setTestError('')
     test.mutate(undefined, {
-      onSuccess: () => setTestResult('ok'),
+      onSuccess: () => { setTestResult('ok'); },
       onError: (err) => { setTestResult('err'); setTestError(err.message) },
     })
   }
@@ -994,7 +994,7 @@ function SIEMSection() {
           {/* Adapter */}
           <div className="space-y-1.5">
             <Label className="text-xs">Adapter</Label>
-            <Select value={adapter} onValueChange={(v) => setAdapter(v as OrgSIEMConfig['adapter'])}>
+            <Select value={adapter} onValueChange={(v) => { setAdapter(v as OrgSIEMConfig['adapter']); }}>
               <SelectTrigger className="h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
@@ -1011,7 +1011,7 @@ function SIEMSection() {
             <Label className="text-xs">Endpunkt-URL</Label>
             <Input
               value={endpoint}
-              onChange={(e) => setEndpoint(e.target.value)}
+              onChange={(e) => { setEndpoint(e.target.value); }}
               placeholder={
                 adapter === 'splunk_hec'
                   ? 'https://splunk.example.com:8088'
@@ -1031,7 +1031,7 @@ function SIEMSection() {
             <Input
               type="password"
               value={token}
-              onChange={(e) => setToken(e.target.value)}
+              onChange={(e) => { setToken(e.target.value); }}
               placeholder={data?.token === '***' ? '••••••••  (gesetzt — leer lassen zum Beibehalten)' : '••••••••'}
               className="h-8 text-sm"
               autoComplete="new-password"
@@ -1143,7 +1143,7 @@ function AISettingsSection() {
   const handleSave = () => {
     update.mutate(
       { model_override: model, base_url_override: baseURL },
-      { onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 2000) } },
+      { onSuccess: () => { setSaved(true); setTimeout(() => { setSaved(false); }, 2000) } },
     )
   }
 
@@ -1173,7 +1173,7 @@ function AISettingsSection() {
             ) : (
               <Input
                 value={model}
-                onChange={(e) => setModel(e.target.value)}
+                onChange={(e) => { setModel(e.target.value); }}
                 placeholder="System-Standard (aus VAKT_AI_MODEL)"
                 className="h-8 text-sm"
               />
@@ -1188,7 +1188,7 @@ function AISettingsSection() {
               <Label className="text-xs">Custom Endpunkt (BYOK) <Badge variant="secondary" className="text-[10px] ml-1">Pro</Badge></Label>
               <Input
                 value={baseURL}
-                onChange={(e) => setBaseURL(e.target.value)}
+                onChange={(e) => { setBaseURL(e.target.value); }}
                 placeholder="https://api.openai.com/v1"
                 className="h-8 text-sm"
               />
@@ -1254,7 +1254,7 @@ function useUpdateSAMLConfig() {
 
 function useRegenerateSAMLCert() {
   const qc = useQueryClient()
-  return useMutation<{ cert_pem: string }, Error>({
+  return useMutation<{ cert_pem: string }>({
     mutationFn: () =>
       apiFetch<{ cert_pem: string }>('/admin/org/saml-config/regenerate-cert', { method: 'POST' }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['org-saml-config'] }),
@@ -1285,13 +1285,13 @@ function SAMLSetupSection() {
   const handleSave = () => {
     update.mutate(
       { entity_id: entityID, acs_url: acsURL, idp_metadata: idpMeta, enabled },
-      { onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 2000) } },
+      { onSuccess: () => { setSaved(true); setTimeout(() => { setSaved(false); }, 2000) } },
     )
   }
 
   const handleRegen = () => {
     regen.mutate(undefined, {
-      onSuccess: () => { setRegenDone(true); setTimeout(() => setRegenDone(false), 3000) },
+      onSuccess: () => { setRegenDone(true); setTimeout(() => { setRegenDone(false); }, 3000) },
     })
   }
 
@@ -1326,7 +1326,7 @@ function SAMLSetupSection() {
             <Label className="text-xs">SP Entity ID</Label>
             <Input
               value={entityID}
-              onChange={(e) => setEntityID(e.target.value)}
+              onChange={(e) => { setEntityID(e.target.value); }}
               placeholder={`${window.location.origin}/saml`}
               className="h-8 text-sm font-mono"
             />
@@ -1336,7 +1336,7 @@ function SAMLSetupSection() {
             <Label className="text-xs">ACS URL</Label>
             <Input
               value={acsURL}
-              onChange={(e) => setACSURL(e.target.value)}
+              onChange={(e) => { setACSURL(e.target.value); }}
               placeholder={`${window.location.origin}/api/v1/auth/saml/acs`}
               className="h-8 text-sm font-mono"
             />
@@ -1346,7 +1346,7 @@ function SAMLSetupSection() {
             <Label className="text-xs">IdP Metadata XML</Label>
             <textarea
               value={idpMeta}
-              onChange={(e) => setIdpMeta(e.target.value)}
+              onChange={(e) => { setIdpMeta(e.target.value); }}
               placeholder='<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" …'
               className="w-full h-28 rounded-md border border-input bg-transparent px-3 py-2 text-xs font-mono resize-y focus:outline-none focus:ring-1 focus:ring-ring"
             />
@@ -1486,7 +1486,7 @@ function DataExportSection() {
           size="sm"
           variant="outline"
           className="h-7 text-xs"
-          onClick={exportData}
+          onClick={() => { void exportData(); }}
           disabled={isLoading}
         >
           {isLoading ? (
@@ -1526,7 +1526,7 @@ function AuditReportSection() {
         </p>
         <Button
           size="sm"
-          onClick={generate}
+          onClick={() => { void generate(); }}
           disabled={isGenerating}
           className="h-7 text-xs gap-1.5"
         >
@@ -1571,7 +1571,7 @@ function StagingSection() {
     staleTime: Infinity,
   })
 
-  const promote = useMutation<unknown, Error>({
+  const promote = useMutation({
     mutationFn: () => apiFetch('/admin/staging/promote', { method: 'POST' }),
     onSuccess: () => { setResult('ok'); setConfirming(false) },
     onError: () => { setResult('err'); setConfirming(false) },
@@ -1619,9 +1619,9 @@ function StagingSection() {
             {t('settingsPage.stagingConfirmDesc')}
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirming(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setConfirming(false); }}>{t('common.cancel')}</Button>
             <Button
-              onClick={() => promote.mutate()}
+              onClick={() => { promote.mutate(); }}
               disabled={promote.isPending}
             >
               {promote.isPending ? (

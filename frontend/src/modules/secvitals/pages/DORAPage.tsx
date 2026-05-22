@@ -82,7 +82,7 @@ function ArticleSection({
       <button
         type="button"
         className="w-full flex items-center justify-between px-4 py-3 bg-surface2 hover:bg-surface text-left"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); }}
       >
         <div className="flex items-center gap-3">
           <ChevronDown className={cn('w-4 h-4 text-secondary transition-transform', !open && '-rotate-90')} />
@@ -103,7 +103,7 @@ function ArticleSection({
               key={ctrl.id}
               className="flex items-center justify-between px-4 py-3 hover:bg-surface2 cursor-pointer"
               onClick={() =>
-                navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`)
+                { navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`); }
               }
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -140,7 +140,7 @@ export default function DORAPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(`/secvitals/frameworks/${frameworkId}`)}
+              onClick={() => { navigate(`/secvitals/frameworks/${frameworkId}`); }}
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Zurück

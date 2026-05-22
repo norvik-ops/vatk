@@ -21,9 +21,9 @@ export function useAISystems(filters?: AISystemFilters) {
 
 export function useDeleteAISystem() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secvitals/ai-systems/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/ai-systems/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'ai-systems'] })
     },
@@ -73,9 +73,9 @@ export function useAIClassifications(systemId: string) {
 
 export function useClassifyAISystem(systemId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, ClassifyAISystemInput>({
+  return useMutation<undefined, Error, ClassifyAISystemInput>({
     mutationFn: (input) =>
-      apiFetch<void>(`/secvitals/ai-systems/${systemId}/classify`, { method: 'POST', body: JSON.stringify(input) }),
+      apiFetch<undefined>(`/secvitals/ai-systems/${systemId}/classify`, { method: 'POST', body: JSON.stringify(input) }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'ai-systems'] })
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'ai-systems', systemId, 'classifications'] })

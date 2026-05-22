@@ -119,7 +119,7 @@ export default function PolicyAcceptPage() {
                   Mit Klick auf den Button bestätigen Sie, dass Sie die Richtlinie gelesen haben und mit deren Inhalt einverstanden sind.
                 </p>
                 <button
-                  onClick={() => acceptMutation.mutate()}
+                  onClick={() => { acceptMutation.mutate(); }}
                   disabled={acceptMutation.isPending}
                   className="w-full rounded-lg bg-brand text-brand-foreground px-6 py-3 font-medium text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
                   style={{ backgroundColor: 'hsl(var(--brand))', color: 'hsl(var(--brand-foreground, 0 0% 100%))' }}

@@ -223,6 +223,7 @@ export default function QuestionnairePage() {
     draggedIdRef.current = questionId
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function handleDragOver(e: React.DragEvent, _targetId: string) {
     e.preventDefault()
   }

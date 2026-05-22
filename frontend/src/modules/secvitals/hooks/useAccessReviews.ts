@@ -57,9 +57,9 @@ export function useUpdateAccessReviewCampaign() {
 
 export function useDeleteAccessReviewCampaign() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secvitals/access-reviews/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/access-reviews/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'access-reviews'] })
     },

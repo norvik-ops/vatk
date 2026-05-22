@@ -45,9 +45,9 @@ export function useCreateTemplate() {
 
 export function useDeleteTemplate() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`${BASE}/templates/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`${BASE}/templates/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secreflex', 'templates'] })
     },

@@ -37,9 +37,9 @@ export function useCreateToken() {
 
 export function useDeleteToken() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`${BASE}/tokens/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`${BASE}/tokens/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvault', 'tokens'] })
     },

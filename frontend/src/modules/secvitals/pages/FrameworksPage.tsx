@@ -125,7 +125,7 @@ function EnabledFrameworkCard({ framework, onDelete }: { framework: Framework; o
       <CardHeader className="flex flex-row items-start justify-between pb-2">
         <div
           className="flex-1 cursor-pointer"
-          onClick={() => navigate(`/secvitals/frameworks/${framework.id}`)}
+          onClick={() => { navigate(`/secvitals/frameworks/${framework.id}`); }}
         >
           <CardTitle className="text-base">{framework.name}</CardTitle>
           <CardDescription className="mt-0.5">v{framework.version}</CardDescription>
@@ -136,7 +136,7 @@ function EnabledFrameworkCard({ framework, onDelete }: { framework: Framework; o
         <div className="flex items-center justify-between text-sm text-secondary">
           <span>{framework.control_count != null ? `${framework.control_count} ${t('secvitals.controlDetailPage.controlsCount')} · ` : ''}{t('secvitals.controlDetailPage.activatedOn')} {enabledDate}</span>
           <button
-            onClick={() => onDelete(framework)}
+            onClick={() => { onDelete(framework); }}
             className="p-1.5 rounded text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors"
             title={t('secvitals.frameworksPage.disableFramework')}
           >
@@ -170,7 +170,7 @@ export default function FrameworksPage() {
   const enabledKeys = new Set((frameworks ?? []).map((f) => f.name.split(' ')[0].toUpperCase()))
 
   function handleExport() {
-    fetch('/api/v1/secvitals/export/audit-package', {
+    void fetch('/api/v1/secvitals/export/audit-package', {
       credentials: 'include',
     })
       .then((r) => r.blob())
@@ -205,7 +205,7 @@ export default function FrameworksPage() {
 
   function handleConfirmDelete() {
     if (!deleteTarget) return
-    deleteFramework.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })
+    deleteFramework.mutate(deleteTarget.id, { onSuccess: () => { setDeleteTarget(null); } })
   }
 
   return (
@@ -225,7 +225,7 @@ export default function FrameworksPage() {
               <Download className="w-3.5 h-3.5 mr-1" />
               {t('secvitals.frameworksPage.exportAuditPackage')}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate('/secvitals')}>
+            <Button variant="outline" size="sm" onClick={() => { navigate('/secvitals'); }}>
               {t('secvitals.frameworksPage.backToOverview')}
             </Button>
           </div>
@@ -335,7 +335,7 @@ export default function FrameworksPage() {
                     ) : (
                       <Button
                         size="sm"
-                        onClick={() => handleEnable(fw.key)}
+                        onClick={() => { handleEnable(fw.key); }}
                         disabled={enableFramework.isPending}
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
@@ -375,7 +375,7 @@ export default function FrameworksPage() {
             {t('secvitals.frameworksPage.disableConfirm', { name: deleteTarget?.name ?? '' })}
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setDeleteTarget(null); }}>{t('common.cancel')}</Button>
             <Button
               variant="destructive"
               onClick={handleConfirmDelete}

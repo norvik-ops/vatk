@@ -54,9 +54,9 @@ export function useUpdateSupplier(id: string) {
 
 export function useDeleteSupplier() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secvitals/suppliers/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/suppliers/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'suppliers'] })
     },

@@ -120,7 +120,7 @@ function SupplierStatusBadge({ supplierId }: { supplierId: string }) {
   const labels = { green: 'Grün', yellow: 'Gelb', red: 'Rot' }
   return (
     <Badge
-      variant={variant as 'destructive' | 'default' | 'outline' | 'secondary'}
+      variant={variant}
       data-testid="supplier-status-badge"
       data-status={status.status}
       className={
@@ -225,7 +225,7 @@ export default function SuppliersPage() {
       contract_end: form.contract_end ? new Date(form.contract_end).toISOString() : undefined,
     }
     if (editId) {
-      updateSupplier.mutate(payload, { onSuccess: () => setDialogOpen(false) })
+      updateSupplier.mutate(payload, { onSuccess: () => { setDialogOpen(false); } })
     } else {
       createSupplier.mutate(payload, {
         onSuccess: () => {
@@ -259,7 +259,7 @@ export default function SuppliersPage() {
     fileInputRef.current?.click()
   }
 
-  async function handleImportFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleImportFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     const formData = new FormData()
@@ -286,7 +286,7 @@ export default function SuppliersPage() {
         description="Drittanbieter und Dienstleister verwalten — NIS2 Art. 21 / DORA Art. 28."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExportCSV}>
+            <Button variant="outline" onClick={() => { void handleExportCSV(); }}>
               <Download className="w-4 h-4 mr-1" />
               CSV exportieren
             </Button>
@@ -316,7 +316,7 @@ export default function SuppliersPage() {
           <span className="text-xs text-muted-foreground">Kritikalität:</span>
           <Select
             value={filterCriticality || '_all_'}
-            onValueChange={(v) => setFilterCriticality(v === '_all_' ? '' : v)}
+            onValueChange={(v) => { setFilterCriticality(v === '_all_' ? '' : v); }}
             data-testid="criticality-filter"
           >
             <SelectTrigger className="h-8 w-36 text-xs">
@@ -334,7 +334,7 @@ export default function SuppliersPage() {
           <span className="text-xs text-muted-foreground">Bewertungsstatus:</span>
           <Select
             value={filterAssessmentStatus || '_all_'}
-            onValueChange={(v) => setFilterAssessmentStatus(v === '_all_' ? '' : v)}
+            onValueChange={(v) => { setFilterAssessmentStatus(v === '_all_' ? '' : v); }}
             data-testid="assessment-status-filter"
           >
             <SelectTrigger className="h-8 w-44 text-xs">
@@ -376,7 +376,7 @@ export default function SuppliersPage() {
         {!isLoading && !isError && suppliers && suppliers.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {suppliers.map((s) => (
-              <SupplierCard key={s.id} supplier={s} onEdit={() => openEdit(s)} onDelete={() => handleDelete(s.id)} />
+              <SupplierCard key={s.id} supplier={s} onEdit={() => { openEdit(s); }} onDelete={() => { handleDelete(s.id); }} />
             ))}
           </div>
         )}
@@ -397,11 +397,11 @@ export default function SuppliersPage() {
             <div className="space-y-1.5">
               <Label>Dienstleistungstyp</Label>
               <Input placeholder="z.B. CDN, Cloud-Speicher, IT-Security" value={form.service_type ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, service_type: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, service_type: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label>Kritikalität</Label>
-              <Select value={form.criticality ?? 'standard'} onValueChange={(v) => setForm((f) => ({ ...f, criticality: v as Supplier['criticality'] }))}>
+              <Select value={form.criticality ?? 'standard'} onValueChange={(v) => { setForm((f) => ({ ...f, criticality: v as Supplier['criticality'] })); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="standard">Standard</SelectItem>
@@ -412,7 +412,7 @@ export default function SuppliersPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Bewertungsstatus</Label>
-              <Select value={form.assessment_status ?? 'none'} onValueChange={(v) => setForm((f) => ({ ...f, assessment_status: v as 'none' | 'pending' | 'completed' }))}>
+              <Select value={form.assessment_status ?? 'none'} onValueChange={(v) => { setForm((f) => ({ ...f, assessment_status: v as 'none' | 'pending' | 'completed' })); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nicht bewertet</SelectItem>
@@ -424,12 +424,12 @@ export default function SuppliersPage() {
             <div className="grid grid-cols-2 gap-3">
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.nis2_relevant ?? false}
-                  onChange={(e) => setForm((f) => ({ ...f, nis2_relevant: e.target.checked }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, nis2_relevant: e.target.checked })); }} />
                 NIS2-relevant
               </label>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.dora_relevant ?? false}
-                  onChange={(e) => setForm((f) => ({ ...f, dora_relevant: e.target.checked }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, dora_relevant: e.target.checked })); }} />
                 DORA-relevant
               </label>
             </div>
@@ -437,7 +437,7 @@ export default function SuppliersPage() {
               <div className="space-y-1.5">
                 <Label>Ansprechpartner</Label>
                 <Input placeholder="Name" value={form.contact_name ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, contact_name: e.target.value }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, contact_name: e.target.value })); }} />
               </div>
               <div className="space-y-1.5">
                 <Label>E-Mail</Label>
@@ -449,16 +449,16 @@ export default function SuppliersPage() {
             <div className="space-y-1.5">
               <Label>Vertragsende</Label>
               <Input type="date" value={form.contract_end ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, contract_end: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, contract_end: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label>Notizen</Label>
               <Textarea rows={3} placeholder="Weitere Informationen" value={form.notes ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, notes: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label>Datenspeicherort (DORA)</Label>
-              <Select value={form.data_location ?? ''} onValueChange={(v) => setForm((f) => ({ ...f, data_location: v }))}>
+              <Select value={form.data_location ?? ''} onValueChange={(v) => { setForm((f) => ({ ...f, data_location: v })); }}>
                 <SelectTrigger><SelectValue placeholder="Auswählen …" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="EU">EU</SelectItem>
@@ -470,16 +470,16 @@ export default function SuppliersPage() {
             <div className="space-y-1.5">
               <Label>Unterdienstleister (kommagetrennt)</Label>
               <Textarea rows={2} placeholder="Komma-separiert eingeben" value={subSuppliersRaw}
-                onChange={(e) => setSubSuppliersRaw(e.target.value)} />
+                onChange={(e) => { setSubSuppliersRaw(e.target.value); }} />
             </div>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" checked={form.exit_strategy_exists ?? false}
-                onChange={(e) => setForm((f) => ({ ...f, exit_strategy_exists: e.target.checked }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, exit_strategy_exists: e.target.checked })); }} />
               Exit-Strategie vorhanden (DORA)
             </label>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>Abbrechen</Button>
             <Button onClick={handleSubmit} disabled={isPending}>
               {isPending ? 'Speichern …' : editId ? 'Speichern' : 'Hinzufügen'}
             </Button>

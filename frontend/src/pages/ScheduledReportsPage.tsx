@@ -184,7 +184,7 @@ function ChipsInput({ value, onChange }: ChipsInputProps) {
           {chip}
           <button
             type="button"
-            onClick={() => removeChip(chip)}
+            onClick={() => { removeChip(chip); }}
             className="hover:text-red-500 transition-colors"
             aria-label={`${chip} entfernen`}
           >
@@ -195,7 +195,7 @@ function ChipsInput({ value, onChange }: ChipsInputProps) {
       <input
         type="email"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={(e) => { setInput(e.target.value); }}
         onKeyDown={handleKeyDown}
         onBlur={addChip}
         placeholder={value.length === 0 ? 'E-Mail eingeben, Enter drücken' : ''}
@@ -255,7 +255,7 @@ function ReportDialog({ open, onClose, initial, onSave, isSaving }: ReportDialog
             <Input
               id="rep-name"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => { setForm({ ...form, name: e.target.value }); }}
               placeholder="z.B. Monatlicher Compliance-Bericht"
             />
           </div>
@@ -264,7 +264,7 @@ function ReportDialog({ open, onClose, initial, onSave, isSaving }: ReportDialog
             <Label>Typ</Label>
             <Select
               value={form.type}
-              onValueChange={(v) => setForm({ ...form, type: v as ReportType })}
+              onValueChange={(v) => { setForm({ ...form, type: v as ReportType }); }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -281,7 +281,7 @@ function ReportDialog({ open, onClose, initial, onSave, isSaving }: ReportDialog
             <Label>Zeitplan</Label>
             <Select
               value={form.schedule}
-              onValueChange={(v) => setForm({ ...form, schedule: v as Schedule })}
+              onValueChange={(v) => { setForm({ ...form, schedule: v as Schedule }); }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -298,7 +298,7 @@ function ReportDialog({ open, onClose, initial, onSave, isSaving }: ReportDialog
             <Label>Empfänger</Label>
             <ChipsInput
               value={form.recipients}
-              onChange={(v) => setForm({ ...form, recipients: v })}
+              onChange={(v) => { setForm({ ...form, recipients: v }); }}
             />
             <p className="text-[11px] text-secondary">
               E-Mail eingeben und Enter drücken. Mehrere Empfänger möglich.
@@ -309,7 +309,7 @@ function ReportDialog({ open, onClose, initial, onSave, isSaving }: ReportDialog
             <Label>Format</Label>
             <Select
               value={form.format}
-              onValueChange={(v) => setForm({ ...form, format: v as Format })}
+              onValueChange={(v) => { setForm({ ...form, format: v as Format }); }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -553,8 +553,8 @@ export default function ScheduledReportsPage() {
               <ReportCard
                 key={r.id}
                 report={r}
-                onEdit={() => openEdit(r)}
-                onDelete={() => setDeleteTarget(r)}
+                onEdit={() => { openEdit(r); }}
+                onDelete={() => { setDeleteTarget(r); }}
                 onRunNow={() => { void handleRunNow(r) }}
                 isRunning={runningId === r.id}
               />

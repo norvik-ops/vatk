@@ -127,7 +127,7 @@ function ControlGroupCard({
       <button
         type="button"
         className="w-full flex items-center justify-between px-4 py-3 bg-surface2 hover:bg-surface text-left gap-3"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); }}
       >
         <div className="flex items-center gap-3 min-w-0">
           <ChevronDown
@@ -164,7 +164,7 @@ function ControlGroupCard({
                   key={ctrl.id}
                   className="cursor-pointer hover:bg-surface2"
                   onClick={() =>
-                    navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`)
+                    { navigate(`/secvitals/controls/${ctrl.id}?frameworkId=${frameworkId}`); }
                   }
                 >
                   <TableCell className="font-mono text-xs">{ctrl.control_id}</TableCell>
@@ -291,7 +291,7 @@ export default function CISControlsPage() {
   function handleExportPDF() {
     if (!frameworkId) return
     const url = `/api/v1/secvitals/frameworks/${frameworkId}/export-pdf`
-    fetch(url, { credentials: 'include' })
+    void fetch(url, { credentials: 'include' })
       .then((r) => r.blob())
       .then((blob) => {
         const objectUrl = URL.createObjectURL(blob)
@@ -321,7 +321,7 @@ export default function CISControlsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/secvitals/frameworks')}
+              onClick={() => { navigate('/secvitals/frameworks'); }}
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Frameworks
@@ -338,7 +338,7 @@ export default function CISControlsPage() {
         )}
 
         {!isLoading && !cisFramework && (
-          <NotEnabled onNavigate={() => navigate('/secvitals/frameworks')} />
+          <NotEnabled onNavigate={() => { navigate('/secvitals/frameworks'); }} />
         )}
 
         {!isLoading && cisFramework && (
@@ -358,7 +358,7 @@ export default function CISControlsPage() {
             </div>
 
             {/* IG selector + content */}
-            <Tabs value={ig} onValueChange={(v) => setIG(v as IG)}>
+            <Tabs value={ig} onValueChange={(v) => { setIG(v as IG); }}>
               <TabsList>
                 {(Object.entries(IG_LABELS) as [IG, string][]).map(([level, label]) => (
                   <TabsTrigger key={level} value={level}>

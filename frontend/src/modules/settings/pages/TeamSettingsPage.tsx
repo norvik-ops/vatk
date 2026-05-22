@@ -97,7 +97,7 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { handleClose(); } }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('teamSettingsPage.inviteDialogTitle')}</DialogTitle>
@@ -110,14 +110,14 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
               type="email"
               placeholder={t('teamSettingsPage.placeholderEmail')}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); }}
               aria-invalid={!!emailValidation.error}
             />
             <FieldError error={emailValidation.error} />
           </div>
           <div className="space-y-1">
             <Label>{t('teamSettingsPage.labelRole')}</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+            <Select value={role} onValueChange={(v) => { setRole(v as Role); }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -155,7 +155,7 @@ interface PermissionsDialogProps {
 function PermissionsDialog({ member, onClose }: PermissionsDialogProps) {
   const { t } = useTranslation()
   return (
-    <Dialog open={member !== null} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={member !== null} onOpenChange={(open) => { if (!open) { onClose(); } }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('teamSettingsPage.permissionsDialogTitle')}</DialogTitle>
@@ -247,7 +247,7 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
                   ) : (
                     <Select
                       value={member.role}
-                      onValueChange={(v) => handleRoleChange(member, v as Role)}
+                      onValueChange={(v) => { handleRoleChange(member, v as Role); }}
                       disabled={updateRole.isPending}
                     >
                       <SelectTrigger className="h-7 w-28 text-xs">
@@ -267,7 +267,7 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setPermTarget(member)}
+                      onClick={() => { setPermTarget(member); }}
                       title={t('teamSettingsPage.permissionsDialogTitle')}
                     >
                       <ShieldCheck className="w-4 h-4 text-secondary" />
@@ -276,7 +276,7 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemove(member)}
+                        onClick={() => { handleRemove(member); }}
                         disabled={removeUser.isPending}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
@@ -291,9 +291,9 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
         </TableBody>
       </Table>
 
-      <PermissionsDialog member={permTarget} onClose={() => setPermTarget(null)} />
+      <PermissionsDialog member={permTarget} onClose={() => { setPermTarget(null); }} />
 
-      <AlertDialog open={removeTarget !== null} onOpenChange={(open) => !open && setRemoveTarget(null)}>
+      <AlertDialog open={removeTarget !== null} onOpenChange={(open) => { if (!open) { setRemoveTarget(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('teamSettingsPage.removeDialogTitle')}</AlertDialogTitle>
@@ -302,7 +302,7 @@ function MembersTable({ members, currentUserID }: { members: TeamMember[]; curre
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRemoveTarget(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setRemoveTarget(null); }}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('common.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -367,7 +367,7 @@ function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleRevoke(inv)}
+                    onClick={() => { handleRevoke(inv); }}
                     disabled={revoke.isPending}
                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
@@ -380,7 +380,7 @@ function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
         </Table>
       </div>
 
-      <AlertDialog open={revokeTarget !== null} onOpenChange={(open) => !open && setRevokeTarget(null)}>
+      <AlertDialog open={revokeTarget !== null} onOpenChange={(open) => { if (!open) { setRevokeTarget(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('teamSettingsPage.revokeDialogTitle')}</AlertDialogTitle>
@@ -389,7 +389,7 @@ function InvitationsTable({ invitations }: { invitations: TeamInvitation[] }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRevokeTarget(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setRevokeTarget(null); }}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmRevoke} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('teamSettingsPage.revokeDialogTitle')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -418,7 +418,7 @@ export default function TeamSettingsPage() {
         title={t('teamSettingsPage.title')}
         description={t('teamSettingsPage.description')}
         actions={
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={() => { setDialogOpen(true); }}>
             <Plus className="w-4 h-4 mr-2" />
             {t('teamSettingsPage.inviteMember')}
           </Button>
@@ -454,7 +454,7 @@ export default function TeamSettingsPage() {
         </div>
       )}
 
-      <InviteDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <InviteDialog open={dialogOpen} onClose={() => { setDialogOpen(false); }} />
     </div>
   )
 }

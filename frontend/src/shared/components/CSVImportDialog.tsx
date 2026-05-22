@@ -152,7 +152,7 @@ export function CSVImportDialog({
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDragOver(false)
-    const f = e.dataTransfer.files[0]
+    const f = e.dataTransfer.files.item(0)
     if (f) processFile(f)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -273,7 +273,7 @@ export function CSVImportDialog({
               </span>
               <button
                 type="button"
-                onClick={() => downloadTemplate(columns, entityLabel)}
+                onClick={() => { downloadTemplate(columns, entityLabel); }}
                 className="flex items-center gap-1 text-brand hover:underline font-medium"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -362,8 +362,8 @@ export function CSVImportDialog({
             `}>
               <p className={`font-semibold text-sm ${result.errors.length > 0 ? 'text-amber-800 dark:text-amber-300' : 'text-green-800 dark:text-green-300'}`}>
                 {result.errors.length === 0
-                  ? `${result.imported} ${entityLabel} erfolgreich importiert`
-                  : `${result.imported} importiert, ${result.skipped} übersprungen`
+                  ? `${String(result.imported)} ${entityLabel} erfolgreich importiert`
+                  : `${String(result.imported)} importiert, ${String(result.skipped)} übersprungen`
                 }
               </p>
               {result.skipped > 0 && (
@@ -378,7 +378,7 @@ export function CSVImportDialog({
                 <button
                   type="button"
                   className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-primary bg-surface2 hover:bg-surface transition-colors"
-                  onClick={() => setErrorsOpen((v) => !v)}
+                  onClick={() => { setErrorsOpen((v) => !v); }}
                 >
                   <span>{result.errors.length} Fehler</span>
                   {errorsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -406,7 +406,7 @@ export function CSVImportDialog({
 
           {step === 'preview' && (
             <>
-              <Button variant="outline" onClick={() => setStep('upload')} disabled={isUploading}>
+              <Button variant="outline" onClick={() => { setStep('upload'); }} disabled={isUploading}>
                 Zurück
               </Button>
               <Button onClick={() => { void handleUpload() }} disabled={isUploading}>

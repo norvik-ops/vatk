@@ -98,7 +98,7 @@ export default function SLADashboardPage() {
           {tabs.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => { setActiveTab(tab.key); }}
               className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 activeTab === tab.key
                   ? 'border-brand text-brand'
@@ -140,7 +140,7 @@ export default function SLADashboardPage() {
             }
             action={
               activeTab === 'all' ? (
-                <Button size="sm" onClick={() => navigate('/secpulse/assets')}>
+                <Button size="sm" onClick={() => { navigate('/secpulse/assets'); }}>
                   Assets anzeigen
                 </Button>
               ) : undefined
@@ -167,7 +167,7 @@ export default function SLADashboardPage() {
                   <TableRow
                     key={entry.finding_id}
                     className="cursor-pointer hover:bg-surface2"
-                    onClick={() => navigate(`/secpulse/findings/${entry.finding_id}`)}
+                    onClick={() => { navigate(`/secpulse/findings/${entry.finding_id}`); }}
                   >
                     <TableCell className="text-sm text-secondary">{entry.asset_name}</TableCell>
                     <TableCell>

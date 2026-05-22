@@ -59,9 +59,9 @@ export function useUploadEvidenceFile(controlId: string) {
 
 export function useDeleteEvidenceFile(controlId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (fileId: string) =>
-      apiFetch<void>(`/secvitals/evidence-files/${fileId}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/evidence-files/${fileId}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['secvitals', 'controls', controlId, 'evidence-files'],

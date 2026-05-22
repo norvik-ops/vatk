@@ -5,7 +5,7 @@ type Density = 'comfortable' | 'compact'
 const KEY = 'vakt_table_density'
 
 function read(): Density {
-  return (localStorage.getItem(KEY) as Density) ?? 'comfortable'
+  return (localStorage.getItem(KEY) as Density | null) ?? 'comfortable'
 }
 
 function apply(d: Density) {

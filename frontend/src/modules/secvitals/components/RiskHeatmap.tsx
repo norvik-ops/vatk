@@ -184,7 +184,7 @@ const RiskHeatmap: React.FC<Props> = ({ risks }) => {
                         return (
                           <button
                             key={likelihood}
-                            onClick={() => setSelectedCell({ likelihood, impact })}
+                            onClick={() => { setSelectedCell({ likelihood, impact }); }}
                             aria-label={`Wahrscheinlichkeit ${LIKELIHOOD_LABELS[likelihood - 1]}, Auswirkung ${IMPACT_LABELS[impact - 1]}, Score ${likelihood * impact}, ${cellRisks.length} Risiko${cellRisks.length === 1 ? '' : 'en'}`}
                             className={`flex-1 min-h-[52px] rounded-md ${bg} relative flex flex-wrap content-start gap-0.5 p-1 transition-all hover:ring-2 hover:ring-white/50 focus:outline-none focus:ring-2 focus:ring-white/70 ${isSelected ? 'ring-2 ring-white/80' : ''}`}
                             title={`W:${likelihood} A:${impact} — Score ${likelihood * impact} · ${cellRisks.length} Risiken`}
@@ -254,7 +254,7 @@ const RiskHeatmap: React.FC<Props> = ({ risks }) => {
           likelihood={selectedCell.likelihood}
           impact={selectedCell.impact}
           risks={selectedRisks}
-          onClose={() => setSelectedCell(null)}
+          onClose={() => { setSelectedCell(null); }}
         />
       )}
     </>

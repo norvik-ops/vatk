@@ -46,7 +46,7 @@ export function useCreateCampaign() {
 
 export function useLaunchCampaign(id: string) {
   const queryClient = useQueryClient()
-  return useMutation<{ status: string }, Error, void>({
+  return useMutation<{ status: string }>({
     mutationFn: () =>
       apiFetch<{ status: string }>(`${BASE}/campaigns/${id}/launch`, { method: 'POST' }),
     onSuccess: () => {
@@ -58,7 +58,7 @@ export function useLaunchCampaign(id: string) {
 
 export function useAbortCampaign(id: string) {
   const queryClient = useQueryClient()
-  return useMutation<{ status: string }, Error, void>({
+  return useMutation<{ status: string }>({
     mutationFn: () =>
       apiFetch<{ status: string }>(`${BASE}/campaigns/${id}/abort`, { method: 'POST' }),
     onSuccess: () => {
@@ -70,7 +70,7 @@ export function useAbortCampaign(id: string) {
 
 export function useDownloadCampaignReport() {
   return (campaignId: string, campaignName?: string) => {
-    fetch(`/api/v1/secreflex/campaigns/${campaignId}/report`, {
+    void fetch(`/api/v1/secreflex/campaigns/${campaignId}/report`, {
       credentials: 'include',
     })
       .then((r) => r.blob())

@@ -23,7 +23,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function EvidenceFileUpload({ controlId, evidenceId: _evidenceId }: EvidenceFileUploadProps) {
+export function EvidenceFileUpload({ controlId }: EvidenceFileUploadProps) {
   const { data: files, isLoading } = useEvidenceFilesByControl(controlId)
   const upload = useUploadEvidenceFile(controlId)
   const deleteFile = useDeleteEvidenceFile(controlId)
@@ -51,7 +51,7 @@ export function EvidenceFileUpload({ controlId, evidenceId: _evidenceId }: Evide
       return
     }
     upload.mutate(file, {
-      onError: (err) => setLocalError(err.message),
+      onError: (err) => { setLocalError(err.message); },
     })
   }
 
@@ -80,7 +80,7 @@ export function EvidenceFileUpload({ controlId, evidenceId: _evidenceId }: Evide
 
   return (
     <div className="space-y-3">
-      <FilePreviewDialog file={previewFile} onClose={() => setPreviewFile(null)} />
+      <FilePreviewDialog file={previewFile} onClose={() => { setPreviewFile(null); }} />
       {/* Drop zone */}
       <div
         className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 transition-colors cursor-pointer ${
@@ -161,7 +161,7 @@ export function EvidenceFileUpload({ controlId, evidenceId: _evidenceId }: Evide
                 size="sm"
                 className="shrink-0 h-6 w-6 p-0 text-secondary hover:text-red-600"
                 title="Löschen"
-                onClick={() => deleteFile.mutate(f.id)}
+                onClick={() => { deleteFile.mutate(f.id); }}
                 disabled={deleteFile.isPending}
               >
                 <Trash2 className="w-3.5 h-3.5" />

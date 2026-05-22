@@ -12,7 +12,7 @@ interface GuidanceMessage {
   actionHref?: string
 }
 
-const GUIDANCE: Record<string, GuidanceMessage> = {
+const GUIDANCE: Partial<Record<string, GuidanceMessage>> = {
   'control:first-created': {
     text: '💡 Erstes Control angelegt — als Nächstes Evidenz hochladen, damit es als „umgesetzt" zählt.',
     actionLabel: 'Evidenz hochladen',
@@ -96,7 +96,7 @@ export function useFirstAction(key: string, condition: boolean): void {
     const seen = loadSeen()
     if (seen.has(key)) return
 
-    const guidance = GUIDANCE[key]
+    const guidance: GuidanceMessage | undefined = GUIDANCE[key]
     if (!guidance) return
 
     seen.add(key)

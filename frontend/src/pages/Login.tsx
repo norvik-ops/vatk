@@ -84,7 +84,7 @@ export default function Login() {
         setDemoUsers(null)
         toast(t('auth.demoUnavailable'), { variant: 'error', duration: 10000 })
       })
-      .finally(() => setDemoStarting(false))
+      .finally(() => { setDemoStarting(false); })
   }, [isDemo, t])
 
   const [password, setPassword] = useState('')
@@ -135,7 +135,7 @@ export default function Login() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); }}
                   placeholder={t('auth.emailPlaceholder')}
                   required
                   aria-required="true"
@@ -151,7 +151,7 @@ export default function Login() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); }}
                   required
                   aria-required="true"
                   aria-describedby={error ? 'login-error' : undefined}

@@ -22,8 +22,8 @@ function CopyButton({ text }: { text: string }) {
 
   useEffect(() => {
     if (!copied) return
-    const id = setTimeout(() => setCopied(false), 2000)
-    return () => clearTimeout(id)
+    const id = setTimeout(() => { setCopied(false); }, 2000)
+    return () => { clearTimeout(id); }
   }, [copied])
 
   function handle() {
@@ -76,7 +76,7 @@ export default function TokensPage() {
 
   function handleDelete() {
     if (!deleteId) return
-    deleteToken.mutate(deleteId, { onSuccess: () => setDeleteId(null) })
+    deleteToken.mutate(deleteId, { onSuccess: () => { setDeleteId(null); } })
   }
 
   return (
@@ -104,7 +104,7 @@ export default function TokensPage() {
             title={t('secvault.tokensPage.noTokens')}
             description={t('secvault.tokensPage.noTokensDesc')}
             action={
-              <Button onClick={() => setOpen(true)}>
+              <Button onClick={() => { setOpen(true); }}>
                 <Plus className="w-4 h-4 mr-1" />{t('secvault.tokensPage.createToken')}
               </Button>
             }
@@ -143,7 +143,7 @@ export default function TokensPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700"
-                        onClick={() => setDeleteId(token.id)}
+                        onClick={() => { setDeleteId(token.id); }}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -177,7 +177,7 @@ export default function TokensPage() {
               </DialogFooter>
             </div>
           ) : (
-            <form onSubmit={(e) => { void handleCreate(e) }}>
+            <form onSubmit={(e) => { handleCreate(e) }}>
               <div className="py-4 space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="token-name">{t('secvault.tokensPage.labelName')}</Label>
@@ -185,7 +185,7 @@ export default function TokensPage() {
                     id="token-name"
                     placeholder="github-actions-prod"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => { setName(e.target.value); }}
                     required
                   />
                 </div>
@@ -198,7 +198,7 @@ export default function TokensPage() {
                           type="checkbox"
                           className="rounded"
                           checked={selectedScopes.has(scope)}
-                          onChange={() => toggleScope(scope)}
+                          onChange={() => { toggleScope(scope); }}
                         />
                         <span className="font-mono text-xs">{scope}</span>
                       </label>
@@ -207,7 +207,7 @@ export default function TokensPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
+                <Button type="button" variant="outline" onClick={() => { setOpen(false); }}>{t('common.cancel')}</Button>
                 <Button type="submit" disabled={createToken.isPending || !name.trim() || selectedScopes.size === 0}>
                   {createToken.isPending ? t('secvault.tokensPage.creating') : t('secvault.tokensPage.createToken')}
                 </Button>
@@ -218,12 +218,12 @@ export default function TokensPage() {
       </Dialog>
 
       {/* Delete confirmation */}
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <Dialog open={!!deleteId} onOpenChange={(open) => { if (!open) { setDeleteId(null); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('secvault.tokensPage.revokeDialogTitle')}</DialogTitle></DialogHeader>
           <p className="text-sm text-secondary py-2">{t('secvault.tokensPage.revokeDialogDesc')}</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setDeleteId(null); }}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteToken.isPending}>
               {deleteToken.isPending ? t('secvault.tokensPage.revoking') : t('secvault.tokensPage.revoke')}
             </Button>

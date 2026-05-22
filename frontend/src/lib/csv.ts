@@ -9,7 +9,13 @@ export function exportToCSV(filename: string, rows: Record<string, unknown>[]): 
 
   function escapeCell(value: unknown): string {
     if (value === null || value === undefined) return ''
-    const str = String(value)
+    let str: string
+    if (typeof value === 'object' || typeof value === 'function') {
+      str = JSON.stringify(value)
+    } else {
+      // value is string | number | boolean | symbol | bigint here
+      str = (value as { toString(): string }).toString()
+    }
     // Wrap in quotes if the value contains a comma, quote, or newline
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
       return `"${str.replace(/"/g, '""')}"`

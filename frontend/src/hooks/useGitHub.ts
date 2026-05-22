@@ -54,8 +54,8 @@ export function useAddGitHubIntegration() {
 
 export function useDeleteGitHubIntegration() {
   const qc = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`${BASE}/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`${BASE}/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['integrations', 'github'] })
     },

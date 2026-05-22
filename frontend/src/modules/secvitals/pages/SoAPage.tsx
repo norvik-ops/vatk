@@ -92,7 +92,7 @@ export default function SoAPage() {
   }
 
   function handleCsvDownload() {
-    apiFetch<Blob>('/secvitals/soa.csv').then(blob => {
+    void apiFetch<Blob>('/secvitals/soa.csv').then(blob => {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -138,7 +138,7 @@ export default function SoAPage() {
         <select
           className="border rounded px-3 py-1.5 text-sm bg-white"
           value={activeFramework}
-          onChange={e => setActiveFramework(e.target.value)}
+          onChange={e => { setActiveFramework(e.target.value); }}
         >
           <option value="all">Alle Frameworks</option>
           {frameworks.map(f => <option key={f} value={f}>{f}</option>)}
@@ -146,7 +146,7 @@ export default function SoAPage() {
         {(['all', 'applicable', 'not_applicable'] as const).map(f => (
           <button
             key={f}
-            onClick={() => setFilter(f)}
+            onClick={() => { setFilter(f); }}
             className={`px-3 py-1.5 rounded text-sm border ${filter === f ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}`}
           >
             {f === 'all' ? 'Alle' : f === 'applicable' ? 'Anwendbar' : 'Nicht anwendbar'}
@@ -186,7 +186,7 @@ export default function SoAPage() {
                 </TableCell>
                 <TableCell className="text-center">
                   <button
-                    onClick={() => toggleApplicable(entry)}
+                    onClick={() => { toggleApplicable(entry); }}
                     disabled={updateMut.isPending}
                     className="hover:opacity-70 transition-opacity"
                     title={entry.applicable ? 'Als nicht anwendbar markieren' : 'Als anwendbar markieren'}

@@ -66,7 +66,7 @@ export default function RiskDetailPage() {
 
   function handleSave() {
     if (!form) return
-    update.mutate(form, { onSuccess: () => setDirty(false) })
+    update.mutate(form, { onSuccess: () => { setDirty(false); } })
   }
 
   if (isLoading) return (
@@ -92,7 +92,7 @@ export default function RiskDetailPage() {
         description={risk.category || 'Risikodetails'}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/secvitals/risks')}>
+            <Button variant="outline" onClick={() => { navigate('/secvitals/risks'); }}>
               <ArrowLeft className="w-4 h-4 mr-1" />
               Zurück
             </Button>
@@ -114,19 +114,19 @@ export default function RiskDetailPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Bezeichnung</Label>
-                  <Input value={form.title} onChange={(e) => set('title', e.target.value)} />
+                  <Input value={form.title} onChange={(e) => { set('title', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Kategorie</Label>
-                  <Input value={form.category ?? ''} placeholder="z.B. Cyber, Compliance" onChange={(e) => set('category', e.target.value)} />
+                  <Input value={form.category ?? ''} placeholder="z.B. Cyber, Compliance" onChange={(e) => { set('category', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Beschreibung</Label>
-                  <Textarea rows={3} value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} />
+                  <Textarea rows={3} value={form.description ?? ''} onChange={(e) => { set('description', e.target.value); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Verantwortlicher</Label>
-                  <Input value={form.owner ?? ''} onChange={(e) => set('owner', e.target.value)} />
+                  <Input value={form.owner ?? ''} onChange={(e) => { set('owner', e.target.value); }} />
                 </div>
               </CardContent>
             </Card>
@@ -136,7 +136,7 @@ export default function RiskDetailPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Strategie</Label>
-                  <Select value={form.treatment} onValueChange={(v) => set('treatment', v as Risk['treatment'])}>
+                  <Select value={form.treatment} onValueChange={(v) => { set('treatment', v as Risk['treatment']); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {(Object.keys(TREATMENT_LABELS) as Risk['treatment'][]).map((k) => (
@@ -147,7 +147,7 @@ export default function RiskDetailPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Maßnahmen</Label>
-                  <Textarea rows={3} value={form.treatment_notes ?? ''} onChange={(e) => set('treatment_notes', e.target.value)} />
+                  <Textarea rows={3} value={form.treatment_notes ?? ''} onChange={(e) => { set('treatment_notes', e.target.value); }} />
                 </div>
               </CardContent>
             </Card>
@@ -165,12 +165,12 @@ export default function RiskDetailPage() {
                 <div className="space-y-1.5">
                   <Label>Wahrscheinlichkeit (1–5)</Label>
                   <Input type="number" min={1} max={5} value={form.likelihood}
-                    onChange={(e) => set('likelihood', Math.min(5, Math.max(1, parseInt(e.target.value, 10) || 1)))} />
+                    onChange={(e) => { set('likelihood', Math.min(5, Math.max(1, parseInt(e.target.value, 10) || 1))); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Auswirkung (1–5)</Label>
                   <Input type="number" min={1} max={5} value={form.impact}
-                    onChange={(e) => set('impact', Math.min(5, Math.max(1, parseInt(e.target.value, 10) || 1)))} />
+                    onChange={(e) => { set('impact', Math.min(5, Math.max(1, parseInt(e.target.value, 10) || 1))); }} />
                 </div>
               </CardContent>
             </Card>
@@ -178,7 +178,7 @@ export default function RiskDetailPage() {
             <Card>
               <CardHeader><CardTitle className="text-sm">Status</CardTitle></CardHeader>
               <CardContent>
-                <Select value={form.status} onValueChange={(v) => set('status', v as Risk['status'])}>
+                <Select value={form.status} onValueChange={(v) => { set('status', v as Risk['status']); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {(Object.keys(STATUS_LABELS) as Risk['status'][]).map((k) => (

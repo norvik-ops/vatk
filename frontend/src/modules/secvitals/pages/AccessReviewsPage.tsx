@@ -176,7 +176,7 @@ function ReviewItemsPanel({ campaign }: { campaign: AccessReviewCampaign }) {
                         className="h-7 w-7 text-green-400 hover:text-green-300"
                         title="Bestätigen"
                         disabled={item.decision === 'approved'}
-                        onClick={() => handleDecision(item, 'approved')}
+                        onClick={() => { handleDecision(item, 'approved'); }}
                       >
                         <Check className="w-3.5 h-3.5" />
                       </Button>
@@ -186,7 +186,7 @@ function ReviewItemsPanel({ campaign }: { campaign: AccessReviewCampaign }) {
                         className="h-7 w-7 text-red-400 hover:text-red-300"
                         title="Widerrufen"
                         disabled={item.decision === 'revoked'}
-                        onClick={() => handleDecision(item, 'revoked')}
+                        onClick={() => { handleDecision(item, 'revoked'); }}
                       >
                         <X className="w-3.5 h-3.5" />
                       </Button>
@@ -210,7 +210,7 @@ function ReviewItemsPanel({ campaign }: { campaign: AccessReviewCampaign }) {
             <Input
               placeholder="benutzer@firma.de"
               value={newItemForm.user_email}
-              onChange={(e) => setNewItemForm((f) => ({ ...f, user_email: e.target.value }))}
+              onChange={(e) => { setNewItemForm((f) => ({ ...f, user_email: e.target.value })); }}
             />
           </div>
           <div className="flex-1 space-y-1">
@@ -218,7 +218,7 @@ function ReviewItemsPanel({ campaign }: { campaign: AccessReviewCampaign }) {
             <Input
               placeholder="z.B. Admin"
               value={newItemForm.access_level}
-              onChange={(e) => setNewItemForm((f) => ({ ...f, access_level: e.target.value }))}
+              onChange={(e) => { setNewItemForm((f) => ({ ...f, access_level: e.target.value })); }}
             />
           </div>
           <Button
@@ -228,12 +228,12 @@ function ReviewItemsPanel({ campaign }: { campaign: AccessReviewCampaign }) {
           >
             Hinzufügen
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setAddingItem(false)}>
+          <Button size="sm" variant="outline" onClick={() => { setAddingItem(false); }}>
             Abbrechen
           </Button>
         </div>
       ) : (
-        <Button size="sm" variant="outline" onClick={() => setAddingItem(true)}>
+        <Button size="sm" variant="outline" onClick={() => { setAddingItem(true); }}>
           <Plus className="w-3.5 h-3.5 mr-1" />
           Benutzer hinzufügen
         </Button>
@@ -265,7 +265,7 @@ function CampaignRow({
         <div className="flex items-start justify-between gap-2">
           <button
             className="flex items-center gap-2 flex-1 text-left"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={() => { setExpanded((v) => !v); }}
           >
             {expanded ? (
               <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -368,10 +368,10 @@ export default function AccessReviewsPage() {
     if (editId) {
       updateCampaign.mutate(
         { id: editId, input: payload },
-        { onSuccess: () => setDialogOpen(false) },
+        { onSuccess: () => { setDialogOpen(false); } },
       )
     } else {
-      createCampaign.mutate(payload, { onSuccess: () => setDialogOpen(false) })
+      createCampaign.mutate(payload, { onSuccess: () => { setDialogOpen(false); } })
     }
   }
 
@@ -428,9 +428,9 @@ export default function AccessReviewsPage() {
                 key={c.id}
                 campaign={c}
                 isAdmin={isAdmin}
-                onEdit={() => openEdit(c)}
-                onDelete={() => handleDelete(c.id)}
-                onActivate={() => handleActivate(c)}
+                onEdit={() => { openEdit(c); }}
+                onDelete={() => { handleDelete(c.id); }}
+                onActivate={() => { handleActivate(c); }}
               />
             ))}
           </div>
@@ -451,7 +451,7 @@ export default function AccessReviewsPage() {
               <Input
                 placeholder="z.B. Q2 2026 Zugriffsüberprüfung"
                 value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); }}
               />
             </div>
 
@@ -461,7 +461,7 @@ export default function AccessReviewsPage() {
                 rows={3}
                 placeholder="Ziel und Umfang dieser Kampagne …"
                 value={form.description ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, description: e.target.value })); }}
               />
             </div>
 
@@ -471,7 +471,7 @@ export default function AccessReviewsPage() {
                 type="email"
                 placeholder="pruefer@firma.de"
                 value={form.reviewer_email}
-                onChange={(e) => setForm((f) => ({ ...f, reviewer_email: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, reviewer_email: e.target.value })); }}
               />
             </div>
 
@@ -480,7 +480,7 @@ export default function AccessReviewsPage() {
               <Input
                 placeholder="z.B. Alle Nutzer mit Admin-Rolle"
                 value={form.scope ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, scope: e.target.value })); }}
               />
             </div>
 
@@ -489,7 +489,7 @@ export default function AccessReviewsPage() {
               <Input
                 type="date"
                 value={form.due_date ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, due_date: e.target.value })); }}
               />
             </div>
 
@@ -498,7 +498,7 @@ export default function AccessReviewsPage() {
                 <Label>Status</Label>
                 <Select
                   value={(form as { status?: string }).status ?? 'draft'}
-                  onValueChange={(v) => setForm((f) => ({ ...f, status: v }))}
+                  onValueChange={(v) => { setForm((f) => ({ ...f, status: v })); }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -515,7 +515,7 @@ export default function AccessReviewsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>
               Abbrechen
             </Button>
             <Button

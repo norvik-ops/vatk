@@ -49,14 +49,14 @@ export default function DSRPortalSettingsPage() {
   const [saved, setSaved] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
-  useEffect(() => () => clearTimeout(savedTimerRef.current), [])
+  useEffect(() => () => { clearTimeout(savedTimerRef.current); }, [])
 
   useEffect(() => {
     if (data) {
       setEnabled(data.enabled)
-      setSlug(data.slug ?? '')
-      setDpoEmail(data.dpo_email ?? '')
-      setIntro(data.intro ?? '')
+      setSlug(data.slug)
+      setDpoEmail(data.dpo_email)
+      setIntro(data.intro)
     }
   }, [data])
 
@@ -66,7 +66,7 @@ export default function DSRPortalSettingsPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['dsr-portal-settings'] })
       setSaved(true)
-      savedTimerRef.current = setTimeout(() => setSaved(false), 3000)
+      savedTimerRef.current = setTimeout(() => { setSaved(false); }, 3000)
     },
   })
 
@@ -119,7 +119,7 @@ export default function DSRPortalSettingsPage() {
             type="button"
             role="switch"
             aria-checked={enabled}
-            onClick={() => setEnabled((v) => !v)}
+            onClick={() => { setEnabled((v) => !v); }}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
               enabled ? 'bg-blue-600' : 'bg-gray-200'
             }`}
@@ -146,7 +146,7 @@ export default function DSRPortalSettingsPage() {
             <input
               type="text"
               value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              onChange={(e) => { setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')); }}
               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="mein-unternehmen"
             />
@@ -163,7 +163,7 @@ export default function DSRPortalSettingsPage() {
           <input
             type="email"
             value={dpoEmail}
-            onChange={(e) => setDpoEmail(e.target.value)}
+            onChange={(e) => { setDpoEmail(e.target.value); }}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="datenschutz@beispiel.de"
           />
@@ -178,7 +178,7 @@ export default function DSRPortalSettingsPage() {
           </label>
           <textarea
             value={intro}
-            onChange={(e) => setIntro(e.target.value)}
+            onChange={(e) => { setIntro(e.target.value); }}
             rows={4}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             placeholder="Willkommen auf unserem Datenschutz-Portal. Hier können Sie Ihre Rechte nach DSGVO wahrnehmen…"
@@ -218,7 +218,7 @@ export default function DSRPortalSettingsPage() {
           <span className="text-sm text-green-600 font-medium">Einstellungen gespeichert</span>
         )}
         <button
-          onClick={() => mutation.mutate()}
+          onClick={() => { mutation.mutate(); }}
           disabled={mutation.isPending}
           className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40"
         >

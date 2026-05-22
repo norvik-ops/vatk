@@ -215,7 +215,7 @@ export default function EmployeesPage() {
 
   function handleField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }))
-    clearEmpError(key as string)
+    clearEmpError(key)
   }
 
   async function handleSubmit() {
@@ -280,7 +280,7 @@ export default function EmployeesPage() {
             key={s}
             variant={statusFilter === s ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setStatusFilter(s)}
+            onClick={() => { setStatusFilter(s); }}
           >
             {s === 'all' ? 'Alle' : s === 'active' ? 'Aktiv' : s === 'offboarding' ? 'Offboarding' : 'Ausgeschieden'}
           </Button>
@@ -333,13 +333,13 @@ export default function EmployeesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 justify-end">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(e)}>
+                        <Button variant="ghost" size="icon" onClick={() => { openEdit(e); }}>
                           <Pencil className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => void handleDelete(e.id)}
+                          onClick={() => { handleDelete(e.id); }}
                           className="text-red-500 hover:text-red-600"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -376,7 +376,7 @@ export default function EmployeesPage() {
                 <Label>Vorname <span className="text-red-400 text-xs">*</span></Label>
                 <Input
                   value={form.first_name}
-                  onChange={(e) => handleField('first_name', e.target.value)}
+                  onChange={(e) => { handleField('first_name', e.target.value); }}
                   placeholder="Max"
                 />
                 <FieldError error={empErrors.first_name ?? null} />
@@ -385,7 +385,7 @@ export default function EmployeesPage() {
                 <Label>Nachname <span className="text-red-400 text-xs">*</span></Label>
                 <Input
                   value={form.last_name}
-                  onChange={(e) => handleField('last_name', e.target.value)}
+                  onChange={(e) => { handleField('last_name', e.target.value); }}
                   placeholder="Mustermann"
                 />
                 <FieldError error={empErrors.last_name ?? null} />
@@ -398,7 +398,7 @@ export default function EmployeesPage() {
                 <Input
                   type="email"
                   value={form.email}
-                  onChange={(e) => handleField('email', e.target.value)}
+                  onChange={(e) => { handleField('email', e.target.value); }}
                   placeholder="max.mustermann@example.com"
                 />
                 <FieldError error={empErrors.email ?? null} />
@@ -410,7 +410,7 @@ export default function EmployeesPage() {
                 <Label>Abteilung</Label>
                 <Input
                   value={form.department}
-                  onChange={(e) => handleField('department', e.target.value)}
+                  onChange={(e) => { handleField('department', e.target.value); }}
                   placeholder="IT"
                 />
               </div>
@@ -418,7 +418,7 @@ export default function EmployeesPage() {
                 <Label>Rolle / Funktion</Label>
                 <Input
                   value={form.role}
-                  onChange={(e) => handleField('role', e.target.value)}
+                  onChange={(e) => { handleField('role', e.target.value); }}
                   placeholder="DevOps Engineer"
                 />
               </div>
@@ -431,7 +431,7 @@ export default function EmployeesPage() {
                   <Input
                     type="date"
                     value={form.start_date}
-                    onChange={(e) => handleField('start_date', e.target.value)}
+                    onChange={(e) => { handleField('start_date', e.target.value); }}
                   />
                 </div>
               )}
@@ -442,14 +442,14 @@ export default function EmployeesPage() {
                     <Input
                       type="date"
                       value={form.end_date}
-                      onChange={(e) => handleField('end_date', e.target.value)}
+                      onChange={(e) => { handleField('end_date', e.target.value); }}
                     />
                   </div>
                   <div className="space-y-1">
                     <Label>Status *</Label>
                     <Select
                       value={form.status}
-                      onValueChange={(v) => handleField('status', v as FormState['status'])}
+                      onValueChange={(v) => { handleField('status', v as FormState['status']); }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -469,7 +469,7 @@ export default function EmployeesPage() {
               <Label>Notizen</Label>
               <Textarea
                 value={form.notes}
-                onChange={(e) => handleField('notes', e.target.value)}
+                onChange={(e) => { handleField('notes', e.target.value); }}
                 placeholder="Interne Notizen..."
                 rows={3}
               />
@@ -477,7 +477,7 @@ export default function EmployeesPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>
               Abbrechen
             </Button>
             <Button onClick={() => void handleSubmit()} disabled={isPending}>

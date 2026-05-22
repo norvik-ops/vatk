@@ -171,7 +171,7 @@ function SectorButton({ sector, selected, onSelect }: SectorButtonProps) {
   return (
     <button
       type="button"
-      onClick={() => onSelect(sector.id)}
+      onClick={() => { onSelect(sector.id); }}
       className={`w-full text-left px-3 py-2.5 rounded-lg border text-[13px] transition-all duration-150 flex items-center gap-2 ${
         selected
           ? 'border-brand bg-brand/10 text-brand font-medium'
@@ -241,7 +241,7 @@ function Step1SectorSelection({ selectedSectorId, onSelect, onNext }: Step1Props
             {/* None option */}
             <button
               type="button"
-              onClick={() => onSelect('none')}
+              onClick={() => { onSelect('none'); }}
               className={`w-full text-left px-3 py-2.5 rounded-lg border text-[13px] transition-all duration-150 flex items-center gap-2 ${
                 selectedSectorId === 'none'
                   ? 'border-brand bg-brand/10 text-brand font-medium'
@@ -310,7 +310,7 @@ function Step2SizeClass({ sector, employees, revenue, onEmployeesChange, onReven
             min="0"
             placeholder="z.B. 120"
             value={employees}
-            onChange={(e) => onEmployeesChange(e.target.value)}
+            onChange={(e) => { onEmployeesChange(e.target.value); }}
           />
         </div>
         <div className="space-y-1.5">
@@ -322,7 +322,7 @@ function Step2SizeClass({ sector, employees, revenue, onEmployeesChange, onReven
             step="0.1"
             placeholder="z.B. 25"
             value={revenue}
-            onChange={(e) => onRevenueChange(e.target.value)}
+            onChange={(e) => { onRevenueChange(e.target.value); }}
           />
         </div>
       </div>
@@ -503,7 +503,7 @@ function Step4Checklist({ classification, checkedItems, onToggle, onBack }: Step
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => onToggle(item.id)}
+                    onClick={() => { onToggle(item.id); }}
                     className="w-full flex items-start gap-3 px-3 py-2.5 rounded-lg border border-border bg-surface hover:border-brand/40 text-left transition-all duration-150 group"
                   >
                     <div className="mt-0.5 shrink-0">
@@ -540,12 +540,12 @@ function Step4Checklist({ classification, checkedItems, onToggle, onBack }: Step
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => window.print()}
+            onClick={() => { window.print(); }}
           >
             <Printer className="w-4 h-4 mr-1.5" />
             Als PDF exportieren
           </Button>
-          <Button onClick={() => navigate('/secvitals')}>
+          <Button onClick={() => { navigate('/secvitals'); }}>
             In SecVitals öffnen
             <ExternalLink className="w-4 h-4 ml-1.5" />
           </Button>
@@ -646,7 +646,7 @@ export default function NIS2AssistantPage() {
         title="NIS2-Registrierungsassistent"
         description="Prüfen Sie in wenigen Schritten, ob Ihr Unternehmen unter die NIS2-Richtlinie fällt."
         actions={
-          <Button variant="outline" size="sm" onClick={() => navigate('/secvitals')}>
+          <Button variant="outline" size="sm" onClick={() => { navigate('/secvitals'); }}>
             <Shield className="w-3.5 h-3.5 mr-1" />
             Zurück zu SecVitals
           </Button>
@@ -678,10 +678,10 @@ export default function NIS2AssistantPage() {
                   sector={sector}
                   employees={state.employees}
                   revenue={state.revenue}
-                  onEmployeesChange={(v) => setState((prev) => ({ ...prev, employees: v }))}
-                  onRevenueChange={(v) => setState((prev) => ({ ...prev, revenue: v }))}
+                  onEmployeesChange={(v) => { setState((prev) => ({ ...prev, employees: v })); }}
+                  onRevenueChange={(v) => { setState((prev) => ({ ...prev, revenue: v })); }}
                   onNext={handleStep2Next}
-                  onBack={() => goTo(1)}
+                  onBack={() => { goTo(1); }}
                 />
               )}
 
@@ -690,7 +690,7 @@ export default function NIS2AssistantPage() {
                   classification={classification}
                   sector={sector}
                   onNext={handleStep3Next}
-                  onBack={() => goTo(state.selectedSectorId === 'none' ? 1 : 2)}
+                  onBack={() => { goTo(state.selectedSectorId === 'none' ? 1 : 2); }}
                 />
               )}
 
@@ -699,7 +699,7 @@ export default function NIS2AssistantPage() {
                   classification={classification}
                   checkedItems={state.checkedItems}
                   onToggle={handleToggleCheck}
-                  onBack={() => goTo(3)}
+                  onBack={() => { goTo(3); }}
                 />
               )}
             </CardContent>

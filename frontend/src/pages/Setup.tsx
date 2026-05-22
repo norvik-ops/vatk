@@ -49,7 +49,7 @@ function Step1OrgName({ orgName, onChange, onNext }: Step1Props) {
           id="org_name"
           type="text"
           value={orgName}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => { onChange(e.target.value); }}
           placeholder={t('setup.orgNamePlaceholder')}
           className="w-full border border-border rounded px-3 py-2 text-sm bg-surface2 text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand"
           autoFocus
@@ -102,7 +102,7 @@ function Step2AdminAccount({
           id="admin_email"
           type="email"
           value={email}
-          onChange={(e) => onChangeEmail(e.target.value)}
+          onChange={(e) => { onChangeEmail(e.target.value); }}
           placeholder={t('setup.adminEmailPlaceholder')}
           className="w-full border border-border rounded px-3 py-2 text-sm bg-surface2 text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand"
           autoFocus
@@ -116,7 +116,7 @@ function Step2AdminAccount({
           id="admin_password"
           type="password"
           value={password}
-          onChange={(e) => onChangePassword(e.target.value)}
+          onChange={(e) => { onChangePassword(e.target.value); }}
           placeholder={t('setup.adminPasswordPlaceholder')}
           className="w-full border border-border rounded px-3 py-2 text-sm bg-surface2 text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand"
         />
@@ -169,7 +169,7 @@ function Step3Modules({ modules, onToggle, onBack, onSubmit, submitting, error }
             <input
               type="checkbox"
               checked={modules.includes(mod)}
-              onChange={() => onToggle(mod)}
+              onChange={() => { onToggle(mod); }}
               className="mt-0.5"
             />
             <div>
@@ -285,7 +285,7 @@ export default function Setup() {
           <Step1OrgName
             orgName={orgName}
             onChange={setOrgName}
-            onNext={() => setStep(2)}
+            onNext={() => { setStep(2); }}
           />
         )}
         {step === 2 && (
@@ -294,16 +294,16 @@ export default function Setup() {
             password={adminPassword}
             onChangeEmail={setAdminEmail}
             onChangePassword={setAdminPassword}
-            onBack={() => setStep(1)}
-            onNext={() => setStep(3)}
+            onBack={() => { setStep(1); }}
+            onNext={() => { setStep(3); }}
           />
         )}
         {step === 3 && (
           <Step3Modules
             modules={modules}
             onToggle={toggleModule}
-            onBack={() => setStep(2)}
-            onSubmit={handleSubmit}
+            onBack={() => { setStep(2); }}
+            onSubmit={() => { void handleSubmit(); }}
             submitting={submitting}
             error={error}
           />

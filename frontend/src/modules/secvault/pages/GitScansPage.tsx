@@ -74,7 +74,7 @@ function ScanResultsPanel({ scanId }: { scanId: string }) {
         <p className="text-xs text-secondary">{dismissed.length} dismissed finding{dismissed.length !== 1 ? 's' : ''}</p>
       )}
 
-      <Dialog open={!!dismissingId} onOpenChange={(open) => !open && setDismissingId(null)}>
+      <Dialog open={!!dismissingId} onOpenChange={(open) => { if (!open) { setDismissingId(null); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Dismiss Finding</DialogTitle></DialogHeader>
           <div className="py-4 space-y-1.5">
@@ -83,11 +83,11 @@ function ScanResultsPanel({ scanId }: { scanId: string }) {
               id="dismiss-reason"
               placeholder="False positive, already rotated, etc."
               value={dismissReason}
-              onChange={(e) => setDismissReason(e.target.value)}
+              onChange={(e) => { setDismissReason(e.target.value); }}
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDismissingId(null)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => { setDismissingId(null); }}>Abbrechen</Button>
             <Button onClick={handleDismiss} disabled={dismiss.isPending}>
               {dismiss.isPending ? 'Dismissing…' : 'Dismiss'}
             </Button>
@@ -105,7 +105,7 @@ function ScanRow({ scan }: { scan: GitScan }) {
     <div className="border border-border rounded-lg bg-surface overflow-hidden">
       <div
         className="flex items-center gap-4 p-4 cursor-pointer hover:bg-surface2"
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => { setExpanded(!expanded); }}
       >
         <GitBranch className="w-4 h-4 text-secondary shrink-0" />
         <span className="font-mono text-sm text-primary flex-1 truncate">{scan.repo_url}</span>
@@ -147,7 +147,7 @@ export default function GitScansPage() {
         title="Git Scans"
         description="Repositories nach geleakten Zugangsdaten und Secrets durchsuchen."
         actions={
-          <Button onClick={() => setOpen(true)}>
+          <Button onClick={() => { setOpen(true); }}>
             <Plus className="w-4 h-4 mr-1" />
             New Scan
           </Button>
@@ -170,7 +170,7 @@ export default function GitScansPage() {
             title="Keine Git-Scans"
             description="Verbinde dein erstes Repository."
             action={
-              <Button onClick={() => setOpen(true)}>
+              <Button onClick={() => { setOpen(true); }}>
                 <Plus className="w-4 h-4 mr-1" />Scan starten
               </Button>
             }
@@ -183,19 +183,19 @@ export default function GitScansPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Scan Repository</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { void handleTrigger(e) }}>
+          <form onSubmit={(e) => { handleTrigger(e) }}>
             <div className="py-4 space-y-1.5">
               <Label htmlFor="repo-url">Repository URL</Label>
               <Input
                 id="repo-url"
                 placeholder="https://github.com/org/repo"
                 value={repoUrl}
-                onChange={(e) => setRepoUrl(e.target.value)}
+                onChange={(e) => { setRepoUrl(e.target.value); }}
                 required
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Abbrechen</Button>
+              <Button type="button" variant="outline" onClick={() => { setOpen(false); }}>Abbrechen</Button>
               <Button type="submit" disabled={triggerScan.isPending}>
                 {triggerScan.isPending ? 'Starting…' : 'Start Scan'}
               </Button>

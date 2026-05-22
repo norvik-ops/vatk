@@ -94,7 +94,7 @@ function ReviewDialog({ approval, mode, onClose }: ReviewDialogProps) {
             <Label className="text-xs">Kommentar (optional)</Label>
             <Textarea
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              onChange={(e) => { setComment(e.target.value); }}
               placeholder={mode === 'approve' ? 'Genehmigt — keine weiteren Anmerkungen' : 'Grund für die Ablehnung…'}
               rows={3}
             />
@@ -214,7 +214,7 @@ export default function ApprovalsPage() {
                         size="sm"
                         variant="outline"
                         className="text-green-600 border-green-600/30 hover:bg-green-600/10"
-                        onClick={() => openReview(a, 'approve')}
+                        onClick={() => { openReview(a, 'approve'); }}
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
                         Genehmigen
@@ -223,7 +223,7 @@ export default function ApprovalsPage() {
                         size="sm"
                         variant="outline"
                         className="text-red-500 border-red-500/30 hover:bg-red-500/10"
-                        onClick={() => openReview(a, 'reject')}
+                        onClick={() => { openReview(a, 'reject'); }}
                       >
                         <XCircle className="w-3.5 h-3.5 mr-1" />
                         Ablehnen
@@ -241,7 +241,7 @@ export default function ApprovalsPage() {
       <ReviewDialog
         approval={selected}
         mode={reviewMode}
-        onClose={() => setSelected(null)}
+        onClose={() => { setSelected(null); }}
       />
     </div>
   )

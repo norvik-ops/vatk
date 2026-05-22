@@ -155,13 +155,13 @@ function DSRCard({
               size="sm"
               variant="outline"
               className="h-7 text-xs gap-1 text-green-400 border-green-500/30 hover:bg-green-500/10"
-              onClick={() => onErasure(dsr.id)}
+              onClick={() => { onErasure(dsr.id); }}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               Löschung durchgeführt
             </Button>
           )}
-          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Bearbeiten" onClick={() => onEdit(dsr)}>
+          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Bearbeiten" onClick={() => { onEdit(dsr); }}>
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           <Button
@@ -169,7 +169,7 @@ function DSRCard({
             variant="ghost"
             className="h-7 w-7 text-destructive hover:text-destructive"
             aria-label="Löschen"
-            onClick={() => onDelete(dsr.id)}
+            onClick={() => { onDelete(dsr.id); }}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
@@ -248,20 +248,20 @@ export default function DSRPage() {
         description: createForm.description || undefined,
         notes: createForm.notes || undefined,
       }
-      createDSR.mutate(payload, { onSuccess: () => setDialogMode(null) })
+      createDSR.mutate(payload, { onSuccess: () => { setDialogMode(null); } })
     } else if (dialogMode === 'edit' && editId) {
       const payload: UpdateDSRInput = {
         status: editForm.status,
         notes: editForm.notes || undefined,
       }
-      updateDSR.mutate({ id: editId, input: payload }, { onSuccess: () => setDialogMode(null) })
+      updateDSR.mutate({ id: editId, input: payload }, { onSuccess: () => { setDialogMode(null); } })
     }
   }
 
   const isPending = createDSR.isPending || updateDSR.isPending
   const canSubmitCreate =
-    createForm.requester_name && createForm.requester_email && createForm.type && !isPending
-  const canSubmitEdit = editForm.status && !isPending
+    createForm.requester_name && createForm.requester_email && !isPending
+  const canSubmitEdit = !isPending
 
   const openDSRs = dsrs?.filter((d) => d.status === 'open' || d.status === 'in_progress') ?? []
   const closedDSRs = dsrs?.filter((d) => d.status === 'completed' || d.status === 'rejected') ?? []
@@ -275,7 +275,7 @@ export default function DSRPage() {
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => {
-              fetch('/api/v1/secprivacy/dsrs/export.csv', { credentials: 'include' })
+              void fetch('/api/v1/secprivacy/dsrs/export.csv', { credentials: 'include' })
                 .then(res => res.blob())
                 .then(blob => {
                   const url = URL.createObjectURL(blob)
@@ -377,7 +377,7 @@ export default function DSRPage() {
       </div>
 
       {/* Art. 17 Erasure execution dialog */}
-      <Dialog open={erasureId !== null} onOpenChange={(open) => !open && setErasureId(null)}>
+      <Dialog open={erasureId !== null} onOpenChange={(open) => { if (!open) { setErasureId(null); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Löschung bestätigen (Art. 17 DSGVO)</DialogTitle>
@@ -391,12 +391,12 @@ export default function DSRPage() {
               id="erasure-note"
               placeholder="z.B. Kundendatensätze in DB gelöscht, Backups werden nach 30 Tagen überschrieben."
               value={erasureNote}
-              onChange={(e) => setErasureNote(e.target.value)}
+              onChange={(e) => { setErasureNote(e.target.value); }}
               rows={3}
             />
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setErasureId(null)}>Abbrechen</Button>
+            <Button variant="ghost" onClick={() => { setErasureId(null); }}>Abbrechen</Button>
             <Button onClick={handleErasureConfirm} className="bg-green-600 hover:bg-green-700 text-white">
               <ShieldCheck className="w-4 h-4 mr-1.5" />
               Löschung bestätigen
@@ -405,7 +405,7 @@ export default function DSRPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) { setDeleteId(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Datenschutzanfrage löschen?</AlertDialogTitle>
@@ -414,14 +414,14 @@ export default function DSRPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setDeleteId(null); }}>Abbrechen</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Löschen</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Create Dialog */}
-      <Dialog open={dialogMode === 'create'} onOpenChange={(open) => !open && setDialogMode(null)}>
+      <Dialog open={dialogMode === 'create'} onOpenChange={(open) => { if (!open) { setDialogMode(null); } }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle><ComplianceTooltip term="dsr">Datenschutzanfrage anlegen</ComplianceTooltip></DialogTitle>
@@ -435,7 +435,7 @@ export default function DSRPage() {
               <Input
                 placeholder="z.B. Max Mustermann"
                 value={createForm.requester_name}
-                onChange={(e) => setCreateForm((f) => ({ ...f, requester_name: e.target.value }))}
+                onChange={(e) => { setCreateForm((f) => ({ ...f, requester_name: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -444,14 +444,14 @@ export default function DSRPage() {
                 type="email"
                 placeholder="max@example.com"
                 value={createForm.requester_email}
-                onChange={(e) => setCreateForm((f) => ({ ...f, requester_email: e.target.value }))}
+                onChange={(e) => { setCreateForm((f) => ({ ...f, requester_email: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
               <Label>Art der Anfrage *</Label>
               <Select
                 value={createForm.type}
-                onValueChange={(v) => setCreateForm((f) => ({ ...f, type: v as DSRType }))}
+                onValueChange={(v) => { setCreateForm((f) => ({ ...f, type: v as DSRType })); }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -469,7 +469,7 @@ export default function DSRPage() {
                 placeholder="Inhalt der Anfrage …"
                 rows={3}
                 value={createForm.description}
-                onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) => { setCreateForm((f) => ({ ...f, description: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -478,12 +478,12 @@ export default function DSRPage() {
                 placeholder="Interne Anmerkungen …"
                 rows={2}
                 value={createForm.notes}
-                onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))}
+                onChange={(e) => { setCreateForm((f) => ({ ...f, notes: e.target.value })); }}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogMode(null)}>
+            <Button variant="outline" onClick={() => { setDialogMode(null); }}>
               Abbrechen
             </Button>
             <Button onClick={handleSubmit} disabled={!canSubmitCreate}>
@@ -494,7 +494,7 @@ export default function DSRPage() {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={dialogMode === 'edit'} onOpenChange={(open) => !open && setDialogMode(null)}>
+      <Dialog open={dialogMode === 'edit'} onOpenChange={(open) => { if (!open) { setDialogMode(null); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Status aktualisieren</DialogTitle>
@@ -504,7 +504,7 @@ export default function DSRPage() {
               <Label>Status *</Label>
               <Select
                 value={editForm.status}
-                onValueChange={(v) => setEditForm((f) => ({ ...f, status: v as DSRStatus }))}
+                onValueChange={(v) => { setEditForm((f) => ({ ...f, status: v as DSRStatus })); }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -522,12 +522,12 @@ export default function DSRPage() {
                 placeholder="Begründung, Maßnahmen, Kommentare …"
                 rows={3}
                 value={editForm.notes}
-                onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
+                onChange={(e) => { setEditForm((f) => ({ ...f, notes: e.target.value })); }}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogMode(null)}>
+            <Button variant="outline" onClick={() => { setDialogMode(null); }}>
               Abbrechen
             </Button>
             <Button onClick={handleSubmit} disabled={!canSubmitEdit}>

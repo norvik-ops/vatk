@@ -113,7 +113,7 @@ function CopyButton({ text }: { text: string }) {
   function handleCopy() {
     void navigator.clipboard.writeText(text).then(() => {
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setTimeout(() => { setCopied(false); }, 2000)
     })
   }
 
@@ -203,8 +203,8 @@ function CreateKeyDialog({ open, onOpenChange, onCreated }: CreateDialogProps) {
             <Input
               placeholder="z.B. GitHub Actions CI"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              onBlur={() => setNameTouched(true)}
+              onChange={(e) => { setName(e.target.value); }}
+              onBlur={() => { setNameTouched(true); }}
               aria-invalid={nameTouched && !name.trim()}
             />
             {nameTouched && !name.trim() && (
@@ -216,7 +216,7 @@ function CreateKeyDialog({ open, onOpenChange, onCreated }: CreateDialogProps) {
             <Input
               type="date"
               value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
+              onChange={(e) => { setExpiresAt(e.target.value); }}
               min={new Date().toISOString().split('T')[0]}
             />
             <p className="text-[11px] text-secondary">{t('settings.apiKeysPage.labelExpiryHint')}</p>
@@ -240,7 +240,7 @@ function CreateKeyDialog({ open, onOpenChange, onCreated }: CreateDialogProps) {
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() => toggleScope(g.scope)}
+                      onChange={() => { toggleScope(g.scope); }}
                       className="mt-0.5 h-4 w-4 rounded border-border"
                     />
                     <div className="flex-1 min-w-0">
@@ -264,7 +264,7 @@ function CreateKeyDialog({ open, onOpenChange, onCreated }: CreateDialogProps) {
           <p className="text-xs text-destructive px-1">{createKey.error.message}</p>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleClose(false)}>
+          <Button variant="outline" onClick={() => { handleClose(false); }}>
             {t('common.cancel')}
           </Button>
           <Button onClick={handleCreate} disabled={createKey.isPending}>
@@ -457,7 +457,7 @@ function ApiKeysContent() {
           <Button
             size="sm"
             className="gap-1.5 shrink-0"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => { setCreateOpen(true); }}
           >
             <Plus className="w-4 h-4" />
             {t('settings.apiKeysPage.createKey')}
@@ -546,7 +546,7 @@ function ApiKeysContent() {
                     variant="ghost"
                     size="sm"
                     className="text-secondary hover:text-primary hover:bg-muted/40"
-                    onClick={() => setRotatingKey(key)}
+                    onClick={() => { setRotatingKey(key); }}
                     title="Key rotieren (24h Grace-Period)"
                   >
                     <RotateCw className="w-4 h-4" />
@@ -556,7 +556,7 @@ function ApiKeysContent() {
                     variant="ghost"
                     size="sm"
                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setRevokingKey(key)}
+                    onClick={() => { setRevokingKey(key); }}
                   >
                     <Trash2 className="w-4 h-4" />
                     <span className="sr-only">{t('settings.apiKeysPage.revokeKey')}</span>
@@ -574,26 +574,26 @@ function ApiKeysContent() {
         <CreateKeyDialog
           open={createOpen}
           onOpenChange={setCreateOpen}
-          onCreated={(raw) => setNewRawKey(raw)}
+          onCreated={(raw) => { setNewRawKey(raw); }}
         />
 
         <NewKeyDialog
           rawKey={newRawKey}
-          onClose={() => setNewRawKey(null)}
+          onClose={() => { setNewRawKey(null); }}
         />
 
         <ConfirmRevokeDialog
           keyId={revokingKey?.id ?? null}
           keyName={revokingKey?.name ?? ''}
           onConfirm={handleRevoke}
-          onCancel={() => setRevokingKey(null)}
+          onCancel={() => { setRevokingKey(null); }}
           isPending={revoke.isPending}
         />
 
         <RotateKeyDialog
           keyToRotate={rotatingKey}
           onConfirm={handleRotate}
-          onCancel={() => setRotatingKey(null)}
+          onCancel={() => { setRotatingKey(null); }}
           isPending={rotate.isPending}
         />
       </div>

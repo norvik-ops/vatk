@@ -274,7 +274,7 @@ function AddChannelDialog({ open, onClose }: { open: boolean; onClose: () => voi
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { onClose(); } }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Benachrichtigungskanal hinzufügen</DialogTitle>
@@ -285,12 +285,12 @@ function AddChannelDialog({ open, onClose }: { open: boolean; onClose: () => voi
             <Input
               placeholder="z.B. Security-Team Slack"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); }}
             />
           </div>
           <div className="space-y-1.5">
             <Label>Typ</Label>
-            <Select value={type} onValueChange={(v) => setType(v as AlertChannel['type'])}>
+            <Select value={type} onValueChange={(v) => { setType(v as AlertChannel['type']); }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -315,7 +315,7 @@ function AddChannelDialog({ open, onClose }: { open: boolean; onClose: () => voi
                   : 'https://webhook.example.com'
               }
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => { setUrl(e.target.value); }}
             />
           </div>
           <div className="space-y-2">
@@ -329,7 +329,7 @@ function AddChannelDialog({ open, onClose }: { open: boolean; onClose: () => voi
                   <input
                     type="checkbox"
                     checked={events.includes(value)}
-                    onChange={() => toggleEvent(value)}
+                    onChange={() => { toggleEvent(value); }}
                     className="w-4 h-4 rounded border-border accent-indigo-500"
                   />
                   <span className="text-sm text-primary">{label}</span>
@@ -365,7 +365,7 @@ function ChannelDeliveryHistory({ channelId }: { channelId: string }) {
   return (
     <div className="border-t border-border">
       <button
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => { setExpanded((v) => !v); }}
         className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-surface2/50 transition-colors"
       >
         {expanded
@@ -449,7 +449,7 @@ function ChannelsSection() {
           <Bell className="w-4 h-4 text-brand" />
           <h2 className="text-sm font-semibold text-primary">Benachrichtigungskanäle</h2>
         </div>
-        <Button size="sm" variant="outline" onClick={() => setDialogOpen(true)} className="h-7 text-xs">
+        <Button size="sm" variant="outline" onClick={() => { setDialogOpen(true); }} className="h-7 text-xs">
           <Plus className="w-3 h-3 mr-1" />
           Kanal hinzufügen
         </Button>
@@ -497,7 +497,7 @@ function ChannelsSection() {
                   </TableCell>
                   <TableCell>
                     <button
-                      onClick={() => toggleChannel.mutate({ id: ch.id, enabled: !ch.enabled })}
+                      onClick={() => { toggleChannel.mutate({ id: ch.id, enabled: !ch.enabled }); }}
                       disabled={toggleChannel.isPending}
                       className={cn(
                         'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none',
@@ -522,7 +522,7 @@ function ChannelsSection() {
                         </span>
                       )}
                       <button
-                        onClick={() => handleTest(ch.id)}
+                        onClick={() => { handleTest(ch.id); }}
                         disabled={testingId === ch.id}
                         title="Testbenachrichtigung senden"
                         className="p-1.5 rounded text-secondary hover:text-brand hover:bg-brand/10 transition-colors disabled:opacity-50"
@@ -533,7 +533,7 @@ function ChannelsSection() {
                         }
                       </button>
                       <button
-                        onClick={() => deleteChannel.mutate(ch.id)}
+                        onClick={() => { deleteChannel.mutate(ch.id); }}
                         disabled={deleteChannel.isPending}
                         title="Kanal löschen"
                         className="p-1.5 rounded text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
@@ -554,7 +554,7 @@ function ChannelsSection() {
         </Table>
       )}
 
-      <AddChannelDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <AddChannelDialog open={dialogOpen} onClose={() => { setDialogOpen(false); }} />
     </div>
   )
 }
@@ -568,7 +568,7 @@ function DeliveryHistorySection() {
   return (
     <div className="bg-surface border border-border rounded-xl overflow-x-auto">
       <button
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => { setExpanded((v) => !v); }}
         className="w-full flex items-center justify-between px-5 py-3.5 border-b border-border hover:bg-surface2/50 transition-colors"
       >
         <div className="flex items-center gap-3">

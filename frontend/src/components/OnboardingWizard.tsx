@@ -146,7 +146,7 @@ export function OnboardingWizard({ open, onClose, status }: OnboardingWizardProp
                 <button
                   type="button"
                   className="w-full flex items-center gap-3 px-4 py-3 text-left"
-                  onClick={() => setActiveStep(isExpanded ? null : idx)}
+                  onClick={() => { setActiveStep(isExpanded ? null : idx); }}
                 >
                   {/* Circle indicator */}
                   <span className="shrink-0">
@@ -271,7 +271,7 @@ export function OnboardingBanner({ status, onOpen }: OnboardingBannerProps) {
         </button>
         <button
           type="button"
-          onClick={() => dismiss.mutate()}
+          onClick={() => { dismiss.mutate(); }}
           disabled={dismiss.isPending}
           aria-label="Onboarding schließen"
           className="text-secondary hover:text-primary transition-colors disabled:opacity-50"

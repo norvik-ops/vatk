@@ -403,7 +403,7 @@ function AddMilestoneDialog({
             <Input
               id="ms-title"
               value={form.title}
-              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              onChange={e => { setForm(f => ({ ...f, title: e.target.value })); }}
               placeholder="z. B. ISO 27001 Zertifizierungsaudit"
             />
           </div>
@@ -412,7 +412,7 @@ function AddMilestoneDialog({
             <Label htmlFor="ms-type">Typ *</Label>
             <Select
               value={form.milestone_type}
-              onValueChange={v => setForm(f => ({ ...f, milestone_type: v as MilestoneType }))}
+              onValueChange={v => { setForm(f => ({ ...f, milestone_type: v as MilestoneType })); }}
             >
               <SelectTrigger id="ms-type">
                 <SelectValue />
@@ -431,7 +431,7 @@ function AddMilestoneDialog({
               id="ms-date"
               type="date"
               value={form.milestone_date}
-              onChange={e => setForm(f => ({ ...f, milestone_date: e.target.value }))}
+              onChange={e => { setForm(f => ({ ...f, milestone_date: e.target.value })); }}
             />
           </div>
 
@@ -441,7 +441,7 @@ function AddMilestoneDialog({
               id="ms-desc"
               rows={3}
               value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              onChange={e => { setForm(f => ({ ...f, description: e.target.value })); }}
               placeholder="Optionale Beschreibung oder Notizen"
             />
           </div>
@@ -450,7 +450,7 @@ function AddMilestoneDialog({
             <Label htmlFor="ms-fw">Framework (optional)</Label>
             <Select
               value={form.framework_id ?? ''}
-              onValueChange={v => setForm(f => ({ ...f, framework_id: v === '__none__' ? '' : v }))}
+              onValueChange={v => { setForm(f => ({ ...f, framework_id: v === '__none__' ? '' : v })); }}
             >
               <SelectTrigger id="ms-fw">
                 <SelectValue placeholder="Kein Framework" />
@@ -561,7 +561,7 @@ export default function CertificationTimelinePage() {
         title="Zertifizierungs-Timeline"
         description="Audits, Zertifizierungsziele und Fristen im Überblick"
         actions={
-          <Button onClick={() => setAddOpen(true)} size="sm">
+          <Button onClick={() => { setAddOpen(true); }} size="sm">
             <Plus className="w-4 h-4 mr-1.5" />
             Meilenstein hinzufügen
           </Button>
@@ -600,7 +600,7 @@ export default function CertificationTimelinePage() {
             {TABS.map(t => (
               <button
                 key={t.key}
-                onClick={() => setTab(t.key)}
+                onClick={() => { setTab(t.key); }}
                 className={`px-3 py-1 rounded text-[11px] font-medium transition-colors ${
                   tab === t.key
                     ? 'bg-brand text-white'
@@ -622,7 +622,7 @@ export default function CertificationTimelinePage() {
             description={
               tab === 'all'
                 ? 'Fügen Sie Ihren ersten Meilenstein hinzu.'
-                : `Keine ${STATUS_LABEL[tab as MilestoneStatus]} Meilensteine vorhanden.`
+                : `Keine ${STATUS_LABEL[tab]} Meilensteine vorhanden.`
             }
           />
         ) : (
@@ -643,7 +643,7 @@ export default function CertificationTimelinePage() {
                   <MilestoneRowWrapper
                     key={m.id}
                     m={m}
-                    onDelete={() => deleteMilestone.mutate(m.id)}
+                    onDelete={() => { deleteMilestone.mutate(m.id); }}
                   />
                 ))}
               </tbody>
@@ -660,7 +660,7 @@ export default function CertificationTimelinePage() {
         <MiniCalendar milestones={milestones} />
       </section>
 
-      <AddMilestoneDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddMilestoneDialog open={addOpen} onClose={() => { setAddOpen(false); }} />
     </div>
   )
 }
@@ -672,7 +672,7 @@ function CountdownCardWrapper({ m }: { m: AuditMilestone }) {
   return (
     <CountdownCard
       m={m}
-      onComplete={() => update.mutate({ status: 'completed' })}
+      onComplete={() => { update.mutate({ status: 'completed' }); }}
     />
   )
 }
@@ -688,7 +688,7 @@ function MilestoneRowWrapper({
   return (
     <MilestoneRow
       m={m}
-      onComplete={() => update.mutate({ status: 'completed' })}
+      onComplete={() => { update.mutate({ status: 'completed' }); }}
       onDelete={onDelete}
     />
   )

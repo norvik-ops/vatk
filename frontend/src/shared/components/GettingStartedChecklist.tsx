@@ -25,7 +25,7 @@ export function useHasEvidence() {
       // A small proof-of-evidence query — we just need to know if any exists.
       // We re-use the auto-evidence endpoint since it surfaces pending uploads.
       const data = await apiFetch<{ count?: number; data?: unknown[] }>('/secvitals/evidence/auto?limit=1')
-      const count = data?.count ?? (Array.isArray((data as { data?: unknown[] })?.data) ? (data as { data: unknown[] }).data.length : 0)
+      const count = data.count ?? (Array.isArray((data as { data?: unknown[] }).data) ? (data as { data: unknown[] }).data.length : 0)
       return count > 0
     },
     staleTime: 30_000,
@@ -38,7 +38,7 @@ export function useHasVvt() {
     queryKey: ['checklist', 'vvt'],
     queryFn: async () => {
       const data = await apiFetch<{ count?: number; data?: unknown[] }>('/secprivacy/vvt?limit=1')
-      const count = data?.count ?? (Array.isArray((data as { data?: unknown[] })?.data) ? (data as { data: unknown[] }).data.length : 0)
+      const count = data.count ?? (Array.isArray((data as { data?: unknown[] }).data) ? (data as { data: unknown[] }).data.length : 0)
       return count > 0
     },
     staleTime: 30_000,
@@ -134,7 +134,7 @@ export function GettingStartedChecklist() {
       >
         <div
           className="h-full rounded-full bg-brand transition-all duration-500"
-          style={{ width: `${pct}%` }}
+          style={{ width: `${String(pct)}%` }}
         />
       </div>
 

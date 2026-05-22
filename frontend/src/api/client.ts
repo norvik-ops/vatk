@@ -209,5 +209,5 @@ export async function apiFetch<T>(
     }
     return res.json() as Promise<T>
   }
-  throw lastError ?? new Error('apiFetch: retry budget exhausted')
+  throw lastError instanceof Error ? lastError : new Error('apiFetch: retry budget exhausted')
 }

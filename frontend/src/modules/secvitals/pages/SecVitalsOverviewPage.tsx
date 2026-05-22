@@ -47,7 +47,7 @@ function ScoreTrendChart({ data }: { data: Array<{ date: string; score: number }
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="label" tick={{ fontSize: 11 }} />
           <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
-          <Tooltip formatter={(v) => [`${v}%`, 'Score']} />
+          <Tooltip formatter={(v) => [`${Array.isArray(v) ? v[0] ?? 0 : (v ?? 0)}%`, 'Score']} />
           <Line
             type="monotone"
             dataKey="score"
@@ -196,14 +196,14 @@ function DashboardOrderPopover({
             <span className="flex-1 text-xs text-gray-600">{WIDGET_LABELS[id] ?? id}</span>
             <button
               disabled={i === 0}
-              onClick={() => moveUp(i)}
+              onClick={() => { moveUp(i); }}
               className="p-0.5 disabled:opacity-30 hover:text-brand"
             >
               <ArrowUp className="w-3 h-3" />
             </button>
             <button
               disabled={i === order.length - 1}
-              onClick={() => moveDown(i)}
+              onClick={() => { moveDown(i); }}
               className="p-0.5 disabled:opacity-30 hover:text-brand"
             >
               <ArrowDown className="w-3 h-3" />
@@ -362,7 +362,7 @@ export default function SecVitalsOverviewPage() {
           label="Frameworks"
           value={frameworks?.length ?? 0}
           sub="aktiviert"
-          onClick={() => navigate('/secvitals/frameworks')}
+          onClick={() => { navigate('/secvitals/frameworks'); }}
           accent={frameworks?.length ? 'green' : 'default'}
         />
         <StatCard
@@ -370,7 +370,7 @@ export default function SecVitalsOverviewPage() {
           label="Offene Risiken"
           value={openRisks.length}
           sub={highRisks.length > 0 ? `${highRisks.length} kritisch/hoch` : 'keine kritischen'}
-          onClick={() => navigate('/secvitals/risks')}
+          onClick={() => { navigate('/secvitals/risks'); }}
           accent={highRisks.length > 0 ? 'red' : openRisks.length > 0 ? 'yellow' : 'green'}
         />
         <StatCard
@@ -378,7 +378,7 @@ export default function SecVitalsOverviewPage() {
           label="Offene Vorfälle"
           value={openIncidents.length}
           sub={criticalIncidents.length > 0 ? `${criticalIncidents.length} kritisch` : 'keine kritischen'}
-          onClick={() => navigate('/secvitals/incidents')}
+          onClick={() => { navigate('/secvitals/incidents'); }}
           accent={criticalIncidents.length > 0 ? 'red' : openIncidents.length > 0 ? 'yellow' : 'green'}
         />
         <StatCard
@@ -386,7 +386,7 @@ export default function SecVitalsOverviewPage() {
           label="Richtlinien"
           value={policies?.length ?? 0}
           sub={overdueReviews.length > 0 ? `${overdueReviews.length} überfällig` : 'alle aktuell'}
-          onClick={() => navigate('/secvitals/policies')}
+          onClick={() => { navigate('/secvitals/policies'); }}
           accent={overdueReviews.length > 0 ? 'yellow' : 'default'}
         />
         <StatCard
@@ -394,7 +394,7 @@ export default function SecVitalsOverviewPage() {
           label="Audits"
           value={plannedAudits.length}
           sub="aktiv / geplant"
-          onClick={() => navigate('/secvitals/audits')}
+          onClick={() => { navigate('/secvitals/audits'); }}
         />
       </div>
     ),
@@ -448,7 +448,7 @@ export default function SecVitalsOverviewPage() {
           ].map(({ icon: Icon, title, desc, path }) => (
             <button
               key={path + title}
-              onClick={() => navigate(path)}
+              onClick={() => { navigate(path); }}
               className="group flex items-start gap-4 p-4 bg-surface border border-border rounded-lg text-left hover:border-brand/50 transition-all duration-150"
             >
               <div className="p-2 rounded-lg bg-surface2 text-brand shrink-0">
@@ -515,7 +515,7 @@ export default function SecVitalsOverviewPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setShowOrderPopover((v) => !v)}
+                  onClick={() => { setShowOrderPopover((v) => !v); }}
                   className="h-8 text-xs gap-1.5"
                 >
                   <Settings className="w-3.5 h-3.5" />
@@ -527,14 +527,14 @@ export default function SecVitalsOverviewPage() {
                     moveUp={moveUp}
                     moveDown={moveDown}
                     reset={reset}
-                    onClose={() => setShowOrderPopover(false)}
+                    onClose={() => { setShowOrderPopover(false); }}
                   />
                 )}
               </div>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={downloadExecutiveSummary}
+                onClick={() => { void downloadExecutiveSummary(); }}
                 disabled={isGeneratingExec}
                 className="h-8 text-xs gap-1.5"
               >
@@ -552,7 +552,7 @@ export default function SecVitalsOverviewPage() {
               </Button>
               <Button
                 size="sm"
-                onClick={generateAuditReport}
+                onClick={() => { void generateAuditReport(); }}
                 disabled={isGeneratingReport}
                 className="h-8 text-xs gap-1.5"
               >

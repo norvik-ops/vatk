@@ -50,7 +50,7 @@ export function ScanProgressIndicator({ scanId, onTerminal }: Props) {
           signal: controller.signal,
         })
         if (!res.ok) {
-          setError(`HTTP ${res.status}`)
+          setError(`HTTP ${String(res.status)}`)
           return
         }
         if (!res.body) {
@@ -157,7 +157,7 @@ export function ScanProgressIndicator({ scanId, onTerminal }: Props) {
         <div className="w-full bg-gray-200 rounded-full h-1">
           <div
             className={`h-1 rounded-full transition-all ${isFail ? 'bg-severity-critical' : 'bg-brand'}`}
-            style={{ width: `${event.percent}%` }}
+            style={{ width: `${String(event.percent)}%` }}
           />
         </div>
       )}

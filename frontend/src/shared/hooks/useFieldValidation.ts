@@ -33,7 +33,7 @@ export function useFieldValidation(
       setError(null)
     }, 300)
 
-    return () => clearTimeout(timerRef.current)
+    return () => { clearTimeout(timerRef.current); }
   }, [value, rules])
 
   return { error, isValid: error === null && value.length > 0 }
@@ -49,7 +49,7 @@ export const required: ValidationRule = {
 export function minLength(n: number): ValidationRule {
   return {
     test: (v) => v.length >= n,
-    message: `Mindestens ${n} Zeichen erforderlich.`,
+    message: `Mindestens ${String(n)} Zeichen erforderlich.`,
   }
 }
 

@@ -71,7 +71,7 @@ describe('SupplierPortalPage', () => {
     ;(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => makeAssessment(),
+      json: () => Promise.resolve(makeAssessment()),
     })
 
     renderPortalPage()
@@ -97,7 +97,7 @@ describe('SupplierPortalPage', () => {
     ;(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => makeAssessment(),
+      json: () => Promise.resolve(makeAssessment()),
     })
 
     renderPortalPage()
@@ -113,7 +113,7 @@ describe('SupplierPortalPage', () => {
     ;(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: false,
       status: 410,
-      json: async () => ({ error: 'assessment_expired_or_submitted' }),
+      json: () => Promise.resolve({ error: 'assessment_expired_or_submitted' }),
     })
 
     renderPortalPage()

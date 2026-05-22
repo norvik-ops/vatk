@@ -45,17 +45,17 @@ export default function AssetDetailPage() {
   const { data: findingsResponse } = useFindings({ asset_id: id })
   const scanTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
-  useEffect(() => () => clearTimeout(scanTimerRef.current), [])
+  useEffect(() => () => { clearTimeout(scanTimerRef.current); }, [])
 
   useEffect(() => {
-    if (asset) trackPage(`/secpulse/assets/${id}`, asset.name, '🖥️')
+    if (asset) trackPage(`/secpulse/assets/${id ?? ''}`, asset.name, '🖥️')
   }, [asset?.id])
 
   async function handleScan() {
     try {
       await triggerScan.mutateAsync()
       setScanTriggered(true)
-      scanTimerRef.current = setTimeout(() => setScanTriggered(false), 3000)
+      scanTimerRef.current = setTimeout(() => { setScanTriggered(false); }, 3000)
     } catch {
       // error handled by isPending/isError states
     }
@@ -82,7 +82,7 @@ export default function AssetDetailPage() {
     return (
       <div className="p-6">
         <p className="text-sm text-red-600">{error?.message ?? 'Asset not found'}</p>
-        <Button variant="outline" className="mt-4" onClick={() => navigate('/secpulse/assets')}>
+        <Button variant="outline" className="mt-4" onClick={() => { navigate('/secpulse/assets'); }}>
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to Assets
         </Button>
@@ -104,7 +104,7 @@ export default function AssetDetailPage() {
         description={asset.target}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => navigate('/secpulse/assets')}>
+            <Button variant="outline" onClick={() => { navigate('/secpulse/assets'); }}>
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back
             </Button>
@@ -119,7 +119,7 @@ export default function AssetDetailPage() {
             <Button
               variant="outline"
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => setDeleteOpen(true)}
+              onClick={() => { setDeleteOpen(true); }}
             >
               <Trash2 className="w-4 h-4 mr-1" />
               Löschen
@@ -225,7 +225,7 @@ export default function AssetDetailPage() {
                       <TableRow
                         key={finding.id}
                         className="cursor-pointer hover:bg-surface2"
-                        onClick={() => navigate(`/secpulse/findings/${finding.id}`)}
+                        onClick={() => { navigate(`/secpulse/findings/${finding.id}`); }}
                       >
                         <TableCell className="font-medium">{finding.title}</TableCell>
                         <TableCell>

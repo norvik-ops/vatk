@@ -70,7 +70,7 @@ export function AssessmentReviewView() {
                     size="sm"
                     variant="outline"
                     className="text-green-700 border-green-300"
-                    onClick={() => handleAccept(answer.id)}
+                    onClick={() => { handleAccept(answer.id); }}
                     disabled={reviewMutation.isPending}
                   >
                     <CheckCircle className="mr-1 h-3 w-3" />
@@ -80,7 +80,7 @@ export function AssessmentReviewView() {
                     size="sm"
                     variant="outline"
                     className="text-yellow-700 border-yellow-300"
-                    onClick={() => setReworkDialog({ answerId: answer.id, note: '' })}
+                    onClick={() => { setReworkDialog({ answerId: answer.id, note: '' }); }}
                   >
                     <AlertTriangle className="mr-1 h-3 w-3" />
                     Nacharbeit nötig
@@ -113,10 +113,10 @@ export function AssessmentReviewView() {
             <Textarea
               placeholder="Begründung / Anforderung für Nacharbeit…"
               value={reworkDialog.note}
-              onChange={(e) => setReworkDialog({ ...reworkDialog, note: e.target.value })}
+              onChange={(e) => { setReworkDialog({ ...reworkDialog, note: e.target.value }); }}
             />
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setReworkDialog(null)}>Abbrechen</Button>
+              <Button variant="ghost" onClick={() => { setReworkDialog(null); }}>Abbrechen</Button>
               <Button onClick={handleReworkConfirm} disabled={reviewMutation.isPending}>
                 Bestätigen
               </Button>

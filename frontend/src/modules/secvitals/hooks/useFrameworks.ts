@@ -42,9 +42,9 @@ export function useEnableFramework() {
 
 export function useDeleteFramework() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id: string) =>
-      apiFetch<void>(`/secvitals/frameworks/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/frameworks/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'frameworks'] })
     },
@@ -89,7 +89,7 @@ export function useFrameworkControls(frameworkId: string, page = 1, limit = 25) 
 
 export function useDownloadFrameworkPDF() {
   return (frameworkId: string, frameworkName?: string) => {
-    fetch(`/api/v1/secvitals/frameworks/${frameworkId}/export-pdf`, {
+    void fetch(`/api/v1/secvitals/frameworks/${frameworkId}/export-pdf`, {
       credentials: 'include',
     })
       .then((r) => r.blob())
@@ -110,7 +110,7 @@ export function useDownloadFrameworkPDF() {
 
 export function useDownloadSoAPDF() {
   return (frameworkId: string, frameworkName?: string) => {
-    fetch(`/api/v1/secvitals/frameworks/${frameworkId}/soa.pdf`, {
+    void fetch(`/api/v1/secvitals/frameworks/${frameworkId}/soa.pdf`, {
       credentials: 'include',
     })
       .then((r) => r.blob())
@@ -131,7 +131,7 @@ export function useDownloadSoAPDF() {
 
 export function useDownloadAuditPackage() {
   return (frameworkId: string, frameworkName?: string) => {
-    fetch(`/api/v1/secvitals/frameworks/${frameworkId}/audit-package.zip`, {
+    void fetch(`/api/v1/secvitals/frameworks/${frameworkId}/audit-package.zip`, {
       credentials: 'include',
     })
       .then((r) => r.blob())

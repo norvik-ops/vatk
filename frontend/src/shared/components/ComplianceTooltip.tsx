@@ -47,7 +47,7 @@ const DEFINITIONS: Record<string, { de: string; en?: string }> = {
 }
 
 let _tooltipId = 0
-function nextTooltipId() { return `compliance-tooltip-${++_tooltipId}` }
+function nextTooltipId() { return `compliance-tooltip-${String(++_tooltipId)}` }
 
 interface ComplianceTooltipProps {
   term: keyof typeof DEFINITIONS
@@ -59,7 +59,6 @@ export function ComplianceTooltip({ term, children }: ComplianceTooltipProps) {
   const [visible, setVisible] = useState(false)
   const [tooltipId] = useState(nextTooltipId)
 
-  if (!def) return <>{children}</>
 
   return (
     <span
@@ -67,10 +66,10 @@ export function ComplianceTooltip({ term, children }: ComplianceTooltipProps) {
       tabIndex={0}
       role="button"
       aria-describedby={tooltipId}
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
-      onFocus={() => setVisible(true)}
-      onBlur={() => setVisible(false)}
+      onMouseEnter={() => { setVisible(true); }}
+      onMouseLeave={() => { setVisible(false); }}
+      onFocus={() => { setVisible(true); }}
+      onBlur={() => { setVisible(false); }}
     >
       {children}
       <HelpCircle className="w-3 h-3 text-muted-foreground/60 shrink-0" aria-hidden="true" />

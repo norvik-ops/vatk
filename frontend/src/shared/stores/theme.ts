@@ -26,7 +26,7 @@ export const useThemeStore = create<ThemeStore>()(
         set({ theme })
         applyTheme(theme)
       },
-      apply: () => applyTheme(get().theme),
+      apply: () => { applyTheme(get().theme); },
     }),
     { name: 'vakt-theme' },
   ),

@@ -111,9 +111,9 @@ function useCreateComment(entityType: string, entityId: string) {
 
 function useDeleteComment(entityType: string, entityId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (commentId) =>
-      apiFetch<void>(`/comments/${commentId}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/comments/${commentId}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['comments', entityType, entityId] })
     },
@@ -170,7 +170,7 @@ export function Comments({ entityType, entityId }: CommentsProps) {
 
   const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value
-    const cursor = e.target.selectionStart ?? val.length
+    const cursor = e.target.selectionStart
     setContent(val)
 
     // Find if there's a `@` before the cursor without a space after it
@@ -212,7 +212,7 @@ export function Comments({ entityType, entityId }: CommentsProps) {
       if (e.key === 'Escape') setMentionQuery(null)
     }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    return () => { document.removeEventListener('keydown', onKey); }
   }, [showMentionDropdown])
 
   const count = comments?.length ?? 0
@@ -223,7 +223,7 @@ export function Comments({ entityType, entityId }: CommentsProps) {
     if (!content.trim()) return
     createComment.mutate(
       { content: content.trim() },
-      { onSuccess: () => setContent('') },
+      { onSuccess: () => { setContent(''); } },
     )
   }
 
@@ -241,7 +241,7 @@ export function Comments({ entityType, entityId }: CommentsProps) {
           {count > 0 && (
             <button
               type="button"
-              onClick={() => setExpanded((v) => !v)}
+              onClick={() => { setExpanded((v) => !v); }}
               className="flex items-center gap-1 text-xs text-secondary hover:text-primary transition-colors"
             >
               {expanded ? (
@@ -296,7 +296,7 @@ export function Comments({ entityType, entityId }: CommentsProps) {
                 {comment.can_delete && (
                   <button
                     type="button"
-                    onClick={() => deleteComment.mutate(comment.id)}
+                    onClick={() => { deleteComment.mutate(comment.id); }}
                     disabled={deleteComment.isPending}
                     className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0 mt-0.5"
                     aria-label={t('comments.delete')}

@@ -121,8 +121,8 @@ export function AppTour() {
     const done = localStorage.getItem(TOUR_COMPLETED_KEY)
     if (!done) {
       // Small delay to let DOM settle
-      const t = setTimeout(() => setActive(true), 800)
-      return () => clearTimeout(t)
+      const t = setTimeout(() => { setActive(true); }, 800)
+      return () => { clearTimeout(t); }
     }
   }, [])
 
@@ -146,7 +146,7 @@ export function AppTour() {
   const updatePosition = useCallback(() => {
     if (!active) return
     const currentStep = TOUR_STEPS[step]
-    if (!currentStep) return
+    if (step >= TOUR_STEPS.length) return
     const r = getElementRect(currentStep.selector)
     setRect(r)
     if (r && tooltipRef.current) {
@@ -171,7 +171,7 @@ export function AppTour() {
   useEffect(() => {
     if (!active) return
     const t = requestAnimationFrame(updatePosition)
-    return () => cancelAnimationFrame(t)
+    return () => { cancelAnimationFrame(t); }
   }, [active, step, updatePosition])
 
   function complete() {

@@ -197,7 +197,7 @@ export default function IncidentsPage() {
       if (typeof av === 'number' && typeof bv === 'number') {
         cmp = av - bv
       } else {
-        cmp = String(av).localeCompare(String(bv), 'de', { sensitivity: 'base' })
+        cmp = String(typeof av === 'object' ? JSON.stringify(av) : av).localeCompare(String(typeof bv === 'object' ? JSON.stringify(bv) : bv), 'de', { sensitivity: 'base' })
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
@@ -243,7 +243,7 @@ export default function IncidentsPage() {
         description={t('secvitals.incidentsPage.description')}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => window.print()} className="no-print">
+            <Button variant="outline" size="sm" onClick={() => { window.print(); }} className="no-print">
               <Printer className="w-4 h-4 mr-1" />
               Drucken
             </Button>
@@ -264,8 +264,8 @@ export default function IncidentsPage() {
               const isActive = sortKey === opt.key
               return (
                 <button
-                  key={String(opt.key)}
-                  onClick={() => toggleSort(opt.key)}
+                  key={opt.key}
+                  onClick={() => { toggleSort(opt.key); }}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border transition-colors ${
                     isActive
                       ? 'border-brand/50 bg-brand/10 text-brand'
@@ -304,7 +304,7 @@ export default function IncidentsPage() {
               <div className="space-y-3">
                 <h2 className="text-sm font-semibold text-red-400"><ComplianceTooltip term="incident">{t('secvitals.incidentsPage.activeIncidents', { count: open.length })}</ComplianceTooltip></h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {open.map((i) => <IncidentCard key={i.id} incident={i} onClick={() => navigate(`/secvitals/incidents/${i.id}`)} />)}
+                  {open.map((i) => <IncidentCard key={i.id} incident={i} onClick={() => { navigate(`/secvitals/incidents/${i.id}`); }} />)}
                 </div>
               </div>
             )}
@@ -312,7 +312,7 @@ export default function IncidentsPage() {
               <div className="space-y-3">
                 <h2 className="text-sm font-semibold text-muted-foreground">{t('secvitals.incidentsPage.closedIncidents')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {closed.map((i) => <IncidentCard key={i.id} incident={i} onClick={() => navigate(`/secvitals/incidents/${i.id}`)} />)}
+                  {closed.map((i) => <IncidentCard key={i.id} incident={i} onClick={() => { navigate(`/secvitals/incidents/${i.id}`); }} />)}
                 </div>
               </div>
             )}
@@ -349,7 +349,7 @@ export default function IncidentsPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="inc-severity">{t('secvitals.incidentsPage.labelSeverity')} *</Label>
-              <Select value={form.severity} onValueChange={(v) => setForm((f) => ({ ...f, severity: v as Incident['severity'] }))}>
+              <Select value={form.severity} onValueChange={(v) => { setForm((f) => ({ ...f, severity: v as Incident['severity'] })); }}>
                 <SelectTrigger id="inc-severity"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">{t('secvitals.incidentsPage.severityLow')}</SelectItem>
@@ -362,12 +362,12 @@ export default function IncidentsPage() {
             <div className="space-y-1.5">
               <Label htmlFor="inc-discovered">{t('secvitals.incidentsPage.labelDiscovered')}</Label>
               <Input id="inc-discovered" type="datetime-local" value={form.discovered_at}
-                onChange={(e) => setForm((f) => ({ ...f, discovered_at: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, discovered_at: e.target.value })); }} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>{t('secvitals.incidentsPage.labelIncidentType')}</Label>
-                <Select value={form.incident_type ?? 'general'} onValueChange={(v) => setForm((f) => ({ ...f, incident_type: v as Incident['incident_type'] }))}>
+                <Select value={form.incident_type ?? 'general'} onValueChange={(v) => { setForm((f) => ({ ...f, incident_type: v as Incident['incident_type'] })); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general">{t('secvitals.incidentsPage.typeGeneral')}</SelectItem>
@@ -378,7 +378,7 @@ export default function IncidentsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>{t('secvitals.incidentsPage.labelReportingObligation')}</Label>
-                <Select value={form.reporting_obligation ?? 'unknown'} onValueChange={(v) => setForm((f) => ({ ...f, reporting_obligation: v as Incident['reporting_obligation'] }))}>
+                <Select value={form.reporting_obligation ?? 'unknown'} onValueChange={(v) => { setForm((f) => ({ ...f, reporting_obligation: v as Incident['reporting_obligation'] })); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unknown">{t('secvitals.incidentsPage.obligationUnknown')}</SelectItem>
@@ -392,7 +392,7 @@ export default function IncidentsPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="inc-authority">{t('secvitals.incidentsPage.labelAuthority')}</Label>
                 <Input id="inc-authority" placeholder={t('secvitals.incidentsPage.placeholderAuthority')} value={form.notification_authority ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, notification_authority: e.target.value }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, notification_authority: e.target.value })); }} />
               </div>
             )}
             {form.incident_type === 'dora' && (
@@ -405,7 +405,7 @@ export default function IncidentsPage() {
                     min={0}
                     placeholder={t('secvitals.incidentsPage.placeholderCustomers')}
                     value={form.affected_customers ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, affected_customers: e.target.value ? Number(e.target.value) : undefined }))}
+                    onChange={(e) => { setForm((f) => ({ ...f, affected_customers: e.target.value ? Number(e.target.value) : undefined })); }}
                     data-testid="create-affected-customers-input"
                   />
                 </div>
@@ -416,7 +416,7 @@ export default function IncidentsPage() {
                     rows={2}
                     placeholder="z.B. ca. 500.000 EUR"
                     value={form.financial_impact_estimate ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, financial_impact_estimate: e.target.value }))}
+                    onChange={(e) => { setForm((f) => ({ ...f, financial_impact_estimate: e.target.value })); }}
                     data-testid="create-financial-impact-textarea"
                   />
                 </div>
@@ -426,7 +426,7 @@ export default function IncidentsPage() {
                     type="checkbox"
                     className="w-4 h-4 accent-primary cursor-pointer"
                     checked={form.is_major_incident ?? false}
-                    onChange={(e) => setForm((f) => ({ ...f, is_major_incident: e.target.checked }))}
+                    onChange={(e) => { setForm((f) => ({ ...f, is_major_incident: e.target.checked })); }}
                     data-testid="create-is-major-incident-checkbox"
                   />
                   <Label htmlFor="inc-major" className="cursor-pointer">
@@ -438,12 +438,12 @@ export default function IncidentsPage() {
             <div className="space-y-1.5">
               <Label htmlFor="inc-desc">{t('secvitals.incidentsPage.labelDescription')} *</Label>
               <Textarea id="inc-desc" rows={3} placeholder={t('secvitals.incidentsPage.placeholderDescription')} value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, description: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="inc-systems">{t('secvitals.incidentsPage.labelSystems')}</Label>
               <Input id="inc-systems" placeholder={t('secvitals.incidentsPage.placeholderSystems')} value={rawSystems}
-                onChange={(e) => setRawSystems(e.target.value)} />
+                onChange={(e) => { setRawSystems(e.target.value); }} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="inc-breach">{t('secvitals.incidentsPage.labelBreachId', 'Datenpannen-ID (optional)')}</Label>
@@ -451,13 +451,13 @@ export default function IncidentsPage() {
                 id="inc-breach"
                 placeholder="breach-uuid (aus SecPrivacy)"
                 value={form.breach_id ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, breach_id: e.target.value || undefined }))}
+                onChange={(e) => { setForm((f) => ({ ...f, breach_id: e.target.value || undefined })); }}
                 data-testid="create-breach-id-input"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleSubmit}
               disabled={createIncident.isPending}>
               {createIncident.isPending ? t('secvitals.incidentsPage.reporting') : t('secvitals.incidentsPage.reportIncident')}

@@ -31,7 +31,7 @@ export function useReports() {
 
 export function useDownloadReport() {
   return (reportId: string, title?: string) => {
-    fetch(`/api/v1/secpulse/reports/${reportId}/download`, {
+    void fetch(`/api/v1/secpulse/reports/${reportId}/download`, {
       credentials: 'include',
     })
       .then((r) => r.blob())

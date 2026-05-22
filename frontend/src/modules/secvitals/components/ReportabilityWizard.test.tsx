@@ -51,9 +51,9 @@ describe('ReportabilityWizard', () => {
       { wrapper },
     )
     fireEvent.click(screen.getByTestId('reportability-no-btn'))
-    await waitFor(() => expect(screen.getByText(/Frage 2 von 3/)).toBeTruthy())
+    await waitFor(() => { expect(screen.getByText(/Frage 2 von 3/)).toBeTruthy(); })
     fireEvent.click(screen.getByTestId('reportability-no-btn'))
-    await waitFor(() => expect(screen.getByText(/Frage 3 von 3/)).toBeTruthy())
+    await waitFor(() => { expect(screen.getByText(/Frage 3 von 3/)).toBeTruthy(); })
     fireEvent.click(screen.getByTestId('reportability-no-btn'))
     await waitFor(() => {
       expect(mockMutate).toHaveBeenCalledWith(

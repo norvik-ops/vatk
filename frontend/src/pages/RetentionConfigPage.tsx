@@ -68,10 +68,10 @@ function useUpdateRetentionConfig() {
 function useToast() {
   const [message, setMessage] = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
-  useEffect(() => () => clearTimeout(timerRef.current), [])
+  useEffect(() => () => { clearTimeout(timerRef.current); }, [])
   function show(msg: string) {
     setMessage(msg)
-    timerRef.current = setTimeout(() => setMessage(null), 3000)
+    timerRef.current = setTimeout(() => { setMessage(null); }, 3000)
   }
   return { message, show }
 }
@@ -114,13 +114,13 @@ export default function RetentionConfigPage() {
 
   function handleRetentionSave() {
     update.mutate(retentionForm, {
-      onSuccess: () => toast.show('Aufbewahrungsfristen gespeichert'),
+      onSuccess: () => { toast.show('Aufbewahrungsfristen gespeichert'); },
     })
   }
 
   function handleDigestSave() {
     update.mutate(digestForm, {
-      onSuccess: () => toast.show('Digest-Einstellungen gespeichert'),
+      onSuccess: () => { toast.show('Digest-Einstellungen gespeichert'); },
     })
   }
 
@@ -163,7 +163,7 @@ export default function RetentionConfigPage() {
                       max={3650}
                       value={retentionForm.audit_log_days}
                       onChange={(e) =>
-                        setRetentionForm((f) => ({ ...f, audit_log_days: Number(e.target.value) }))
+                        { setRetentionForm((f) => ({ ...f, audit_log_days: Number(e.target.value) })); }
                       }
                       className="h-8 text-sm"
                     />
@@ -177,7 +177,7 @@ export default function RetentionConfigPage() {
                       max={3650}
                       value={retentionForm.findings_resolved_days}
                       onChange={(e) =>
-                        setRetentionForm((f) => ({ ...f, findings_resolved_days: Number(e.target.value) }))
+                        { setRetentionForm((f) => ({ ...f, findings_resolved_days: Number(e.target.value) })); }
                       }
                       className="h-8 text-sm"
                     />
@@ -190,7 +190,7 @@ export default function RetentionConfigPage() {
                       max={3650}
                       value={retentionForm.notifications_days}
                       onChange={(e) =>
-                        setRetentionForm((f) => ({ ...f, notifications_days: Number(e.target.value) }))
+                        { setRetentionForm((f) => ({ ...f, notifications_days: Number(e.target.value) })); }
                       }
                       className="h-8 text-sm"
                     />
@@ -203,7 +203,7 @@ export default function RetentionConfigPage() {
                       max={3650}
                       value={retentionForm.scan_history_days}
                       onChange={(e) =>
-                        setRetentionForm((f) => ({ ...f, scan_history_days: Number(e.target.value) }))
+                        { setRetentionForm((f) => ({ ...f, scan_history_days: Number(e.target.value) })); }
                       }
                       className="h-8 text-sm"
                     />
@@ -242,7 +242,7 @@ export default function RetentionConfigPage() {
                       type="checkbox"
                       checked={digestForm.digest_enabled}
                       onChange={(e) =>
-                        setDigestForm((f) => ({ ...f, digest_enabled: e.target.checked }))
+                        { setDigestForm((f) => ({ ...f, digest_enabled: e.target.checked })); }
                       }
                       className="w-4 h-4 rounded border-border accent-indigo-500"
                     />
@@ -256,7 +256,7 @@ export default function RetentionConfigPage() {
                         <select
                           value={digestForm.digest_day}
                           onChange={(e) =>
-                            setDigestForm((f) => ({ ...f, digest_day: Number(e.target.value) }))
+                            { setDigestForm((f) => ({ ...f, digest_day: Number(e.target.value) })); }
                           }
                           className="h-8 text-sm rounded-md border border-input bg-background px-2 focus:outline-none focus:ring-1 focus:ring-brand"
                         >
@@ -270,7 +270,7 @@ export default function RetentionConfigPage() {
                         <select
                           value={digestForm.digest_hour}
                           onChange={(e) =>
-                            setDigestForm((f) => ({ ...f, digest_hour: Number(e.target.value) }))
+                            { setDigestForm((f) => ({ ...f, digest_hour: Number(e.target.value) })); }
                           }
                           className="h-8 text-sm rounded-md border border-input bg-background px-2 focus:outline-none focus:ring-1 focus:ring-brand"
                         >

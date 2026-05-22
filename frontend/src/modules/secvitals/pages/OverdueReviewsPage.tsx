@@ -88,7 +88,7 @@ export default function OverdueReviewsPage() {
                       <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0" />
                       <button
                         className="text-sm font-medium hover:underline truncate text-left"
-                        onClick={() => navigate(`/secvitals/controls/${ctrl.id}`)}
+                        onClick={() => { navigate(`/secvitals/controls/${ctrl.id}`); }}
                       >
                         {ctrl.title}
                       </button>
@@ -107,7 +107,7 @@ export default function OverdueReviewsPage() {
                     size="sm"
                     variant="outline"
                     className="ml-4 h-7 text-xs shrink-0"
-                    onClick={() => setSelectedControl(ctrl)}
+                    onClick={() => { setSelectedControl(ctrl); }}
                   >
                     <CalendarClock className="w-3 h-3 mr-1" />
                     Jetzt überprüfen
@@ -120,7 +120,7 @@ export default function OverdueReviewsPage() {
       ))}
 
       {selectedControl && (
-        <Dialog open={!!selectedControl} onOpenChange={(open) => !open && setSelectedControl(null)}>
+        <Dialog open={!!selectedControl} onOpenChange={(open) => { if (!open) { setSelectedControl(null); } }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="text-sm font-semibold">

@@ -132,7 +132,7 @@ function CreateOrgDialog({ open, onClose, onCreated }: CreateDialogProps) {
             <label className="text-sm font-medium">{t('admin.tenants.labelName')}</label>
             <Input
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => { setForm({ ...form, name: e.target.value }); }}
               placeholder={t('admin.tenants.namePlaceholder')}
               autoFocus
             />
@@ -141,7 +141,7 @@ function CreateOrgDialog({ open, onClose, onCreated }: CreateDialogProps) {
             <label className="text-sm font-medium">{t('admin.tenants.labelPlan')}</label>
             <select
               value={form.plan}
-              onChange={(e) => setForm({ ...form, plan: e.target.value })}
+              onChange={(e) => { setForm({ ...form, plan: e.target.value }); }}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
             >
               <option value="msp_managed">MSP Managed</option>
@@ -227,7 +227,7 @@ export default function AdminTenantsPage() {
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
               {t('admin.tenants.refresh')}
             </Button>
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button size="sm" onClick={() => { setCreateOpen(true); }}>
               <Plus className="w-3.5 h-3.5 mr-1.5" />
               {t('admin.tenants.newOrg')}
             </Button>
@@ -241,7 +241,7 @@ export default function AdminTenantsPage() {
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-secondary" />
           <Input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); }}
             placeholder={t('admin.tenants.searchPlaceholder')}
             className="pl-8"
           />
@@ -311,7 +311,7 @@ export default function AdminTenantsPage() {
                                 variant="outline"
                                 size="sm"
                                 disabled={impersonateMutation.isPending || !!org.scheduled_deletion_at}
-                                onClick={() => impersonateMutation.mutate(org.id)}
+                                onClick={() => { impersonateMutation.mutate(org.id); }}
                               >
                                 <ExternalLink className="w-3 h-3 mr-1" />
                                 {t('admin.tenants.open')}
@@ -321,7 +321,7 @@ export default function AdminTenantsPage() {
                                 size="sm"
                                 className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 dark:border-red-800 dark:hover:border-red-700"
                                 disabled={!!org.scheduled_deletion_at}
-                                onClick={() => setDeactivateTarget(org)}
+                                onClick={() => { setDeactivateTarget(org); }}
                               >
                                 <Trash2 className="w-3 h-3 mr-1" />
                                 {t('admin.tenants.deactivate')}
@@ -342,7 +342,7 @@ export default function AdminTenantsPage() {
       {/* Create Dialog */}
       <CreateOrgDialog
         open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        onClose={() => { setCreateOpen(false); }}
         onCreated={() => void queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })}
       />
 

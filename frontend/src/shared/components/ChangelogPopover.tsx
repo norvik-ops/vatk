@@ -62,12 +62,12 @@ export function ChangelogPopover() {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); }} aria-hidden="true" />
           <div className="absolute right-0 bottom-10 z-50 w-80 bg-surface border border-border rounded-xl shadow-lg overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface2">
               <h3 className="font-semibold text-sm">Neue Funktionen</h3>
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); }}
                 className="p-1 hover:bg-muted/50 rounded"
                 aria-label="Changelog schließen"
               >
@@ -85,7 +85,7 @@ export function ChangelogPopover() {
                   </div>
                   <ul className="space-y-1.5">
                     {version.entries.map((entry, i) => {
-                      const badge = TYPE_LABELS[entry.type] ?? TYPE_LABELS.improvement
+                      const badge = TYPE_LABELS[entry.type]
                       return (
                         <li key={i} className="flex gap-2 items-start">
                           <span

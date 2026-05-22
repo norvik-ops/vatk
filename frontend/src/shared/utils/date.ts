@@ -24,10 +24,10 @@ export function formatDate(dateStr: string): string {
 export function formatRelative(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const minutes = Math.floor(diff / 60000)
-  if (minutes < 60) return `vor ${minutes} Minuten`
+  if (minutes < 60) return `vor ${String(minutes)} Minuten`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `vor ${hours} Stunden`
+  if (hours < 24) return `vor ${String(hours)} Stunden`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `vor ${days} Tagen`
+  if (days < 7) return `vor ${String(days)} Tagen`
   return formatDate(dateStr)
 }

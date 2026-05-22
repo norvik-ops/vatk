@@ -35,9 +35,9 @@ export default function AuditorAcceptPage() {
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>()
-  useEffect(() => () => clearTimeout(copiedTimerRef.current), [])
+  useEffect(() => () => { clearTimeout(copiedTimerRef.current); }, [])
 
-  const accept = useMutation<AcceptResponse, Error>({
+  const accept = useMutation<AcceptResponse>({
     mutationFn: () => acceptInvite(token ?? ''),
     onSuccess: (data) => {
       setSessionToken(data.session_token)
@@ -48,7 +48,7 @@ export default function AuditorAcceptPage() {
     if (!sessionToken) return
     void navigator.clipboard.writeText(sessionToken).then(() => {
       setCopied(true)
-      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000)
+      copiedTimerRef.current = setTimeout(() => { setCopied(false); }, 2000)
     })
   }
 
@@ -125,7 +125,7 @@ export default function AuditorAcceptPage() {
         <Button
           className="w-full"
           size="lg"
-          onClick={() => accept.mutate()}
+          onClick={() => { accept.mutate(); }}
           disabled={accept.isPending || !token}
         >
           {accept.isPending ? 'Aktiviere...' : 'Zugang aktivieren'}

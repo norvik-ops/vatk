@@ -11,7 +11,7 @@ export interface ScoreHistoryEntry {
 export function useScoreHistory(days: 30 | 90) {
   return useQuery<ScoreHistoryEntry[]>({
     queryKey: ['secvitals', 'score-history', days],
-    queryFn: () => apiFetch<ScoreHistoryEntry[]>(`/secvitals/score-history?days=${days}`),
+    queryFn: () => apiFetch<ScoreHistoryEntry[]>(`/secvitals/score-history?days=${String(days)}`),
     staleTime: 5 * 60_000,
   })
 }

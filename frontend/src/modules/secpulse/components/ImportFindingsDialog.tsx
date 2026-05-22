@@ -39,7 +39,7 @@ export function ImportFindingsDialog({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: assets } = useAssets()
-  const assetList = Array.isArray(assets) ? assets : ((assets as unknown) as { data?: typeof assets })?.data ?? []
+  const assetList = assets ?? []
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0] ?? null
@@ -133,7 +133,7 @@ export function ImportFindingsDialog({
           {/* Format selector */}
           <div className="space-y-1">
             <label className="text-sm font-medium text-primary">Format</label>
-            <Select value={format} onValueChange={(v) => setFormat(v as ImportFormat)}>
+            <Select value={format} onValueChange={(v) => { setFormat(v as ImportFormat); }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -187,7 +187,7 @@ export function ImportFindingsDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleClose(false)} disabled={isPending}>
+          <Button variant="outline" onClick={() => { handleClose(false); }} disabled={isPending}>
             Abbrechen
           </Button>
           <Button onClick={() => { void handleUpload() }} disabled={isPending || !file || !assetId}>

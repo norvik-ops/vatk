@@ -78,8 +78,8 @@ export function useUpdateWebhook(id: string) {
 
 export function useDeleteWebhook() {
   const qc = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/webhooks/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/webhooks/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['webhooks'] })
     },
@@ -87,9 +87,9 @@ export function useDeleteWebhook() {
 }
 
 export function useTestWebhook() {
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/webhooks/${id}/test`, { method: 'POST' }),
+      apiFetch<undefined>(`/webhooks/${id}/test`, { method: 'POST' }),
     onSuccess: () => {
       toast('Test-Ping gesendet', 'success')
     },

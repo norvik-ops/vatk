@@ -42,7 +42,7 @@ function useRevokeSession() {
 // und behält die aktuelle Session. Wird vom "Andere abmelden"-Button verwendet.
 function useRevokeOtherSessions() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error>({
+  return useMutation({
     mutationFn: () => apiFetch<unknown>('/auth/sessions', { method: 'DELETE' }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['sessions'] }),
   })
@@ -180,7 +180,7 @@ export default function SessionsPage() {
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
               disabled={revoke.isPending || session.is_current}
               title={session.is_current ? 'Diese Session abzumelden geht über Logout — nicht hier' : undefined}
-              onClick={() => revoke.mutate(session.id)}
+              onClick={() => { revoke.mutate(session.id); }}
             >
               <Trash2 className="w-4 h-4" />
               <span className="sr-only">{t('settings.sessionsPage.revokeSession')}</span>
@@ -208,7 +208,7 @@ export default function SessionsPage() {
           <Button
             variant="destructive"
             disabled={revokeOthers.isPending || (sessions.filter(s => !s.is_current).length === 0)}
-            onClick={() => revokeOthers.mutate()}
+            onClick={() => { revokeOthers.mutate(); }}
           >
             <LogOut className="mr-2 h-4 w-4" />
             {revokeOthers.isPending ? t('settings.sessionsPage.revokingAll') : 'Andere abmelden'}

@@ -15,9 +15,9 @@ function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches)
   useEffect(() => {
     const mql = window.matchMedia(query)
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches)
+    const handler = (e: MediaQueryListEvent) => { setMatches(e.matches); }
     mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
+    return () => { mql.removeEventListener('change', handler); }
   }, [query])
   return matches
 }
@@ -75,7 +75,7 @@ function DesktopTable<T>({ columns, data, onRowClick, keyField }: ResponsiveTabl
             >
               {columns.map((col) => (
                 <TableCell key={String(col.key)}>
-                  {col.render ? col.render(row) : String(getCellValue(row, col.key) ?? '—')}
+                  {col.render ? col.render(row) : (getCellValue(row, col.key) ?? '—')}
                 </TableCell>
               ))}
             </TableRow>
@@ -106,7 +106,7 @@ function MobileCardList<T>({ columns, data, onRowClick, keyField }: ResponsiveTa
         >
           {/* Title row */}
           <p className="font-semibold text-base text-primary leading-snug">
-            {titleCol.render ? titleCol.render(row) : String(getCellValue(row, titleCol.key) ?? '—')}
+            {titleCol.render ? titleCol.render(row) : (getCellValue(row, titleCol.key) ?? '—')}
           </p>
 
           {/* Key-value pairs */}
@@ -115,7 +115,7 @@ function MobileCardList<T>({ columns, data, onRowClick, keyField }: ResponsiveTa
               <div key={String(col.key)} className="flex items-center gap-2 text-sm">
                 <span className="text-secondary shrink-0 w-28 truncate">{col.label}:</span>
                 <span className="text-primary">
-                  {col.render ? col.render(row) : String(getCellValue(row, col.key) ?? '—')}
+                  {col.render ? col.render(row) : (getCellValue(row, col.key) ?? '—')}
                 </span>
               </div>
             ))}

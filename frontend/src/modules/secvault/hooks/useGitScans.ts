@@ -46,9 +46,9 @@ export function useTriggerGitScan() {
 
 export function useDismissScanResult() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, { resultId: string; reason: string }>({
+  return useMutation<undefined, Error, { resultId: string; reason: string }>({
     mutationFn: ({ resultId, reason }) =>
-      apiFetch<void>(`${BASE}/git-scans/results/${resultId}/dismiss`, {
+      apiFetch<undefined>(`${BASE}/git-scans/results/${resultId}/dismiss`, {
         method: 'POST',
         body: JSON.stringify({ reason }),
       }),

@@ -157,7 +157,7 @@ export function FrameworkSetupWizard({ framework, onClose }: FrameworkSetupWizar
               <Button variant="ghost" size="sm" onClick={handleSkip}>
                 Später einrichten
               </Button>
-              <Button onClick={() => setStep(2)}>
+              <Button onClick={() => { setStep(2); }}>
                 Erste Controls anzeigen
               </Button>
             </DialogFooter>
@@ -203,10 +203,10 @@ export function FrameworkSetupWizard({ framework, onClose }: FrameworkSetupWizar
             </div>
 
             <DialogFooter className="mt-4">
-              <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
+              <Button variant="ghost" size="sm" onClick={() => { setStep(1); }}>
                 Zurück
               </Button>
-              <Button onClick={() => setStep(3)}>
+              <Button onClick={() => { setStep(3); }}>
                 Verstanden, weiter
               </Button>
             </DialogFooter>

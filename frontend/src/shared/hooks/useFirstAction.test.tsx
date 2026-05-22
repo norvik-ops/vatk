@@ -6,7 +6,7 @@ import { useFirstAction } from './useFirstAction'
 // instantiate the real Toaster which would need a Provider in the test tree.
 const toastMock = vi.fn()
 vi.mock('./useToast', () => ({
-  toast: (...args: unknown[]) => toastMock(...args),
+  toast: (...args: unknown[]) => toastMock(...args) as unknown,
 }))
 
 beforeEach(() => {
@@ -16,39 +16,39 @@ beforeEach(() => {
 
 describe('useFirstAction', () => {
   it('does NOT fire when condition is already true on initial mount', () => {
-    renderHook(() => useFirstAction('control:first-created', true))
+    renderHook(() => { useFirstAction('control:first-created', true); })
     expect(toastMock).not.toHaveBeenCalled()
   })
 
   it('fires once on transition false → true', () => {
-    const { rerender } = renderHook(({ cond }: { cond: boolean }) => useFirstAction('control:first-created', cond), {
+    const { rerender } = renderHook(({ cond }: { cond: boolean }) => { useFirstAction('control:first-created', cond); }, {
       initialProps: { cond: false },
     })
     expect(toastMock).not.toHaveBeenCalled()
 
-    act(() => rerender({ cond: true }))
+    act(() => { rerender({ cond: true }); })
     expect(toastMock).toHaveBeenCalledTimes(1)
   })
 
   it('persists in localStorage and does not fire again after remount', () => {
-    const { rerender, unmount } = renderHook(({ cond }: { cond: boolean }) => useFirstAction('control:first-created', cond), {
+    const { rerender, unmount } = renderHook(({ cond }: { cond: boolean }) => { useFirstAction('control:first-created', cond); }, {
       initialProps: { cond: false },
     })
-    act(() => rerender({ cond: true }))
+    act(() => { rerender({ cond: true }); })
     expect(toastMock).toHaveBeenCalledTimes(1)
     unmount()
 
     // Remount the hook — should NOT fire again even though condition is true,
     // because the key is already in localStorage.
-    renderHook(() => useFirstAction('control:first-created', true))
+    renderHook(() => { useFirstAction('control:first-created', true); })
     expect(toastMock).toHaveBeenCalledTimes(1)
   })
 
   it('silently no-ops for unknown keys', () => {
-    const { rerender } = renderHook(({ cond }: { cond: boolean }) => useFirstAction('unknown:key', cond), {
+    const { rerender } = renderHook(({ cond }: { cond: boolean }) => { useFirstAction('unknown:key', cond); }, {
       initialProps: { cond: false },
     })
-    act(() => rerender({ cond: true }))
+    act(() => { rerender({ cond: true }); })
     // Unknown keys are skipped — no toast.
     expect(toastMock).not.toHaveBeenCalled()
   })

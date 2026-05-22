@@ -81,9 +81,9 @@ export function useSecretValue(projectId: string, envId: string, key: string, en
  */
 export function useUpsertSecret(projectId: string, envId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, { key: string; value: string }>({
+  return useMutation<undefined, Error, { key: string; value: string }>({
     mutationFn: ({ key, value }) =>
-      apiFetch<void>(
+      apiFetch<undefined>(
         `${BASE}/projects/${projectId}/envs/${envId}/secrets/${encodeURIComponent(key)}`,
         {
           method: 'PUT',
@@ -125,7 +125,7 @@ export function useProjectAccessLog(projectId: string, page = 1, limit = 25) {
   return useQuery<AccessLogPage>({
     queryKey: ['secvault', 'projects', projectId, 'access-log', page, limit],
     queryFn: () =>
-      apiFetch<AccessLogPage>(`${BASE}/projects/${projectId}/access-log?page=${page}&limit=${limit}`),
+      apiFetch<AccessLogPage>(`${BASE}/projects/${projectId}/access-log?page=${String(page)}&limit=${String(limit)}`),
     staleTime: 30_000,
     enabled: Boolean(projectId),
   })
@@ -138,9 +138,9 @@ export function useProjectAccessLog(projectId: string, page = 1, limit = 25) {
  */
 export function useDeleteSecret(projectId: string, envId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (key) =>
-      apiFetch<void>(
+      apiFetch<undefined>(
         `${BASE}/projects/${projectId}/envs/${envId}/secrets/${encodeURIComponent(key)}`,
         { method: 'DELETE' },
       ),

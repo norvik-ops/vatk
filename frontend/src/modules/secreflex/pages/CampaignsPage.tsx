@@ -74,7 +74,7 @@ export default function CampaignsPage() {
         title="Campaigns"
         description="Phishing-Simulationskampagnen verwalten."
         actions={
-          <Button onClick={() => setOpen(true)}>
+          <Button onClick={() => { setOpen(true); }}>
             <Plus className="w-4 h-4 mr-1" />
             New Campaign
           </Button>
@@ -98,7 +98,7 @@ export default function CampaignsPage() {
               title="Keine Kampagnen"
               description="Starte deine erste Phishing-Simulation."
               action={
-                <Button onClick={() => setOpen(true)}>
+                <Button onClick={() => { setOpen(true); }}>
                   <Plus className="w-4 h-4 mr-1" />Kampagne erstellen
                 </Button>
               }
@@ -120,7 +120,7 @@ export default function CampaignsPage() {
                     <TableRow
                       key={c.id}
                       className="cursor-pointer hover:bg-surface2"
-                      onClick={() => navigate(`/secreflex/campaigns/${c.id}`)}
+                      onClick={() => { navigate(`/secreflex/campaigns/${c.id}`); }}
                     >
                       <TableCell className="font-medium">{c.name}</TableCell>
                       <TableCell>
@@ -153,11 +153,11 @@ export default function CampaignsPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Neue Kampagne</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { void handleCreate(e) }}>
+          <form onSubmit={(e) => { handleCreate(e) }}>
             <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               <div className="space-y-1.5">
                 <Label htmlFor="camp-name">Kampagnenname</Label>
-                <Input id="camp-name" value={name} onChange={(e) => setName(e.target.value)} required />
+                <Input id="camp-name" value={name} onChange={(e) => { setName(e.target.value); }} required />
               </div>
               <div className="space-y-1.5">
                 <Label>Vorlage</Label>
@@ -184,20 +184,20 @@ export default function CampaignsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="from-name">Absendername</Label>
-                  <Input id="from-name" value={fromName} onChange={(e) => setFromName(e.target.value)} required />
+                  <Input id="from-name" value={fromName} onChange={(e) => { setFromName(e.target.value); }} required />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="from-email">From Email</Label>
-                  <Input id="from-email" type="email" value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} required />
+                  <Input id="from-email" type="email" value={fromEmail} onChange={(e) => { setFromEmail(e.target.value); }} required />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="subject">Subject</Label>
-                <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+                <Input id="subject" value={subject} onChange={(e) => { setSubject(e.target.value); }} required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="scheduled-at">Schedule (optional)</Label>
-                <Input id="scheduled-at" type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+                <Input id="scheduled-at" type="datetime-local" value={scheduledAt} onChange={(e) => { setScheduledAt(e.target.value); }} />
               </div>
 
               {/* Betriebsrat Mode — ON by default */}
@@ -207,7 +207,7 @@ export default function CampaignsPage() {
                     id="betriebsrat-mode"
                     type="checkbox"
                     checked={betriebsratMode}
-                    onChange={(e) => setBetriebsratMode(e.target.checked)}
+                    onChange={(e) => { setBetriebsratMode(e.target.checked); }}
                     className="mt-0.5 h-4 w-4 rounded border-border accent-brand"
                   />
                   <div>
@@ -226,7 +226,7 @@ export default function CampaignsPage() {
                       id="track-opens"
                       type="checkbox"
                       checked={trackOpens}
-                      onChange={(e) => setTrackOpens(e.target.checked)}
+                      onChange={(e) => { setTrackOpens(e.target.checked); }}
                       className="mt-0.5 h-4 w-4 rounded border-border accent-brand"
                     />
                     <div>

@@ -28,9 +28,9 @@ interface AssignPayload {
 // useAssignEvidence — mutation to assign auto-evidence to a control
 export function useAssignEvidence() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, { evidenceId: string; controlId: string }>({
+  return useMutation<undefined, Error, { evidenceId: string; controlId: string }>({
     mutationFn: ({ evidenceId, controlId }) =>
-      apiFetch<void>(`/secvitals/evidence/auto/${evidenceId}/assign`, {
+      apiFetch<undefined>(`/secvitals/evidence/auto/${evidenceId}/assign`, {
         method: 'POST',
         body: JSON.stringify({ control_id: controlId } satisfies AssignPayload),
       }),

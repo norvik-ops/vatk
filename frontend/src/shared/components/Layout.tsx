@@ -141,7 +141,7 @@ export default function Layout() {
   )
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const { data: updateInfo } = useUpdateCheck()
-  const isAdminOrOwner = user?.roles?.includes('admin') || user?.roles?.includes('owner')
+  const isAdminOrOwner = user?.roles.includes('admin') || user?.roles.includes('owner')
   const demoMode = useDemoMode()
   const { data: overdueControls } = useOverdueControls()
   const overdueCount = overdueControls?.length ?? 0
@@ -150,7 +150,7 @@ export default function Layout() {
   const { data: pendingApprovalData } = usePendingApprovalCount()
   const pendingApprovalCount = pendingApprovalData?.count ?? 0
 
-  useKeyboardShortcuts({ onOpenHelp: () => setShortcutsOpen(true) })
+  useKeyboardShortcuts({ onOpenHelp: () => { setShortcutsOpen(true); } })
 
   function toggleSidebarCollapsed() {
     setSidebarCollapsed((prev) => {
@@ -190,7 +190,7 @@ export default function Layout() {
             <FlaskConical className="w-4 h-4 shrink-0" />
             <strong>{t('demo.banner')}</strong> — {t('demo.description')}
           </span>
-          <button onClick={() => setDemoBannerDismissed(true)} aria-label={t('common.close')} className="text-brand/60 hover:text-brand ml-4">✕</button>
+          <button onClick={() => { setDemoBannerDismissed(true); }} aria-label={t('common.close')} className="text-brand/60 hover:text-brand ml-4">✕</button>
         </div>
       )}
       {backupStatus?.stale && !backupDismissed && !demoMode && (
@@ -198,7 +198,7 @@ export default function Layout() {
           <span className="text-amber-800">
             ⚠ {t('backup.staleWarning')} — <code>make backup</code> ausführen
           </span>
-          <button onClick={() => setBackupDismissed(true)} aria-label={t('common.close')} className="text-amber-600 hover:text-amber-800 ml-4">✕</button>
+          <button onClick={() => { setBackupDismissed(true); }} aria-label={t('common.close')} className="text-amber-600 hover:text-amber-800 ml-4">✕</button>
         </div>
       )}
       <VersionBanner />
@@ -223,7 +223,7 @@ export default function Layout() {
             </span>
           </span>
           <button
-            onClick={() => setUpdateDismissed(true)}
+            onClick={() => { setUpdateDismissed(true); }}
             aria-label={t('common.close')}
             className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 ml-4"
           >
@@ -239,7 +239,7 @@ export default function Layout() {
            but allows Escape to close via the document-level keydown listener */
         <div
           className="fixed inset-0 z-20 bg-black/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => { setSidebarOpen(false); }}
           aria-hidden="true"
         />
       )}
@@ -262,7 +262,7 @@ export default function Layout() {
             {!sidebarCollapsed && (
               <button
                 className="ml-auto lg:hidden text-secondary hover:text-primary p-1 rounded"
-                onClick={() => setSidebarOpen(false)}
+                onClick={() => { setSidebarOpen(false); }}
                 aria-label={t('nav.closeMenu')}
               >
                 <X className="w-4 h-4" aria-hidden="true" />
@@ -318,7 +318,7 @@ export default function Layout() {
                   {/* WCAG 2.4.4 + 4.1.2: aria-current="page" identifies the active link */}
                   <Link
                     to={path}
-                    onClick={() => setSidebarOpen(false)}
+                    onClick={() => { setSidebarOpen(false); }}
                     aria-current={active ? 'page' : undefined}
                     title={sidebarCollapsed ? label : undefined}
                     className={cn(
@@ -344,7 +344,7 @@ export default function Layout() {
                           <Link
                             key={cp}
                             to={cp}
-                            onClick={() => setSidebarOpen(false)}
+                            onClick={() => { setSidebarOpen(false); }}
                             aria-current={childActive ? 'page' : undefined}
                             className={cn(
                               'flex items-center gap-2 px-2 py-[6px] rounded-md text-[12px] font-medium transition-all duration-150',
@@ -358,7 +358,7 @@ export default function Layout() {
                             {isOverduePath && overdueCount > 0 && (
                               <span
                                 className="ml-auto text-[10px] font-semibold bg-destructive text-destructive-foreground rounded-full px-1.5 py-0.5 leading-none"
-                                aria-label={`${overdueCount} überfällige Kontrollen`}
+                                aria-label={`${String(overdueCount)} überfällige Kontrollen`}
                               >
                                 {overdueCount}
                               </span>
@@ -366,7 +366,7 @@ export default function Layout() {
                             {isAutoEvidencePath && autoEvidenceCount > 0 && (
                               <span
                                 className="ml-auto text-[10px] font-semibold bg-brand text-white rounded-full px-1.5 py-0.5 leading-none"
-                                aria-label={`${autoEvidenceCount} neue Nachweise`}
+                                aria-label={`${String(autoEvidenceCount)} neue Nachweise`}
                               >
                                 {autoEvidenceCount}
                               </span>
@@ -374,7 +374,7 @@ export default function Layout() {
                             {isApprovalsPath && pendingApprovalCount > 0 && (
                               <span
                                 className="ml-auto text-[10px] font-semibold bg-amber-500 text-white rounded-full px-1.5 py-0.5 leading-none"
-                                aria-label={`${pendingApprovalCount} ausstehende Genehmigungen`}
+                                aria-label={`${String(pendingApprovalCount)} ausstehende Genehmigungen`}
                               >
                                 {pendingApprovalCount}
                               </span>
@@ -421,7 +421,7 @@ export default function Layout() {
                 <Link
                   key={to}
                   to={to}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={() => { setSidebarOpen(false); }}
                   aria-current={active ? 'page' : undefined}
                   title={sidebarCollapsed ? label : undefined}
                   className={cn(
@@ -460,7 +460,7 @@ export default function Layout() {
 
           {/* Help / keyboard shortcuts */}
           <button
-            onClick={() => setShortcutsOpen(true)}
+            onClick={() => { setShortcutsOpen(true); }}
             aria-label="Tastaturkürzel anzeigen"
             title="Tastaturkürzel (?)"
             className={cn(
@@ -554,7 +554,7 @@ export default function Layout() {
         {/* Mobile top bar with hamburger */}
         <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-surface shrink-0">
           <button
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => { setSidebarOpen(true); }}
             aria-label={t('nav.openMenu')}
             className="text-secondary hover:text-primary p-1 rounded"
           >
@@ -635,7 +635,7 @@ export default function Layout() {
         })}
       </nav>
       <GlobalSearch />
-      <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => { setShortcutsOpen(false); }} />
       {demoMode && <FeedbackWidget />}
       <WhatsNewModal />
       <Toaster />

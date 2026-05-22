@@ -6,7 +6,7 @@ function readFavorites(): string[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
-    const parsed = JSON.parse(raw)
+    const parsed: unknown = JSON.parse(raw) as unknown
     return Array.isArray(parsed) ? (parsed as string[]) : []
   } catch {
     return []

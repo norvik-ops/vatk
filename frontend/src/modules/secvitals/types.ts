@@ -765,6 +765,7 @@ export interface ReportabilityAnswers {
   personal_data_compromised: boolean
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AssessReportabilityInput extends ReportabilityAnswers {}
 
 export interface ReportabilityResult {

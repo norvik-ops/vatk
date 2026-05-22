@@ -21,7 +21,9 @@ function loadPages(): RecentPage[] {
 function savePages(pages: RecentPage[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(pages))
-  } catch {}
+  } catch {
+    // localStorage may be unavailable
+  }
 }
 
 export function trackPage(path: string, label: string, icon: string): void {
@@ -36,12 +38,12 @@ export function useRecentPages(): RecentPage[] {
   const [pages, setPages] = useState<RecentPage[]>(() => loadPages())
 
   // Keep up-to-date when trackPage is called from the same tab
-  const refresh = useCallback(() => setPages(loadPages()), [])
+  const refresh = useCallback(() => { setPages(loadPages()); }, [])
 
   // Listen for updates
   useEffect(() => {
     window.addEventListener('vakt:recent-pages-updated', refresh)
-    return () => window.removeEventListener('vakt:recent-pages-updated', refresh)
+    return () => { window.removeEventListener('vakt:recent-pages-updated', refresh); }
   }, [refresh])
 
   return pages

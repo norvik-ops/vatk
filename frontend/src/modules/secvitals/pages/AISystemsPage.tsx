@@ -158,15 +158,15 @@ export default function AISystemsPage() {
 
   function handleSubmit() {
     if (editId) {
-      updateSystem.mutate(form as UpdateAISystemInput, { onSuccess: () => setDialogOpen(false) })
+      updateSystem.mutate(form, { onSuccess: () => { setDialogOpen(false); } })
     } else {
-      createSystem.mutate(form as CreateAISystemInput, { onSuccess: () => setDialogOpen(false) })
+      createSystem.mutate(form, { onSuccess: () => { setDialogOpen(false); } })
     }
   }
 
   function confirmDelete() {
     if (!deleteId) return
-    deleteSystem.mutate(deleteId, { onSuccess: () => setDeleteId(null) })
+    deleteSystem.mutate(deleteId, { onSuccess: () => { setDeleteId(null); } })
   }
 
   const isPending = createSystem.isPending || updateSystem.isPending
@@ -193,7 +193,7 @@ export default function AISystemsPage() {
           <Label className="text-xs">Risikoklasse</Label>
           <Select
             value={filterRiskClass || '_all'}
-            onValueChange={(v) => setFilterRiskClass(v === '_all' ? '' : v)}
+            onValueChange={(v) => { setFilterRiskClass(v === '_all' ? '' : v); }}
           >
             <SelectTrigger className="h-8 w-44" data-testid="filter-risk-class">
               <SelectValue placeholder="Alle" />
@@ -211,7 +211,7 @@ export default function AISystemsPage() {
           <Label className="text-xs">Status</Label>
           <Select
             value={filterStatus || '_all'}
-            onValueChange={(v) => setFilterStatus(v === '_all' ? '' : v)}
+            onValueChange={(v) => { setFilterStatus(v === '_all' ? '' : v); }}
           >
             <SelectTrigger className="h-8 w-44" data-testid="filter-status">
               <SelectValue placeholder="Alle" />
@@ -270,9 +270,9 @@ export default function AISystemsPage() {
               <AISystemCard
                 key={a.id}
                 system={a}
-                onEdit={() => openEdit(a)}
-                onDelete={() => setDeleteId(a.id)}
-                onClassify={() => setWizardSystem(a)}
+                onEdit={() => { openEdit(a); }}
+                onDelete={() => { setDeleteId(a.id); }}
+                onClassify={() => { setWizardSystem(a); }}
               />
             ))}
           </div>
@@ -290,7 +290,7 @@ export default function AISystemsPage() {
               <Input
                 placeholder="z.B. ChatGPT-Integration"
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -298,7 +298,7 @@ export default function AISystemsPage() {
               <Input
                 placeholder="z.B. OpenAI, Google, intern"
                 value={form.provider ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, provider: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -307,7 +307,7 @@ export default function AISystemsPage() {
                 rows={2}
                 placeholder="Wofür wird das KI-System eingesetzt?"
                 value={form.use_case ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, use_case: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, use_case: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -316,7 +316,7 @@ export default function AISystemsPage() {
                 rows={2}
                 placeholder="Technische Beschreibung"
                 value={form.description ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, description: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -324,7 +324,7 @@ export default function AISystemsPage() {
               <Input
                 placeholder="z.B. Mitarbeitende, Kunden, Bewerber"
                 value={form.affected_groups ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, affected_groups: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, affected_groups: e.target.value })); }}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -333,7 +333,7 @@ export default function AISystemsPage() {
                 <Select
                   value={form.autonomy_level ?? 'assistive'}
                   onValueChange={(v) =>
-                    setForm((f) => ({ ...f, autonomy_level: v as AISystem['autonomy_level'] }))
+                    { setForm((f) => ({ ...f, autonomy_level: v as AISystem['autonomy_level'] })); }
                   }
                 >
                   <SelectTrigger>
@@ -350,7 +350,7 @@ export default function AISystemsPage() {
                 <Label>Risikoklasse</Label>
                 <Select
                   value={(form as UpdateAISystemInput).risk_class ?? '_none'}
-                  onValueChange={(v) => setForm((f) => ({ ...f, risk_class: v === '_none' ? undefined : v }))}
+                  onValueChange={(v) => { setForm((f) => ({ ...f, risk_class: v === '_none' ? undefined : v })); }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="— auswählen —" />
@@ -371,7 +371,7 @@ export default function AISystemsPage() {
                 <Select
                   value={(form as UpdateAISystemInput).status ?? 'under_review'}
                   onValueChange={(v) =>
-                    setForm((f) => ({ ...f, status: v as AISystem['status'] }))
+                    { setForm((f) => ({ ...f, status: v as AISystem['status'] })); }
                   }
                 >
                   <SelectTrigger>
@@ -392,7 +392,7 @@ export default function AISystemsPage() {
                 rows={2}
                 placeholder="Begründung für die Risikoklassifizierung"
                 value={form.classification_rationale ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, classification_rationale: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, classification_rationale: e.target.value })); }}
               />
             </div>
             {isUpdate && (
@@ -401,7 +401,7 @@ export default function AISystemsPage() {
                 <Input
                   placeholder="Name der verantwortlichen Person"
                   value={(form as UpdateAISystemInput).classified_by ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, classified_by: e.target.value }))}
+                  onChange={(e) => { setForm((f) => ({ ...f, classified_by: e.target.value })); }}
                 />
               </div>
             )}
@@ -411,13 +411,13 @@ export default function AISystemsPage() {
                 type="date"
                 value={(form as UpdateAISystemInput).in_production_since ?? ''}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, in_production_since: e.target.value || undefined }))
+                  { setForm((f) => ({ ...f, in_production_since: e.target.value || undefined })); }
                 }
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>
               Abbrechen
             </Button>
             <Button onClick={handleSubmit} disabled={!form.name || isPending}>
@@ -432,7 +432,7 @@ export default function AISystemsPage() {
           systemId={wizardSystem.id}
           systemName={wizardSystem.name}
           open={!!wizardSystem}
-          onClose={() => setWizardSystem(null)}
+          onClose={() => { setWizardSystem(null); }}
         />
       )}
 

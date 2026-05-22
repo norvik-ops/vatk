@@ -22,8 +22,8 @@ export function useOnboardingStatus() {
 
 export function useDismissOnboarding() {
   const qc = useQueryClient()
-  return useMutation<void, Error, void>({
-    mutationFn: () => apiFetch<void>('/onboarding/dismiss', { method: 'POST' }),
+  return useMutation<undefined>({
+    mutationFn: () => apiFetch<undefined>('/onboarding/dismiss', { method: 'POST' }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['onboarding', 'status'] })
     },

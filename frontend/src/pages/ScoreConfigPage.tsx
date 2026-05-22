@@ -11,10 +11,10 @@ import { useScoreConfig, useUpdateScoreConfig, ScoreConfig } from '../hooks/useD
 function useToast() {
   const [message, setMessage] = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
-  useEffect(() => () => clearTimeout(timerRef.current), [])
+  useEffect(() => () => { clearTimeout(timerRef.current); }, [])
   function show(msg: string) {
     setMessage(msg)
-    timerRef.current = setTimeout(() => setMessage(null), 3000)
+    timerRef.current = setTimeout(() => { setMessage(null); }, 3000)
   }
   return { message, show }
 }
@@ -38,7 +38,7 @@ function FieldRow({ label, field, value, error, onChange }: FieldRowProps) {
         min={1}
         max={100}
         value={value}
-        onChange={(e) => onChange(field, Number(e.target.value))}
+        onChange={(e) => { onChange(field, Number(e.target.value)); }}
         className={`h-8 text-sm ${error ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
       />
       {error && <p className="text-[11px] text-red-500">{error}</p>}
@@ -97,7 +97,7 @@ export default function ScoreConfigPage() {
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
     update.mutate(form, {
-      onSuccess: () => toast.show('Score-Konfiguration gespeichert'),
+      onSuccess: () => { toast.show('Score-Konfiguration gespeichert'); },
     })
   }
 

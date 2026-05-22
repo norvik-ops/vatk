@@ -89,8 +89,8 @@ export default function OrgBrandingPage() {
     update.mutate(
       { logo_url: logoUrl },
       {
-        onSuccess: () => setSaved(true),
-        onError: () => setSaved(false),
+        onSuccess: () => { setSaved(true); },
+        onError: () => { setSaved(false); },
       },
     )
   }
@@ -100,8 +100,8 @@ export default function OrgBrandingPage() {
     updateTrustCenter.mutate(
       { enabled: tcEnabled, description: tcDescription, contact: tcContact },
       {
-        onSuccess: () => setTcSaved(true),
-        onError: () => setTcSaved(false),
+        onSuccess: () => { setTcSaved(true); },
+        onError: () => { setTcSaved(false); },
       },
     )
   }

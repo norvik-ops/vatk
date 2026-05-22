@@ -39,7 +39,8 @@ export function useCreateTask(entityType: string, entityId: string) {
 export function useUpdateTask() {
   const queryClient = useQueryClient()
   return useMutation<CollabTask, Error, { taskId: string; entityType: string; entityId: string } & UpdateCollabTaskInput>({
-    mutationFn: ({ taskId, entityType: _et, entityId: _eid, ...input }) =>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    mutationFn: ({ taskId, entityType: _entityType, entityId: _entityId, ...input }) =>
       apiFetch<CollabTask>(`/secvitals/collab-tasks/${taskId}`, {
         method: 'PATCH',
         body: JSON.stringify(input),
@@ -54,9 +55,9 @@ export function useUpdateTask() {
 
 export function useDeleteTask(entityType: string, entityId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (taskId) =>
-      apiFetch<void>(`/secvitals/collab-tasks/${taskId}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/collab-tasks/${taskId}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['secvitals', entityType, entityId, 'collab-tasks'],

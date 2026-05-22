@@ -17,7 +17,7 @@ import type { PaginatedResponse } from '../../../shared/types/pagination'
 export function useEmployees(page = 1, limit = 25) {
   const query = useQuery<PaginatedResponse<Employee>>({
     queryKey: ['hr', 'employees', page, limit],
-    queryFn: () => apiFetch<PaginatedResponse<Employee>>(`/hr/employees?page=${page}&limit=${limit}`),
+    queryFn: () => apiFetch<PaginatedResponse<Employee>>(`/hr/employees?page=${String(page)}&limit=${String(limit)}`),
     staleTime: 5 * 60 * 1000,
   })
   return {
@@ -51,8 +51,8 @@ export function useUpdateEmployee() {
 
 export function useDeleteEmployee() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/hr/employees/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/hr/employees/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['hr', 'employees'] })
     },
@@ -82,8 +82,8 @@ export function useCreateChecklist() {
 
 export function useDeleteChecklist() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => apiFetch<void>(`/hr/checklists/${id}`, { method: 'DELETE' }),
+  return useMutation<undefined, Error, string>({
+    mutationFn: (id) => apiFetch<undefined>(`/hr/checklists/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['hr', 'checklists'] })
     },
@@ -95,7 +95,7 @@ export function useDeleteChecklist() {
 export function useChecklistRuns(employeeId?: string) {
   return useQuery<ChecklistRun[]>({
     queryKey: ['hr', 'checklist-runs', employeeId],
-    queryFn: () => apiFetch<ChecklistRun[]>(`/hr/employees/${employeeId}/checklist-runs`),
+    queryFn: () => apiFetch<ChecklistRun[]>(`/hr/employees/${employeeId ?? ''}/checklist-runs`),
     enabled: !!employeeId,
     staleTime: 5 * 60 * 1000,
   })

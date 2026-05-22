@@ -66,7 +66,7 @@ function ChecklistCard({ checklist, onDelete }: { checklist: Checklist; onDelete
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => setExpanded((x) => !x)}
+              onClick={() => { setExpanded((x) => !x); }}
               className="text-secondary hover:text-primary transition-colors shrink-0"
             >
               {expanded ? (
@@ -160,7 +160,7 @@ export default function ChecklistsPage() {
     setDialogOpen(false)
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     setDeleteTarget(id)
   }
 
@@ -209,7 +209,7 @@ export default function ChecklistsPage() {
             <ChecklistCard
               key={c.id}
               checklist={c}
-              onDelete={() => void handleDelete(c.id)}
+              onDelete={() => { handleDelete(c.id); }}
             />
           ))}
         </div>
@@ -227,7 +227,7 @@ export default function ChecklistsPage() {
               <Label>Typ *</Label>
               <Select
                 value={form.type}
-                onValueChange={(v) => setForm((f) => ({ ...f, type: v as FormState['type'] }))}
+                onValueChange={(v) => { setForm((f) => ({ ...f, type: v as FormState['type'] })); }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -243,7 +243,7 @@ export default function ChecklistsPage() {
               <Label>Name *</Label>
               <Input
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); }}
                 placeholder="Standard-Onboarding IT"
               />
             </div>
@@ -268,7 +268,7 @@ export default function ChecklistsPage() {
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5 text-red-400 shrink-0"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => { removeItem(item.id); }}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -279,7 +279,7 @@ export default function ChecklistsPage() {
               <div className="flex gap-2">
                 <Input
                   value={newItemLabel}
-                  onChange={(e) => setNewItemLabel(e.target.value)}
+                  onChange={(e) => { setNewItemLabel(e.target.value); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addItem() } }}
                   placeholder="Schritt beschreiben..."
                   className="flex-1"
@@ -288,7 +288,7 @@ export default function ChecklistsPage() {
                   <input
                     type="checkbox"
                     checked={newItemRequired}
-                    onChange={(e) => setNewItemRequired(e.target.checked)}
+                    onChange={(e) => { setNewItemRequired(e.target.checked); }}
                     className="rounded"
                   />
                   Pflicht
@@ -301,7 +301,7 @@ export default function ChecklistsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>
               Abbrechen
             </Button>
             <Button

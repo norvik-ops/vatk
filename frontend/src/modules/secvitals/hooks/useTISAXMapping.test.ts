@@ -58,15 +58,15 @@ describe('useTISAXISOMapping', () => {
       wrapper: createWrapper(),
     })
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    await waitFor(() => { expect(result.current.isSuccess).toBe(true); })
 
     expect(result.current.data).toHaveLength(2)
     // First result: covered=true
-    expect(result.current.data![0].covered).toBe(true)
-    expect(result.current.data![0].tisax_control_id).toBe('TISAX-1.1.1')
-    expect(result.current.data![0].iso_control_id).toBe('A.5.1.1')
+    expect(result.current.data?.[0].covered).toBe(true)
+    expect(result.current.data?.[0].tisax_control_id).toBe('TISAX-1.1.1')
+    expect(result.current.data?.[0].iso_control_id).toBe('A.5.1.1')
     // Second result: covered=false
-    expect(result.current.data![1].covered).toBe(false)
+    expect(result.current.data?.[1].covered).toBe(false)
   })
 
   it('passes framework_id as query param when provided', async () => {
@@ -98,7 +98,7 @@ describe('useTISAXGapsAfterISO', () => {
       wrapper: createWrapper(),
     })
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    await waitFor(() => { expect(result.current.isSuccess).toBe(true); })
 
     expect(result.current.data).toHaveLength(1)
     expect(result.current.data![0].covered).toBe(false)

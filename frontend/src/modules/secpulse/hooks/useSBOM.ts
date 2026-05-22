@@ -39,9 +39,9 @@ export function useAssetSBOM(assetId: string) {
 
 export function useTriggerSBOM(assetId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, void>({
+  return useMutation<undefined>({
     mutationFn: () =>
-      apiFetch<void>(`/secpulse/assets/${assetId}/sbom`, { method: 'POST' }),
+      apiFetch<undefined>(`/secpulse/assets/${assetId}/sbom`, { method: 'POST' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secpulse', 'sbom', assetId] })
     },

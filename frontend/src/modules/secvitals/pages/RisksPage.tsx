@@ -50,7 +50,7 @@ function RiskMatrixHeatmap({ risks }: { risks: Risk[] }) {
         {/* Y-axis label */}
         <div
           className="flex flex-col justify-between text-xs text-gray-400 py-1"
-          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', height: 5 * 44 + 'px' }}
+          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', height: `${5 * 44}px` }}
         >
           Auswirkung →
         </div>
@@ -146,8 +146,8 @@ function RiskCard({
             <input
               type="checkbox"
               checked={selected}
-              onChange={() => onToggleSelect(risk.id)}
-              onClick={(e) => e.stopPropagation()}
+              onChange={() => { onToggleSelect(risk.id); }}
+              onClick={(e) => { e.stopPropagation(); }}
               className="mt-0.5 rounded shrink-0"
               aria-label={`Risiko "${risk.title}" auswählen`}
             />
@@ -262,7 +262,7 @@ export default function RisksPage() {
   }
 
   function handleSubmit() {
-    createRisk.mutate(form, { onSuccess: () => setDialogOpen(false) })
+    createRisk.mutate(form, { onSuccess: () => { setDialogOpen(false); } })
   }
 
   const displayRisks = view === 'list' ? sortedRisks : (risks ?? [])
@@ -283,7 +283,7 @@ export default function RisksPage() {
                 size="sm"
                 variant={view === 'list' ? 'secondary' : 'ghost'}
                 className="h-7 px-2.5 text-xs"
-                onClick={() => setView('list')}
+                onClick={() => { setView('list'); }}
               >
                 <List className="w-3.5 h-3.5 mr-1" />
                 {t('secvitals.risksPage.viewList')}
@@ -292,7 +292,7 @@ export default function RisksPage() {
                 size="sm"
                 variant={view === 'heatmap' ? 'secondary' : 'ghost'}
                 className="h-7 px-2.5 text-xs"
-                onClick={() => setView('heatmap')}
+                onClick={() => { setView('heatmap'); }}
               >
                 <BarChart2 className="w-3.5 h-3.5 mr-1" />
                 {t('secvitals.risksPage.viewHeatmap')}
@@ -321,8 +321,8 @@ export default function RisksPage() {
               const isActive = sortKey === opt.key
               return (
                 <button
-                  key={String(opt.key)}
-                  onClick={() => toggleSort(opt.key)}
+                  key={opt.key}
+                  onClick={() => { toggleSort(opt.key); }}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border transition-colors ${
                     isActive
                       ? 'border-brand/50 bg-brand/10 text-brand'
@@ -375,7 +375,7 @@ export default function RisksPage() {
                     <RiskCard
                       key={r.id}
                       risk={r}
-                      onClick={() => navigate(`/secvitals/risks/${r.id}`)}
+                      onClick={() => { navigate(`/secvitals/risks/${r.id}`); }}
                       selected={selected.has(r.id)}
                       onToggleSelect={toggleSelect}
                     />
@@ -391,7 +391,7 @@ export default function RisksPage() {
                     <RiskCard
                       key={r.id}
                       risk={r}
-                      onClick={() => navigate(`/secvitals/risks/${r.id}`)}
+                      onClick={() => { navigate(`/secvitals/risks/${r.id}`); }}
                       selected={selected.has(r.id)}
                       onToggleSelect={toggleSelect}
                     />
@@ -407,7 +407,7 @@ export default function RisksPage() {
                     <RiskCard
                       key={r.id}
                       risk={r}
-                      onClick={() => navigate(`/secvitals/risks/${r.id}`)}
+                      onClick={() => { navigate(`/secvitals/risks/${r.id}`); }}
                       selected={selected.has(r.id)}
                       onToggleSelect={toggleSelect}
                     />
@@ -434,7 +434,7 @@ export default function RisksPage() {
             <p className="text-sm text-secondary">
               Neuen Status für {selected.size} ausgewählte{selected.size === 1 ? 's Risiko' : ' Risiken'} setzen:
             </p>
-            <Select value={pendingBulkStatus} onValueChange={(v) => setPendingBulkStatus(v as Risk['status'])}>
+            <Select value={pendingBulkStatus} onValueChange={(v) => { setPendingBulkStatus(v as Risk['status']); }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -447,7 +447,7 @@ export default function RisksPage() {
             </Select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkStatusDialogOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => { setBulkStatusDialogOpen(false); }}>Abbrechen</Button>
             <Button onClick={() => { void handleBulkStatusApply() }} disabled={isApplyingBulk}>
               {isApplyingBulk ? 'Wird gespeichert…' : 'Anwenden'}
             </Button>
@@ -457,12 +457,12 @@ export default function RisksPage() {
 
       <BulkActionBar
         selectedCount={selected.size}
-        onClearSelection={() => setSelected(new Set())}
+        onClearSelection={() => { setSelected(new Set()); }}
         actions={[
           {
             label: 'Status setzen',
             icon: RefreshCw,
-            onClick: () => setBulkStatusDialogOpen(true),
+            onClick: () => { setBulkStatusDialogOpen(true); },
           },
         ]}
       />
@@ -474,28 +474,28 @@ export default function RisksPage() {
             <div className="space-y-1.5">
               <Label htmlFor="risk-title">{t('secvitals.risksPage.labelTitle')} *</Label>
               <Input id="risk-title" placeholder={t('secvitals.risksPage.placeholderTitle')} value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="risk-category">{t('secvitals.risksPage.labelCategory')}</Label>
               <Input id="risk-category" placeholder={t('secvitals.risksPage.placeholderCategory')} value={form.category ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, category: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="risk-desc">{t('secvitals.risksPage.labelDescription')}</Label>
               <Textarea id="risk-desc" rows={2} placeholder={t('secvitals.risksPage.placeholderDescription')} value={form.description ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, description: e.target.value })); }} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="risk-likelihood">{t('secvitals.risksPage.labelLikelihood')} *</Label>
                 <Input id="risk-likelihood" type="number" min={1} max={5} value={form.likelihood}
-                  onChange={(e) => setForm((f) => ({ ...f, likelihood: parseInt(e.target.value, 10) || 1 }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, likelihood: parseInt(e.target.value, 10) || 1 })); }} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="risk-impact">{t('secvitals.risksPage.labelImpact')} *</Label>
                 <Input id="risk-impact" type="number" min={1} max={5} value={form.impact}
-                  onChange={(e) => setForm((f) => ({ ...f, impact: parseInt(e.target.value, 10) || 1 }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, impact: parseInt(e.target.value, 10) || 1 })); }} />
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
@@ -503,7 +503,7 @@ export default function RisksPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="risk-treatment">{t('secvitals.risksPage.labelTreatment')} *</Label>
-              <Select value={form.treatment} onValueChange={(v) => setForm((f) => ({ ...f, treatment: v as Risk['treatment'] }))}>
+              <Select value={form.treatment} onValueChange={(v) => { setForm((f) => ({ ...f, treatment: v as Risk['treatment'] })); }}>
                 <SelectTrigger id="risk-treatment"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="avoid">{t('secvitals.risksPage.treatmentAvoid')}</SelectItem>
@@ -516,18 +516,18 @@ export default function RisksPage() {
             <div className="space-y-1.5">
               <Label htmlFor="risk-treatment-notes">{t('secvitals.risksPage.labelTreatmentNotes')}</Label>
               <Textarea id="risk-treatment-notes" rows={2} placeholder={t('secvitals.risksPage.placeholderTreatmentNotes')} value={form.treatment_notes ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, treatment_notes: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, treatment_notes: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label>{t('secvitals.risksPage.labelOwner')}</Label>
               <UserPicker
                 value={form.owner ?? undefined}
-                onChange={(name) => setForm((f) => ({ ...f, owner: name ?? '' }))}
+                onChange={(name) => { setForm((f) => ({ ...f, owner: name ?? '' })); }}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>{t('common.cancel')}</Button>
             <Button onClick={handleSubmit} disabled={!form.title || !form.treatment || createRisk.isPending}>
               {createRisk.isPending ? t('common.saving') : t('secvitals.risksPage.addRisk')}
             </Button>

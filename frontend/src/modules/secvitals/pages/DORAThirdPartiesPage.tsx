@@ -102,10 +102,10 @@ function ThirdPartyDialog({
   )
 
   const set = <K extends keyof CreateDORAThirdPartyInput>(key: K, val: CreateDORAThirdPartyInput[K]) =>
-    setForm((f) => ({ ...f, [key]: val }))
+    { setForm((f) => ({ ...f, [key]: val })); }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { onClose(); } }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initial ? 'Drittanbieter bearbeiten' : 'Drittanbieter hinzufügen'}</DialogTitle>
@@ -117,14 +117,14 @@ function ThirdPartyDialog({
               <Label>Name *</Label>
               <Input
                 value={form.name}
-                onChange={(e) => set('name', e.target.value)}
+                onChange={(e) => { set('name', e.target.value); }}
                 placeholder="z.B. AWS Frankfurt, Microsoft Azure"
               />
             </div>
 
             <div className="space-y-1">
               <Label>Dienstleistungstyp *</Label>
-              <Select value={form.service_type} onValueChange={(v) => set('service_type', v as typeof form.service_type)}>
+              <Select value={form.service_type} onValueChange={(v) => { set('service_type', v as typeof form.service_type); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {SERVICE_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -134,7 +134,7 @@ function ThirdPartyDialog({
 
             <div className="space-y-1">
               <Label>Kritikalität *</Label>
-              <Select value={form.criticality} onValueChange={(v) => set('criticality', v as typeof form.criticality)}>
+              <Select value={form.criticality} onValueChange={(v) => { set('criticality', v as typeof form.criticality); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CRITICALITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -144,12 +144,12 @@ function ThirdPartyDialog({
 
             <div className="space-y-1">
               <Label>Vertragsbeginn</Label>
-              <Input type="date" value={form.contract_start ?? ''} onChange={(e) => set('contract_start', e.target.value || null)} />
+              <Input type="date" value={form.contract_start ?? ''} onChange={(e) => { set('contract_start', e.target.value || null); }} />
             </div>
 
             <div className="space-y-1">
               <Label>Vertragsende</Label>
-              <Input type="date" value={form.contract_end ?? ''} onChange={(e) => set('contract_end', e.target.value || null)} />
+              <Input type="date" value={form.contract_end ?? ''} onChange={(e) => { set('contract_end', e.target.value || null); }} />
             </div>
 
             <div className="space-y-1">
@@ -158,7 +158,7 @@ function ThirdPartyDialog({
                 type="number"
                 min={0}
                 value={form.sla_rto_hours ?? ''}
-                onChange={(e) => set('sla_rto_hours', e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => { set('sla_rto_hours', e.target.value ? Number(e.target.value) : null); }}
                 placeholder="z.B. 4"
               />
             </div>
@@ -171,14 +171,14 @@ function ThirdPartyDialog({
                 max={100}
                 step={0.01}
                 value={form.sla_availability ?? ''}
-                onChange={(e) => set('sla_availability', e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => { set('sla_availability', e.target.value ? Number(e.target.value) : null); }}
                 placeholder="z.B. 99.9"
               />
             </div>
 
             <div className="space-y-1">
               <Label>Datenspeicherort *</Label>
-              <Select value={form.data_location} onValueChange={(v) => set('data_location', v as typeof form.data_location)}>
+              <Select value={form.data_location} onValueChange={(v) => { set('data_location', v as typeof form.data_location); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {DATA_LOCATIONS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
@@ -191,7 +191,7 @@ function ThirdPartyDialog({
                 type="checkbox"
                 id="has_sub"
                 checked={form.has_subcontractors}
-                onChange={(e) => set('has_subcontractors', e.target.checked)}
+                onChange={(e) => { set('has_subcontractors', e.target.checked); }}
                 className="h-4 w-4"
               />
               <Label htmlFor="has_sub">Hat Unterauftragnehmer</Label>
@@ -202,7 +202,7 @@ function ThirdPartyDialog({
                 <Label>Unterauftragnehmer (Namen)</Label>
                 <Input
                   value={form.subcontractor_names ?? ''}
-                  onChange={(e) => set('subcontractor_names', e.target.value)}
+                  onChange={(e) => { set('subcontractor_names', e.target.value); }}
                   placeholder="z.B. Rackspace, Cloudflare"
                 />
               </div>
@@ -213,7 +213,7 @@ function ThirdPartyDialog({
                 type="checkbox"
                 id="exit_strat"
                 checked={form.exit_strategy}
-                onChange={(e) => set('exit_strategy', e.target.checked)}
+                onChange={(e) => { set('exit_strategy', e.target.checked); }}
                 className="h-4 w-4"
               />
               <Label htmlFor="exit_strat">Ausstiegsstrategie vorhanden</Label>
@@ -224,7 +224,7 @@ function ThirdPartyDialog({
                 <Label>Ausstiegsnotizen</Label>
                 <Textarea
                   value={form.exit_notes ?? ''}
-                  onChange={(e) => set('exit_notes', e.target.value)}
+                  onChange={(e) => { set('exit_notes', e.target.value); }}
                   rows={2}
                   placeholder="Beschreibe den Exit-Plan..."
                 />
@@ -235,7 +235,7 @@ function ThirdPartyDialog({
               <Label>Notizen</Label>
               <Textarea
                 value={form.notes ?? ''}
-                onChange={(e) => set('notes', e.target.value)}
+                onChange={(e) => { set('notes', e.target.value); }}
                 rows={3}
                 placeholder="Interne Notizen zu diesem Drittanbieter..."
               />
@@ -245,7 +245,7 @@ function ThirdPartyDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Abbrechen</Button>
-          <Button onClick={() => onSave(form)} disabled={saving || !form.name}>
+          <Button onClick={() => { onSave(form); }} disabled={saving || !form.name}>
             {saving ? <Spinner size="sm" className="mr-2" /> : null}
             {initial ? 'Speichern' : 'Hinzufügen'}
           </Button>
@@ -334,7 +334,7 @@ export default function DORAThirdPartiesPage() {
       })
     } else {
       createMut.mutate(input, {
-        onSuccess: () => setDialogOpen(false),
+        onSuccess: () => { setDialogOpen(false); },
       })
     }
   }
@@ -373,7 +373,7 @@ export default function DORAThirdPartiesPage() {
           {/* Filter */}
           <div className="flex items-center gap-2">
             <Label className="text-sm shrink-0">Filter:</Label>
-            <Select value={criticality || 'all'} onValueChange={(v) => setCriticality(v === 'all' ? '' : v)}>
+            <Select value={criticality || 'all'} onValueChange={(v) => { setCriticality(v === 'all' ? '' : v); }}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Alle" />
               </SelectTrigger>
@@ -407,7 +407,7 @@ export default function DORAThirdPartiesPage() {
                   key={tp.id}
                   tp={tp}
                   onEdit={() => { setEditing(tp); setDialogOpen(true) }}
-                  onDelete={() => setDeleteTarget(tp)}
+                  onDelete={() => { setDeleteTarget(tp); }}
                 />
               ))}
             </div>
@@ -423,7 +423,7 @@ export default function DORAThirdPartiesPage() {
         saving={createMut.isPending || updateMut.isPending}
       />
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) { setDeleteTarget(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Drittanbieter löschen?</AlertDialogTitle>
@@ -437,7 +437,7 @@ export default function DORAThirdPartiesPage() {
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => {
                 if (deleteTarget) {
-                  deleteMut.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })
+                  deleteMut.mutate(deleteTarget.id, { onSuccess: () => { setDeleteTarget(null); } })
                 }
               }}
             >

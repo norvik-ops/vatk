@@ -43,7 +43,7 @@ export default function ReportsPage() {
         title={t('secpulse.reportsPage.title')}
         description={t('secpulse.reportsPage.description')}
         actions={
-          <Button onClick={() => setOpen(true)}>
+          <Button onClick={() => { setOpen(true); }}>
             <FileText className="w-4 h-4 mr-1" />
             {t('secpulse.reportsPage.createReport')}
           </Button>
@@ -113,7 +113,7 @@ export default function ReportsPage() {
                         <TableCell>
                           {r.status === 'completed' && (
                             <button
-                              onClick={() => downloadReport(r.id, r.title)}
+                              onClick={() => { downloadReport(r.id, r.title); }}
                               className="flex items-center gap-1 text-xs text-brand hover:underline"
                             >
                               <Download className="w-3.5 h-3.5" />
@@ -142,7 +142,7 @@ export default function ReportsPage() {
                 <Input
                   id="report-title"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => { setTitle(e.target.value); }}
                   placeholder="Q2 2026 Security Report"
                   required
                 />
@@ -152,7 +152,7 @@ export default function ReportsPage() {
               )}
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
+              <Button type="button" variant="outline" onClick={() => { setOpen(false); }}>{t('common.cancel')}</Button>
               <Button type="submit" disabled={createReport.isPending}>
                 {createReport.isPending ? t('secpulse.reportsPage.generating') : t('secpulse.reportsPage.generate')}
               </Button>

@@ -55,6 +55,7 @@ const mockUseSuppliersResult = {
   isLoading: false,
   isError: false,
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const mockUseSuppliers = vi.fn((_filters?: SupplierFilters) => mockUseSuppliersResult)
 
 vi.mock('../hooks/useSuppliers', () => ({
@@ -179,7 +180,7 @@ describe('SuppliersPage', () => {
     renderPage()
     // Initial state: both filters are empty — hook receives undefined for both
     const calls = mockUseSuppliers.mock.calls
-    const lastCall = calls[calls.length - 1]![0]
+    const lastCall = calls[calls.length - 1][0]
     expect(lastCall?.criticality).toBeUndefined()
     expect(lastCall?.assessmentStatus).toBeUndefined()
   })

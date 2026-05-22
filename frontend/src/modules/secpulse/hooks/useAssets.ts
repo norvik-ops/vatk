@@ -65,8 +65,8 @@ export function useImportAssets() {
         body: formData,
       }).then(async (res) => {
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: res.statusText }))
-          throw new Error((err as { error?: string }).error ?? res.statusText)
+          const err = await res.json().catch(() => ({ error: res.statusText })) as { error?: string }
+          throw new Error(err.error ?? res.statusText)
         }
         return res.json() as Promise<ImportAssetsResult>
       })
@@ -87,9 +87,9 @@ export function useSLADashboard() {
 
 export function useDeleteAsset() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secpulse/assets/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secpulse/assets/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secpulse', 'assets'] })
     },
@@ -98,9 +98,9 @@ export function useDeleteAsset() {
 
 export function useTriggerScan(assetId: string) {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, void>({
+  return useMutation<undefined>({
     mutationFn: () =>
-      apiFetch<void>(`/secpulse/assets/${assetId}/scans`, { method: 'POST' }),
+      apiFetch<undefined>(`/secpulse/assets/${assetId}/scans`, { method: 'POST' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secpulse', 'assets', assetId] })
       void queryClient.invalidateQueries({ queryKey: ['secpulse', 'findings'] })

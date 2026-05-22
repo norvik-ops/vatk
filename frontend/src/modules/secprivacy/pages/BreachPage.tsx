@@ -130,7 +130,7 @@ function BreachCard({
             size="sm"
             variant="outline"
             className="w-full mt-1 text-xs border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
-            onClick={() => onNotify(breach.id)}
+            onClick={() => { onNotify(breach.id); }}
           >
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
             {t('secprivacy.breachPage.markAuthorityNotified')}
@@ -142,11 +142,11 @@ function BreachCard({
             variant="ghost"
             className="h-7 w-7 text-muted-foreground hover:text-primary"
             title={t('common.export')}
-            onClick={() => onExportPDF(breach.id)}
+            onClick={() => { onExportPDF(breach.id); }}
           >
             <FileDown className="w-3.5 h-3.5" />
           </Button>
-          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('common.edit')} onClick={() => onEdit(breach)}>
+          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('common.edit')} onClick={() => { onEdit(breach); }}>
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           <Button
@@ -154,7 +154,7 @@ function BreachCard({
             variant="ghost"
             className="h-7 w-7 text-destructive hover:text-destructive"
             aria-label={t('common.delete')}
-            onClick={() => onDelete(breach.id)}
+            onClick={() => { onDelete(breach.id); }}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
@@ -213,7 +213,7 @@ export default function BreachPage() {
         affected_count: affectedCount,
         data_categories: dataCategories,
       }
-      createBreach.mutate(payload, { onSuccess: () => setDialogMode(null) })
+      createBreach.mutate(payload, { onSuccess: () => { setDialogMode(null); } })
     } else if (dialogMode === 'edit' && editId) {
       const payload: UpdateBreachInput = {
         title: form.title,
@@ -222,7 +222,7 @@ export default function BreachPage() {
         affected_count: affectedCount,
         data_categories: dataCategories,
       }
-      updateBreach.mutate({ id: editId, input: payload }, { onSuccess: () => setDialogMode(null) })
+      updateBreach.mutate({ id: editId, input: payload }, { onSuccess: () => { setDialogMode(null); } })
     }
   }
 
@@ -289,7 +289,7 @@ export default function BreachPage() {
                     <BreachCard
                       key={b.id}
                       breach={b}
-                      onNotify={(id) => markNotified.mutate(id)}
+                      onNotify={(id) => { markNotified.mutate(id); }}
                       onEdit={openEdit}
                       onDelete={handleDelete}
                       onExportPDF={exportPDF}
@@ -306,7 +306,7 @@ export default function BreachPage() {
                     <BreachCard
                       key={b.id}
                       breach={b}
-                      onNotify={(id) => markNotified.mutate(id)}
+                      onNotify={(id) => { markNotified.mutate(id); }}
                       onEdit={openEdit}
                       onDelete={handleDelete}
                       onExportPDF={exportPDF}
@@ -324,7 +324,7 @@ export default function BreachPage() {
         />
       </div>
 
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('secprivacy.breachPage.deleteDialogTitle')}</AlertDialogTitle>
@@ -333,13 +333,13 @@ export default function BreachPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setDeleteId(null); }}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('common.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && setDialogMode(null)}>
+      <Dialog open={dialogMode !== null} onOpenChange={(open) => { if (!open) setDialogMode(null) }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -357,7 +357,7 @@ export default function BreachPage() {
               <Input
                 placeholder={t('secprivacy.breachPage.placeholderTitle')}
                 value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -366,7 +366,7 @@ export default function BreachPage() {
                 placeholder={t('secprivacy.breachPage.placeholderDescription')}
                 rows={3}
                 value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, description: e.target.value })); }}
               />
             </div>
             {dialogMode === 'create' && (
@@ -375,7 +375,7 @@ export default function BreachPage() {
                 <Input
                   type="datetime-local"
                   value={form.discovered_at}
-                  onChange={(e) => setForm((f) => ({ ...f, discovered_at: e.target.value }))}
+                  onChange={(e) => { setForm((f) => ({ ...f, discovered_at: e.target.value })); }}
                 />
               </div>
             )}
@@ -384,7 +384,7 @@ export default function BreachPage() {
               <Input
                 placeholder={t('secprivacy.breachPage.placeholderCategories')}
                 value={form.rawCategories}
-                onChange={(e) => setForm((f) => ({ ...f, rawCategories: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, rawCategories: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
@@ -394,7 +394,7 @@ export default function BreachPage() {
                 min="0"
                 placeholder={t('secprivacy.breachPage.placeholderCount')}
                 value={form.rawCount}
-                onChange={(e) => setForm((f) => ({ ...f, rawCount: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, rawCount: e.target.value })); }}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -402,14 +402,14 @@ export default function BreachPage() {
                 type="checkbox"
                 id="breach-subjects"
                 checked={form.subjects_notification_required}
-                onChange={(e) => setForm((f) => ({ ...f, subjects_notification_required: e.target.checked }))}
+                onChange={(e) => { setForm((f) => ({ ...f, subjects_notification_required: e.target.checked })); }}
                 className="w-4 h-4"
               />
               <Label htmlFor="breach-subjects">{t('secprivacy.breachPage.labelSubjectsNotification')}</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogMode(null)}>
+            <Button variant="outline" onClick={() => { setDialogMode(null); }}>
               {t('common.cancel')}
             </Button>
             <Button

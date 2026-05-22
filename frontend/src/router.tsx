@@ -91,7 +91,7 @@ function SetupPageGuard() {
   useEffect(() => {
     apiFetch<SetupStatus>('/setup/status')
       .then((data) => { setSetupNeeded(!data.setup_complete); setReady(true) })
-      .catch(() => setReady(true))
+      .catch(() => { setReady(true); })
   }, [])
 
   if (!ready) return <LoadingSpinner />

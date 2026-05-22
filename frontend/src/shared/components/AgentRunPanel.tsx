@@ -121,7 +121,7 @@ function EventCard({ evt, index }: EventCardProps) {
             {hasDetails && (
               <button
                 type="button"
-                onClick={() => setExpanded((v) => !v)}
+                onClick={() => { setExpanded((v) => !v); }}
                 className="text-[10px] text-secondary hover:text-primary flex items-center gap-0.5"
               >
                 {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -261,7 +261,7 @@ export function AgentRunPanel({ initialGoal = '', contextHints }: AgentRunPanelP
         </div>
         <textarea
           value={goal}
-          onChange={(e) => setGoal(e.target.value)}
+          onChange={(e) => { setGoal(e.target.value); }}
           placeholder="Z.B.: Erstelle eine Übersicht aller offenen Controls für NIS2 und schlage Prioritäten vor."
           rows={3}
           disabled={isRunning}

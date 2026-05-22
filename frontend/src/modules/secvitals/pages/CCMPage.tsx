@@ -98,8 +98,8 @@ function ResultsDialog({
                 className="p-3 rounded-md border bg-card text-sm space-y-1"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <Badge className={STATUS_CLASS[r.status as CCMStatus]}>
-                    {STATUS_LABEL[r.status as CCMStatus] ?? r.status}
+                  <Badge className={STATUS_CLASS[r.status]}>
+                    {STATUS_LABEL[r.status] ?? r.status}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {new Date(r.ran_at).toLocaleString(formatLocale())}
@@ -139,7 +139,7 @@ function CCMCheckRow({
   onShowResults: () => void
   isRunning: boolean
 }) {
-  const status = (check.last_status ?? 'unknown') as CCMStatus
+  const status = (check.last_status ?? 'unknown')
 
   return (
     <Card className={!check.enabled ? 'opacity-60' : ''}>
@@ -160,7 +160,7 @@ function CCMCheckRow({
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              {CHECK_TYPE_LABELS[check.check_type as CCMCheckType] ?? check.check_type}
+              {CHECK_TYPE_LABELS[check.check_type] ?? check.check_type}
               {' · '}alle {check.interval_hours}h
             </p>
             {check.last_run_at && (
@@ -242,7 +242,7 @@ function ConfigEditor({
             className="text-sm"
             placeholder={hint.placeholder}
             value={config[hint.key] ?? ''}
-            onChange={(e) => onChange({ ...config, [hint.key]: e.target.value })}
+            onChange={(e) => { onChange({ ...config, [hint.key]: e.target.value }); }}
           />
         </div>
       ))}
@@ -297,7 +297,7 @@ export default function CCMPage() {
   function handleTrigger(check: CCMCheck) {
     setTriggeringId(check.id)
     triggerCheck.mutate(check.id, {
-      onSettled: () => setTriggeringId(null),
+      onSettled: () => { setTriggeringId(null); },
     })
   }
 
@@ -362,10 +362,10 @@ export default function CCMPage() {
                 <CCMCheckRow
                   key={check.id}
                   check={check}
-                  onDelete={() => handleDelete(check.id)}
-                  onToggle={() => handleToggle(check)}
-                  onTrigger={() => handleTrigger(check)}
-                  onShowResults={() => setResultsCheck(check)}
+                  onDelete={() => { handleDelete(check.id); }}
+                  onToggle={() => { handleToggle(check); }}
+                  onTrigger={() => { handleTrigger(check); }}
+                  onShowResults={() => { setResultsCheck(check); }}
                   isRunning={triggeringId === check.id}
                 />
               ))}
@@ -385,7 +385,7 @@ export default function CCMPage() {
                 <Input
                   placeholder="z.B. API Health Check"
                   value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); }}
                 />
               </div>
 
@@ -394,7 +394,7 @@ export default function CCMPage() {
                 <Select
                   value={form.check_type}
                   onValueChange={(v) =>
-                    setForm((f) => ({ ...f, check_type: v as CCMCheckType, config: {} }))
+                    { setForm((f) => ({ ...f, check_type: v as CCMCheckType, config: {} })); }
                   }
                 >
                   <SelectTrigger>
@@ -414,7 +414,7 @@ export default function CCMPage() {
                 <Input
                   placeholder="UUID des Controls"
                   value={form.control_id}
-                  onChange={(e) => setForm((f) => ({ ...f, control_id: e.target.value }))}
+                  onChange={(e) => { setForm((f) => ({ ...f, control_id: e.target.value })); }}
                 />
                 {frameworks.length > 0 && (
                   <p className="text-xs text-muted-foreground">
@@ -431,7 +431,7 @@ export default function CCMPage() {
                   max={8760}
                   value={form.interval_hours}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, interval_hours: parseInt(e.target.value) || 24 }))
+                    { setForm((f) => ({ ...f, interval_hours: parseInt(e.target.value) || 24 })); }
                   }
                 />
               </div>
@@ -439,11 +439,11 @@ export default function CCMPage() {
               <ConfigEditor
                 checkType={form.check_type}
                 config={form.config}
-                onChange={(config) => setForm((f) => ({ ...f, config }))}
+                onChange={(config) => { setForm((f) => ({ ...f, config })); }}
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              <Button variant="outline" onClick={() => { setDialogOpen(false); }}>
                 Abbrechen
               </Button>
               <Button
@@ -463,7 +463,7 @@ export default function CCMPage() {
 
         {/* Results dialog */}
         {resultsCheck && (
-          <ResultsDialog check={resultsCheck} onClose={() => setResultsCheck(null)} />
+          <ResultsDialog check={resultsCheck} onClose={() => { setResultsCheck(null); }} />
         )}
       </div>
     </ProGate>

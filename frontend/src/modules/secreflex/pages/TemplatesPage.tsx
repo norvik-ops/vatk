@@ -47,7 +47,7 @@ export default function TemplatesPage() {
         title="E-Mail-Vorlagen"
         description="E-Mail-Vorlagen für Phishing-Simulationen verwalten."
         actions={
-          <Button onClick={() => setOpen(true)}>
+          <Button onClick={() => { setOpen(true); }}>
             <Plus className="w-4 h-4 mr-1" />
             New Template
           </Button>
@@ -65,7 +65,7 @@ export default function TemplatesPage() {
             title="Keine Templates"
             description="Erstelle dein erstes E-Mail-Template."
             action={
-              <Button onClick={() => setOpen(true)}>
+              <Button onClick={() => { setOpen(true); }}>
                 <Plus className="w-4 h-4 mr-1" />Template erstellen
               </Button>
             }
@@ -101,7 +101,7 @@ export default function TemplatesPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700 h-7 w-7 p-0"
-                        onClick={() => setDeleteId(t.id)}
+                        onClick={() => { setDeleteId(t.id); }}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -117,25 +117,25 @@ export default function TemplatesPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Neue E-Mail-Vorlage</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { void handleCreate(e) }}>
+          <form onSubmit={(e) => { handleCreate(e) }}>
             <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               <div className="space-y-1.5">
                 <Label htmlFor="tmpl-name">Vorlagenname</Label>
-                <Input id="tmpl-name" value={name} onChange={(e) => setName(e.target.value)} required />
+                <Input id="tmpl-name" value={name} onChange={(e) => { setName(e.target.value); }} required />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="tmpl-from-name">Absendername</Label>
-                  <Input id="tmpl-from-name" value={fromName} onChange={(e) => setFromName(e.target.value)} required />
+                  <Input id="tmpl-from-name" value={fromName} onChange={(e) => { setFromName(e.target.value); }} required />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="tmpl-from-email">Absender-E-Mail</Label>
-                  <Input id="tmpl-from-email" type="email" value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} required />
+                  <Input id="tmpl-from-email" type="email" value={fromEmail} onChange={(e) => { setFromEmail(e.target.value); }} required />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="tmpl-subject">Betreff</Label>
-                <Input id="tmpl-subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+                <Input id="tmpl-subject" value={subject} onChange={(e) => { setSubject(e.target.value); }} required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="tmpl-body">HTML Body</Label>
@@ -144,7 +144,7 @@ export default function TemplatesPage() {
                   rows={6}
                   className="w-full rounded-md border border-border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-brand"
                   value={htmlBody}
-                  onChange={(e) => setHtmlBody(e.target.value)}
+                  onChange={(e) => { setHtmlBody(e.target.value); }}
                   placeholder="<html>...</html>"
                   required
                 />
@@ -160,15 +160,15 @@ export default function TemplatesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <Dialog open={!!deleteId} onOpenChange={(open) => { if (!open) { setDeleteId(null); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Vorlage löschen</DialogTitle></DialogHeader>
           <p className="text-sm text-secondary py-2">This will permanently delete the template. Campaigns using it will not be affected.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => { setDeleteId(null); }}>Abbrechen</Button>
             <Button
               variant="destructive"
-              onClick={() => deleteTemplate.mutate(deleteId!, { onSuccess: () => setDeleteId(null) })}
+              onClick={() => { deleteTemplate.mutate(deleteId!, { onSuccess: () => { setDeleteId(null); } }); }}
               disabled={deleteTemplate.isPending}
             >
               {deleteTemplate.isPending ? 'Deleting…' : 'Delete'}

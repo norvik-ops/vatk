@@ -205,7 +205,7 @@ export default function MultiFrameworkWizardPage() {
           <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
           <p className="text-gray-700 text-sm">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => { window.location.reload(); }}
             className="text-sm text-indigo-600 hover:underline"
           >
             Neu laden
@@ -309,7 +309,7 @@ export default function MultiFrameworkWizardPage() {
           <textarea
             placeholder="Kommentar (optional)"
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(e) => { setComment(e.target.value); }}
             className="w-full mt-2 text-sm border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             rows={2}
           />
@@ -317,7 +317,7 @@ export default function MultiFrameworkWizardPage() {
 
         <div className="flex justify-between mt-6">
           <button
-            onClick={() => setStepIdx((i) => Math.max(i - 1, 0))}
+            onClick={() => { setStepIdx((i) => Math.max(i - 1, 0)); }}
             disabled={stepIdx === 0}
             className="text-sm text-gray-600 disabled:text-gray-300 inline-flex items-center gap-1"
           >

@@ -145,7 +145,7 @@ function HistoryTable({ runs }: { runs: AssessmentRun[] }) {
           <Card key={run.id} className="overflow-hidden">
             <CardHeader
               className="cursor-pointer select-none py-3 px-4 hover:bg-gray-50 transition-colors"
-              onClick={() => setExpanded(isExpanded ? null : run.id)}
+              onClick={() => { setExpanded(isExpanded ? null : run.id); }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -265,7 +265,7 @@ function ReassessmentWizard({ runId, onComplete, onCancel }: WizardProps) {
         setQuestions(d.questions)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => { setLoading(false); })
   })
 
   const submitAnswer = async (value: number) => {
@@ -341,7 +341,7 @@ function ReassessmentWizard({ runId, onComplete, onCancel }: WizardProps) {
         <textarea
           placeholder="Kommentar (optional)"
           value={comment}
-          onChange={(e) => setComment(e.target.value)}
+          onChange={(e) => { setComment(e.target.value); }}
           className="w-full mt-2 text-sm border border-gray-200 rounded-md px-3 py-2"
           rows={2}
         />
@@ -349,7 +349,7 @@ function ReassessmentWizard({ runId, onComplete, onCancel }: WizardProps) {
 
       <div className="flex justify-between mt-2">
         <button
-          onClick={() => setStepIdx((i) => Math.max(i - 1, 0))}
+          onClick={() => { setStepIdx((i) => Math.max(i - 1, 0)); }}
           disabled={stepIdx === 0}
           className="text-sm text-gray-600 disabled:text-gray-300 inline-flex items-center gap-1"
         >
@@ -441,7 +441,7 @@ export default function NIS2ReassessmentPage() {
         <ReassessmentWizard
           runId={activeRunId}
           onComplete={handleComplete}
-          onCancel={() => setActiveRunId(null)}
+          onCancel={() => { setActiveRunId(null); }}
         />
       </div>
     )
@@ -499,7 +499,7 @@ export default function NIS2ReassessmentPage() {
             </p>
             <Button
               size="sm"
-              onClick={() => startMutation.mutate()}
+              onClick={() => { startMutation.mutate(); }}
               disabled={startMutation.isPending}
               className="gap-2"
             >
@@ -552,7 +552,7 @@ export default function NIS2ReassessmentPage() {
       {/* Link zum öffentlichen Wizard (für neuen anonymen Check) */}
       <div className="text-center">
         <button
-          onClick={() => navigate('/nis2-check')}
+          onClick={() => { navigate('/nis2-check'); }}
           className="text-xs text-gray-400 hover:text-gray-600 underline"
         >
           Zum öffentlichen NIS2-Wizard →

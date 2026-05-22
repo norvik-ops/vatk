@@ -21,7 +21,7 @@ function readFromStorage(key: string, fallback: string[]): string[] {
   try {
     const raw = localStorage.getItem(key)
     if (!raw) return fallback
-    const parsed = JSON.parse(raw)
+    const parsed: unknown = JSON.parse(raw) as unknown
     return Array.isArray(parsed) ? (parsed as string[]) : fallback
   } catch {
     return fallback

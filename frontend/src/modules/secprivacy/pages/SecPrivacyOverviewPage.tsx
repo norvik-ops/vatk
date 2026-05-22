@@ -78,7 +78,7 @@ export default function SecPrivacyOverviewPage() {
         {/* 72h Alert */}
         {urgentBreaches.length > 0 && (
           <button
-            onClick={() => navigate('/secprivacy/breach')}
+            onClick={() => { navigate('/secprivacy/breach'); }}
             className="w-full flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-left hover:border-red-500/50 transition-colors"
           >
             <Clock className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
@@ -100,23 +100,23 @@ export default function SecPrivacyOverviewPage() {
             label="Verarbeitungen (VVT)"
             value={activeVVT.length}
             sub="aktive Einträge"
-            onClick={() => navigate('/secprivacy/vvt')}
+            onClick={() => { navigate('/secprivacy/vvt'); }}
             accent={activeVVT.length > 0 ? 'green' : 'default'}
           />
           <StatCard
             icon={FileSearch}
             label="Datenschutz-Folgenabschätzungen"
             value={dpias?.length ?? 0}
-            sub={activeDPIAs.length > 0 ? `${activeDPIAs.length} in Bearbeitung` : 'alle abgeschlossen'}
-            onClick={() => navigate('/secprivacy/dpia')}
+            sub={activeDPIAs.length > 0 ? `${String(activeDPIAs.length)} in Bearbeitung` : 'alle abgeschlossen'}
+            onClick={() => { navigate('/secprivacy/dpia'); }}
             accent={activeDPIAs.length > 0 ? 'yellow' : 'default'}
           />
           <StatCard
             icon={Handshake}
             label="AV-Verträge (AVV)"
             value={activeAVVs.length}
-            sub={expiredAVVs.length > 0 ? `${expiredAVVs.length} abgelaufen` : 'alle gültig'}
-            onClick={() => navigate('/secprivacy/avv')}
+            sub={expiredAVVs.length > 0 ? `${String(expiredAVVs.length)} abgelaufen` : 'alle gültig'}
+            onClick={() => { navigate('/secprivacy/avv'); }}
             accent={expiredAVVs.length > 0 ? 'red' : 'default'}
           />
           <StatCard
@@ -124,7 +124,7 @@ export default function SecPrivacyOverviewPage() {
             label="Datenpannen"
             value={openBreaches.length}
             sub={urgentBreaches.length > 0 ? `${urgentBreaches.length} innerhalb 72h` : 'keine aktiven'}
-            onClick={() => navigate('/secprivacy/breach')}
+            onClick={() => { navigate('/secprivacy/breach'); }}
             accent={urgentBreaches.length > 0 ? 'red' : openBreaches.length > 0 ? 'yellow' : 'green'}
           />
           <StatCard
@@ -132,7 +132,7 @@ export default function SecPrivacyOverviewPage() {
             label="Datenschutzanfragen (DSR)"
             value={openDSRs.length}
             sub={overdueDSRs.length > 0 ? `${overdueDSRs.length} überfällig` : 'keine überfälligen'}
-            onClick={() => navigate('/secprivacy/dsr')}
+            onClick={() => { navigate('/secprivacy/dsr'); }}
             accent={overdueDSRs.length > 0 ? 'red' : openDSRs.length > 0 ? 'yellow' : 'green'}
           />
         </div>
@@ -177,7 +177,7 @@ export default function SecPrivacyOverviewPage() {
             ].map(({ icon: Icon, title, desc, path }) => (
               <button
                 key={path}
-                onClick={() => navigate(path)}
+                onClick={() => { navigate(path); }}
                 className="group flex items-start gap-4 p-4 bg-surface border border-border rounded-lg text-left hover:border-brand/50 transition-all duration-150"
               >
                 <div className="p-2 rounded-lg bg-surface2 text-brand shrink-0">

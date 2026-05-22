@@ -26,9 +26,9 @@ export function useCreateCCMCheck() {
 
 export function useDeleteCCMCheck() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: (id) =>
-      apiFetch<void>(`/secvitals/ccm/checks/${id}`, { method: 'DELETE' }),
+      apiFetch<undefined>(`/secvitals/ccm/checks/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secvitals', 'ccm', 'checks'] })
     },
@@ -37,9 +37,9 @@ export function useDeleteCCMCheck() {
 
 export function useToggleCCMCheck() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, { id: string; enabled: boolean }>({
+  return useMutation<undefined, Error, { id: string; enabled: boolean }>({
     mutationFn: ({ id, enabled }) =>
-      apiFetch<void>(`/secvitals/ccm/checks/${id}/toggle`, {
+      apiFetch<undefined>(`/secvitals/ccm/checks/${id}/toggle`, {
         method: 'PATCH',
         body: JSON.stringify({ enabled }),
       }),

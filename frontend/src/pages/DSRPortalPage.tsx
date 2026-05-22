@@ -217,7 +217,7 @@ export default function DSRPortalPage() {
                 {DSR_TYPES.map((t) => (
                   <button
                     key={t.value}
-                    onClick={() => setSelectedType(t.value)}
+                    onClick={() => { setSelectedType(t.value); }}
                     className={`text-left p-4 rounded-lg border-2 transition-colors ${
                       selectedType === t.value
                         ? 'border-blue-600 bg-blue-50'
@@ -233,7 +233,7 @@ export default function DSRPortalPage() {
 
               <div className="flex justify-end pt-2">
                 <button
-                  onClick={() => setStep(2)}
+                  onClick={() => { setStep(2); }}
                   disabled={!selectedType}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -262,7 +262,7 @@ export default function DSRPortalPage() {
                   <input
                     type="text"
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    onChange={(e) => { setFirstName(e.target.value); }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Max"
                   />
@@ -274,7 +274,7 @@ export default function DSRPortalPage() {
                   <input
                     type="text"
                     value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    onChange={(e) => { setLastName(e.target.value); }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Mustermann"
                   />
@@ -288,7 +288,7 @@ export default function DSRPortalPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="max.mustermann@beispiel.de"
                 />
@@ -301,7 +301,7 @@ export default function DSRPortalPage() {
                 </label>
                 <textarea
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => { setDescription(e.target.value); }}
                   rows={4}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   placeholder="Bitte beschreiben Sie Ihre Anfrage genauer…"
@@ -316,7 +316,7 @@ export default function DSRPortalPage() {
 
               <div className="flex justify-between pt-2">
                 <button
-                  onClick={() => setStep(1)}
+                  onClick={() => { setStep(1); }}
                   className="px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
                 >
                   Zurück

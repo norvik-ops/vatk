@@ -278,7 +278,7 @@ export default function ISO27001ChecklistPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => downloadSoA(iso27001.id, iso27001.name)}
+                onClick={() => { downloadSoA(iso27001.id, iso27001.name); }}
               >
                 <FileDown className="w-4 h-4 mr-1.5" />
                 SoA exportieren
@@ -286,7 +286,7 @@ export default function ISO27001ChecklistPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => downloadAuditPackage(iso27001.id, iso27001.name)}
+                onClick={() => { downloadAuditPackage(iso27001.id, iso27001.name); }}
               >
                 <Download className="w-4 h-4 mr-1.5" />
                 Audit-Paket exportieren (ZIP)
@@ -321,7 +321,7 @@ export default function ISO27001ChecklistPage() {
             key={clause.id}
             clause={clause}
             expanded={expanded[clause.id] ?? true}
-            onToggle={() => toggle(clause.id)}
+            onToggle={() => { toggle(clause.id); }}
           />
         ))}
       </div>

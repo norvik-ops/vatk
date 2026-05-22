@@ -59,9 +59,9 @@ export function useApprovalSetting() {
 
 export function useUpdateApprovalSetting() {
   const qc = useQueryClient()
-  return useMutation<void, Error, boolean>({
+  return useMutation<undefined, Error, boolean>({
     mutationFn: (approval_required) =>
-      apiFetch<void>('/secvitals/org/approval-setting', {
+      apiFetch<undefined>('/secvitals/org/approval-setting', {
         method: 'PUT',
         body: JSON.stringify({ approval_required }),
       }),
@@ -71,9 +71,9 @@ export function useUpdateApprovalSetting() {
 
 export function useApproveApproval() {
   const qc = useQueryClient()
-  return useMutation<void, Error, { id: string; comment: string }>({
+  return useMutation<undefined, Error, { id: string; comment: string }>({
     mutationFn: ({ id, comment }) =>
-      apiFetch<void>(`/secvitals/approvals/${id}/approve`, {
+      apiFetch<undefined>(`/secvitals/approvals/${id}/approve`, {
         method: 'POST',
         body: JSON.stringify({ comment }),
       }),
@@ -88,9 +88,9 @@ export function useApproveApproval() {
 
 export function useRejectApproval() {
   const qc = useQueryClient()
-  return useMutation<void, Error, { id: string; comment: string }>({
+  return useMutation<undefined, Error, { id: string; comment: string }>({
     mutationFn: ({ id, comment }) =>
-      apiFetch<void>(`/secvitals/approvals/${id}/reject`, {
+      apiFetch<undefined>(`/secvitals/approvals/${id}/reject`, {
         method: 'POST',
         body: JSON.stringify({ comment }),
       }),

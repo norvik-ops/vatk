@@ -6,7 +6,7 @@ import type { PaginatedResponse } from '../../../shared/types/pagination'
 export function useRisks(page = 1, limit = 25) {
   const query = useQuery<PaginatedResponse<Risk>>({
     queryKey: ['secvitals', 'risks', page, limit],
-    queryFn: () => apiFetch<PaginatedResponse<Risk>>(`/secvitals/risks?page=${page}&limit=${limit}`),
+    queryFn: () => apiFetch<PaginatedResponse<Risk>>(`/secvitals/risks?page=${String(page)}&limit=${String(limit)}`),
     staleTime: 5 * 60 * 1000,
   })
   return {

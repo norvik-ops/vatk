@@ -77,7 +77,7 @@ export default function AuditsPage() {
   }
 
   function handleSubmit() {
-    createRecord.mutate(form, { onSuccess: () => setDialogOpen(false) })
+    createRecord.mutate(form, { onSuccess: () => { setDialogOpen(false); } })
   }
 
   return (
@@ -112,7 +112,7 @@ export default function AuditsPage() {
         )}
         {!isLoading && !isError && records && records.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {records.map((r) => <AuditCard key={r.id} record={r} onClick={() => navigate(`/secvitals/audits/${r.id}`)} />)}
+            {records.map((r) => <AuditCard key={r.id} record={r} onClick={() => { navigate(`/secvitals/audits/${r.id}`); }} />)}
           </div>
         )}
       </div>
@@ -124,38 +124,38 @@ export default function AuditsPage() {
             <div className="space-y-1.5">
               <Label htmlFor="audit-title">{t('secvitals.auditsPage.labelTitle')} *</Label>
               <Input id="audit-title" placeholder={t('secvitals.auditsPage.placeholderTitle')} value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="audit-scope">{t('secvitals.auditsPage.labelScope')}</Label>
               <Input id="audit-scope" placeholder={t('secvitals.auditsPage.placeholderScope')} value={form.scope ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, scope: e.target.value })); }} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="audit-auditor">{t('secvitals.auditsPage.labelAuditor')}</Label>
                 <Input id="audit-auditor" placeholder={t('secvitals.auditsPage.placeholderAuditor')} value={form.auditor ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, auditor: e.target.value }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, auditor: e.target.value })); }} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="audit-date">{t('secvitals.auditsPage.labelDate')} *</Label>
                 <Input id="audit-date" type="date" value={form.audit_date}
-                  onChange={(e) => setForm((f) => ({ ...f, audit_date: e.target.value }))} />
+                  onChange={(e) => { setForm((f) => ({ ...f, audit_date: e.target.value })); }} />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="audit-findings">{t('secvitals.auditsPage.labelFindings')}</Label>
               <Textarea id="audit-findings" rows={3} placeholder={t('secvitals.auditsPage.placeholderFindings')} value={form.findings ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, findings: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, findings: e.target.value })); }} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="audit-recommendations">{t('secvitals.auditsPage.labelRecommendations')}</Label>
               <Textarea id="audit-recommendations" rows={2} placeholder={t('secvitals.auditsPage.placeholderRecommendations')} value={form.recommendations ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, recommendations: e.target.value }))} />
+                onChange={(e) => { setForm((f) => ({ ...f, recommendations: e.target.value })); }} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); }}>{t('common.cancel')}</Button>
             <Button onClick={handleSubmit} disabled={!form.title || !form.audit_date || createRecord.isPending}>
               {createRecord.isPending ? t('secvitals.auditsPage.saving') : t('secvitals.auditsPage.createAudit')}
             </Button>
