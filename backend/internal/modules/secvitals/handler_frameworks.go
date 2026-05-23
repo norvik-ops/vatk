@@ -289,7 +289,7 @@ func (h *Handler) GetDSGVOTOMCoverage(c echo.Context) error {
 			return echo.ErrInternalServerError
 		}
 		if fw == nil {
-			return c.JSON(http.StatusOK, map[string]any{"data": []any{}})
+			return c.JSON(http.StatusOK, []MappingResult{})
 		}
 		frameworkID = fw.ID
 	}
@@ -298,7 +298,10 @@ func (h *Handler) GetDSGVOTOMCoverage(c echo.Context) error {
 		log.Error().Err(err).Str("framework_id", frameworkID).Msg("get dsgvo tom coverage")
 		return echo.ErrInternalServerError
 	}
-	return c.JSON(http.StatusOK, map[string]any{"data": results})
+	if results == nil {
+		results = []MappingResult{}
+	}
+	return c.JSON(http.StatusOK, results)
 }
 
 // ExportSoAPDF handles GET /api/v1/secvitals/frameworks/:id/soa.pdf.
