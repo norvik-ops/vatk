@@ -61,10 +61,10 @@ func SCIMAuthMiddleware(db *pgxpool.Pool) echo.MiddlewareFunc {
 // scimError returns a minimal SCIM-compatible error response.
 func scimError(c echo.Context, status int, scimType, detail string) error {
 	return c.JSON(status, scimErrorResponse{
-		Schemas: []string{"urn:ietf:params:scim:api:messages:2.0:Error"},
-		Status:  status,
+		Schemas:  []string{"urn:ietf:params:scim:api:messages:2.0:Error"},
+		Status:   status,
 		ScimType: scimType,
-		Detail:  detail,
+		Detail:   detail,
 	})
 }
 

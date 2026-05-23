@@ -13,11 +13,11 @@ import (
 // Sprint 15 (S15-1/2/3) hinzukamen — Redis fuer Rate-Limit + Cache, sowie
 // die Tracker-Konfig.
 type RegisterOptions struct {
-	Redis           *redis.Client
-	RateLimitRPM    int
-	DailyTokenLimit int
-	CacheTTLSeconds int
-	CostPerMTokenIn int64
+	Redis            *redis.Client
+	RateLimitRPM     int
+	DailyTokenLimit  int
+	CacheTTLSeconds  int
+	CostPerMTokenIn  int64
 	CostPerMTokenOut int64
 }
 

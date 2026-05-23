@@ -300,7 +300,6 @@ func (h *Handler) GetMultiFrameworkResult(c echo.Context) error {
 	return c.JSON(http.StatusOK, run)
 }
 
-
 // Start legt einen neuen Run an + gibt Token zurück. Im Body optional
 // `referrer` (Marketing-Attribution).
 func (h *Handler) Start(c echo.Context) error {

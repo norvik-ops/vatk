@@ -7,8 +7,8 @@ import (
 
 	"github.com/matharnica/vakt/internal/auth"
 	siemSvc "github.com/matharnica/vakt/internal/services/siem"
-	"github.com/matharnica/vakt/internal/shared/platform/features"
 	sharedmw "github.com/matharnica/vakt/internal/shared/middleware"
+	"github.com/matharnica/vakt/internal/shared/platform/features"
 )
 
 // Register mounts admin routes under g.  All routes require the "Admin" role.

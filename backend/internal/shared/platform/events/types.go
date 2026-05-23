@@ -18,13 +18,13 @@ const (
 
 // ResourceType identifies what kind of event occurred.
 const (
-	ResourceTypeFindingCreated       = "vakt-scan/finding-created"
-	ResourceTypeBreachNotified       = "vakt-privacy/breach-notified"
-	ResourceTypeDSRCompleted         = "vakt-privacy/dsr-completed"
-	ResourceTypeSecretRotated        = "vakt-vault/secret-rotated"
-	ResourceTypeTrainingCompleted    = "vakt-aware/training-completion"
-	ResourceTypeIncidentCreated      = "vakt-comply/incident-created"
-	ResourceTypeEvidenceCollected    = "vakt-comply/evidence-collected"
+	ResourceTypeFindingCreated    = "vakt-scan/finding-created"
+	ResourceTypeBreachNotified    = "vakt-privacy/breach-notified"
+	ResourceTypeDSRCompleted      = "vakt-privacy/dsr-completed"
+	ResourceTypeSecretRotated     = "vakt-vault/secret-rotated"
+	ResourceTypeTrainingCompleted = "vakt-aware/training-completion"
+	ResourceTypeIncidentCreated   = "vakt-comply/incident-created"
+	ResourceTypeEvidenceCollected = "vakt-comply/evidence-collected"
 )
 
 // CrossModuleEvent is the canonical envelope for all cross-module events.

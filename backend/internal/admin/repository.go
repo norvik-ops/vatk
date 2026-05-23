@@ -163,8 +163,8 @@ func (r *Repository) SetOrgAISettings(ctx context.Context, orgID, modelOverride,
 
 // OrgSecurityExtensions holds Pro-tier security settings (S21-5 + S21-6).
 type OrgSecurityExtensions struct {
-	AdminIPAllowlist          string `json:"admin_ip_allowlist"`            // comma-separated CIDRs; empty = allow all
-	RequireMFASensitiveCalls  bool   `json:"require_mfa_sensitive_calls"`
+	AdminIPAllowlist         string `json:"admin_ip_allowlist"` // comma-separated CIDRs; empty = allow all
+	RequireMFASensitiveCalls bool   `json:"require_mfa_sensitive_calls"`
 }
 
 // GetOrgSecurityExtensions returns the org's Pro security settings.
@@ -204,12 +204,12 @@ func (r *Repository) SetOrgRequireMFASensitiveCalls(ctx context.Context, orgID s
 
 // SCIMToken is the DB record for a SCIM Bearer token (hash only, no raw value).
 type SCIMToken struct {
-	ID          string     `json:"id"`
-	OrgID       string     `json:"org_id"`
-	Name        string     `json:"name"`
-	LastUsedAt  *time.Time `json:"last_used_at"`
-	CreatedAt   time.Time  `json:"created_at"`
-	RevokedAt   *time.Time `json:"revoked_at"`
+	ID         string     `json:"id"`
+	OrgID      string     `json:"org_id"`
+	Name       string     `json:"name"`
+	LastUsedAt *time.Time `json:"last_used_at"`
+	CreatedAt  time.Time  `json:"created_at"`
+	RevokedAt  *time.Time `json:"revoked_at"`
 }
 
 // ListSCIMTokens returns all non-revoked SCIM tokens for an org.

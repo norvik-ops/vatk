@@ -26,14 +26,14 @@ import (
 	"github.com/matharnica/vakt/internal/modules/secvault"
 	"github.com/matharnica/vakt/internal/modules/secvitals"
 	"github.com/matharnica/vakt/internal/services/alerting"
+	"github.com/matharnica/vakt/internal/services/crossevidence"
 	"github.com/matharnica/vakt/internal/services/siem"
 	"github.com/matharnica/vakt/internal/shared/bsi"
-	"github.com/matharnica/vakt/internal/services/crossevidence"
 	"github.com/matharnica/vakt/internal/shared/demo"
 	"github.com/matharnica/vakt/internal/shared/emaildigest"
-	cloudintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/cloud"
 	"github.com/matharnica/vakt/internal/shared/nis2wizard"
 	"github.com/matharnica/vakt/internal/shared/notifications"
+	cloudintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/cloud"
 	"github.com/matharnica/vakt/internal/shared/retention"
 	"github.com/matharnica/vakt/internal/shared/scheduledreports"
 )
@@ -63,14 +63,14 @@ func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 			Queues: map[string]int{
 				// Module-dedicated queues (S31-3): each module has its own namespace so
 				// a long-running scan batch cannot starve breach-notification or evidence jobs.
-				secpulse.QueueScans:   8,  // scanner jobs — highest module concurrency
-				secvitals.Queue:       5,  // evidence collection, deadline checks
-				secprivacy.Queue:      5,  // breach notifications, AVV checks
-				secreflex.Queue:       3,  // campaign send, training reminders
+				secpulse.QueueScans: 8, // scanner jobs — highest module concurrency
+				secvitals.Queue:     5, // evidence collection, deadline checks
+				secprivacy.Queue:    5, // breach notifications, AVV checks
+				secreflex.Queue:     3, // campaign send, training reminders
 				// Generic queues kept for backward compat with external enqueues.
-				"critical":    10,
-				"default":     5,
-				"low":         3,
+				"critical":                10,
+				"default":                 5,
+				"low":                     3,
 				secpulse.QueueMaintenance: 2, // SBOM generation and EOL checks
 			},
 		},
@@ -209,7 +209,6 @@ func EnqueueScanTask(client *asynq.Client, taskType string, payload []byte) erro
 	_, err := client.Enqueue(task, asynq.Queue(queue))
 	return err
 }
-
 
 func main() {
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()

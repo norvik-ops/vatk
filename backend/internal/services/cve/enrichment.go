@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	nvdBaseURL      = "https://services.nvd.nist.gov/rest/json/cves/2.0"
-	cacheTTL        = 24 * time.Hour
-	retryBackoff    = 10 * time.Second
-	maxRetries      = 2
-	cacheKeyPrefix  = "cve:"
+	nvdBaseURL     = "https://services.nvd.nist.gov/rest/json/cves/2.0"
+	cacheTTL       = 24 * time.Hour
+	retryBackoff   = 10 * time.Second
+	maxRetries     = 2
+	cacheKeyPrefix = "cve:"
 )
 
 // CVEDetails holds the enriched data for a single CVE.

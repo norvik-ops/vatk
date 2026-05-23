@@ -462,7 +462,7 @@ type GetOrgSAMLConfigResponse struct {
 	EntityID    string `json:"entity_id"`
 	ACSURL      string `json:"acs_url"`
 	IDPMetadata string `json:"idp_metadata"`
-	CertPEM     string `json:"cert_pem"`   // public cert only — private key never returned
+	CertPEM     string `json:"cert_pem"` // public cert only — private key never returned
 	Enabled     bool   `json:"enabled"`
 }
 

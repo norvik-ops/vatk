@@ -23,15 +23,15 @@ import (
 // AssessmentRun ist die persistierte Darstellung eines Re-Assessment-Runs
 // einer eingeloggten Org.
 type AssessmentRun struct {
-	ID           string         `json:"id"`
-	OrgID        string         `json:"org_id"`
-	RunNumber    int            `json:"run_number"`
+	ID           string                 `json:"id"`
+	OrgID        string                 `json:"org_id"`
+	RunNumber    int                    `json:"run_number"`
 	Answers      map[string]AnswerEntry `json:"answers"`
-	OverallScore *int           `json:"overall_score,omitempty"`
-	ScoreByArea  map[Area]int   `json:"score_by_area,omitempty"`
-	Gaps         []Gap          `json:"top_gaps,omitempty"`
-	CompletedAt  *time.Time     `json:"completed_at,omitempty"`
-	CreatedAt    time.Time      `json:"created_at"`
+	OverallScore *int                   `json:"overall_score,omitempty"`
+	ScoreByArea  map[Area]int           `json:"score_by_area,omitempty"`
+	Gaps         []Gap                  `json:"top_gaps,omitempty"`
+	CompletedAt  *time.Time             `json:"completed_at,omitempty"`
+	CreatedAt    time.Time              `json:"created_at"`
 }
 
 // reassessmentCooldown ist der Mindestabstand zwischen zwei Runs derselben Org.
@@ -190,11 +190,11 @@ type scanner interface {
 
 func scanReassessmentRun(row scanner) (AssessmentRun, error) {
 	var (
-		r            AssessmentRun
-		answersJSON  []byte
-		byAreaJSON   []byte
-		gapsJSON     []byte
-		completedAt  *time.Time
+		r           AssessmentRun
+		answersJSON []byte
+		byAreaJSON  []byte
+		gapsJSON    []byte
+		completedAt *time.Time
 	)
 	if err := row.Scan(
 		&r.ID, &r.OrgID, &r.RunNumber,

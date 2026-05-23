@@ -18,9 +18,9 @@ import (
 	"github.com/matharnica/vakt/internal/shared/bsi"
 	"github.com/matharnica/vakt/internal/shared/demo"
 	"github.com/matharnica/vakt/internal/shared/emaildigest"
-	cloudintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/cloud"
 	"github.com/matharnica/vakt/internal/shared/nis2wizard"
 	"github.com/matharnica/vakt/internal/shared/notifications"
+	cloudintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/cloud"
 	"github.com/matharnica/vakt/internal/shared/retention"
 	"github.com/matharnica/vakt/internal/shared/scheduledreports"
 )

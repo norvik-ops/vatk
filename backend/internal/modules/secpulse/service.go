@@ -22,8 +22,8 @@ import (
 	"github.com/matharnica/vakt/internal/services/evidence_auto"
 	"github.com/matharnica/vakt/internal/shared/dashboard"
 	"github.com/matharnica/vakt/internal/shared/notify"
-	"github.com/matharnica/vakt/internal/shared/safego"
 	"github.com/matharnica/vakt/internal/shared/platform/webhooks"
+	"github.com/matharnica/vakt/internal/shared/safego"
 )
 
 // webhookTrigger abstracts the webhook delivery dependency for testability.

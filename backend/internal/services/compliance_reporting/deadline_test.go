@@ -20,8 +20,8 @@ func TestComputeDeadlines_DORA(t *testing.T) {
 	}
 
 	cases := []struct {
-		label    string
-		wantAt   time.Time
+		label  string
+		wantAt time.Time
 	}{
 		{"4h", epoch.Add(4 * time.Hour)},
 		{"24h", epoch.Add(24 * time.Hour)},

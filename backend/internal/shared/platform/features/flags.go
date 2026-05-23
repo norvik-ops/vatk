@@ -23,27 +23,27 @@ type Feature = string
 // Feature constants mirror license.Feature* so callers only need to import
 // this package, not the license package.
 const (
-	FeatureTISAX              Feature = license.FeatureTISAX
-	FeatureDORA               Feature = license.FeatureDORA
-	FeatureEUAIAct            Feature = license.FeatureEUAIAct
-	FeatureCRA                Feature = license.FeatureCRA
-	FeatureAIAdvisor          Feature = license.FeatureAIAdvisor
-	FeatureAuditPDF           Feature = license.FeatureAuditPDF
-	FeatureSSO                Feature = license.FeatureSSO
-	FeatureAPI                Feature = license.FeatureAPI
-	FeatureSecReflex          Feature = license.FeatureSecReflex
-	FeatureSecPulse           Feature = license.FeatureSecPulse
+	FeatureTISAX               Feature = license.FeatureTISAX
+	FeatureDORA                Feature = license.FeatureDORA
+	FeatureEUAIAct             Feature = license.FeatureEUAIAct
+	FeatureCRA                 Feature = license.FeatureCRA
+	FeatureAIAdvisor           Feature = license.FeatureAIAdvisor
+	FeatureAuditPDF            Feature = license.FeatureAuditPDF
+	FeatureSSO                 Feature = license.FeatureSSO
+	FeatureAPI                 Feature = license.FeatureAPI
+	FeatureSecReflex           Feature = license.FeatureSecReflex
+	FeatureSecPulse            Feature = license.FeatureSecPulse
 	FeatureGranularPermissions Feature = license.FeatureGranularPermissions
-	FeatureSupplierPortal     Feature = license.FeatureSupplierPortal
-	FeatureNIS2Reporting      Feature = license.FeatureNIS2Reporting
+	FeatureSupplierPortal      Feature = license.FeatureSupplierPortal
+	FeatureNIS2Reporting       Feature = license.FeatureNIS2Reporting
 
 	// New Pro-features (not yet in license.go constants — added here first,
 	// then mirrored when issuing new license keys):
-	FeatureSAMLAuth       Feature = "saml_auth"
+	FeatureSAMLAuth         Feature = "saml_auth"
 	FeatureSCIMProvisioning Feature = "scim_provisioning"
-	FeatureSIEM           Feature = "siem_export"
-	FeatureAgentWriteTools Feature = "agent_write_tools"
-	FeatureMultiFramework  Feature = "multi_framework"
+	FeatureSIEM             Feature = "siem_export"
+	FeatureAgentWriteTools  Feature = "agent_write_tools"
+	FeatureMultiFramework   Feature = "multi_framework"
 )
 
 // IsEnabled reports whether the feature is available for the current request.

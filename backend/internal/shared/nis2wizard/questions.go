@@ -28,12 +28,12 @@ var AllAreas = []Area{
 
 // Question beschreibt eine einzelne Wizard-Frage.
 type Question struct {
-	ID       string `json:"id"`        // stable z.B. "gov.policy"
-	Area     Area   `json:"area"`
-	Title    string `json:"title"`     // kurze Frage
-	Help     string `json:"help"`      // 1-2 Sätze Hilfetext
-	NIS2Ref  string `json:"nis2_ref"`  // Verweis auf NIS2-Art. § Buchst.
-	Weight   int    `json:"weight"`    // 1-3, Score-Gewichtung
+	ID      string `json:"id"` // stable z.B. "gov.policy"
+	Area    Area   `json:"area"`
+	Title   string `json:"title"`    // kurze Frage
+	Help    string `json:"help"`     // 1-2 Sätze Hilfetext
+	NIS2Ref string `json:"nis2_ref"` // Verweis auf NIS2-Art. § Buchst.
+	Weight  int    `json:"weight"`   // 1-3, Score-Gewichtung
 }
 
 // Questions ist die 30-Fragen-Liste. Beim Edit: stable IDs nicht ändern,

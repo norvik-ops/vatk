@@ -93,10 +93,10 @@ func TestEnrich_CachesResult(t *testing.T) {
 
 	rewriteClient := &http.Client{
 		Transport: &hostRewriteTransport{
-			inner:   http.DefaultTransport,
-			from:    "services.nvd.nist.gov",
-			to:      srv.Listener.Addr().String(),
-			scheme:  "http",
+			inner:  http.DefaultTransport,
+			from:   "services.nvd.nist.gov",
+			to:     srv.Listener.Addr().String(),
+			scheme: "http",
 		},
 	}
 

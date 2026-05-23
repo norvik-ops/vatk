@@ -56,4 +56,3 @@ func connectDB(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
 	}
 	return pool, nil
 }
-

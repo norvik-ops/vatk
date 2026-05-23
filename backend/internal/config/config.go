@@ -27,10 +27,10 @@ type Config struct {
 	SMTPFrom       string
 	// AI reports — OpenAI-compatible provider (disabled by default).
 	// Provider "openai" works with OpenAI, Mistral, Groq, Ollama (/v1), LM Studio, vLLM, etc.
-	AIProvider          string // "disabled" | "openai"
-	AIBaseURL           string // e.g. "https://api.mistral.ai/v1" or "http://ollama:11434/v1"
-	AIAPIKey            string // optional — leave empty for local providers (Ollama, LM Studio)
-	AIModel             string // e.g. "mistral-small-latest", "gpt-4o-mini", "llama3.2"
+	AIProvider string // "disabled" | "openai"
+	AIBaseURL  string // e.g. "https://api.mistral.ai/v1" or "http://ollama:11434/v1"
+	AIAPIKey   string // optional — leave empty for local providers (Ollama, LM Studio)
+	AIModel    string // e.g. "mistral-small-latest", "gpt-4o-mini", "llama3.2"
 	// Sprint 15: AI-Härtung.
 	// AIRateLimitRPM     — max AI-Calls pro Minute pro Org (Token-Bucket, Redis-backed). 0 = aus.
 	// AIDailyTokenLimit  — pro Org pro Kalendertag (UTC). 0 = aus.
@@ -43,7 +43,7 @@ type Config struct {
 	AICostPerMTokenOut int64 // micro-EUR per 1M output tokens
 	// Sprint 15 S15-14: optionales Sentry-DSN. Wenn leer, kein Sentry-Init.
 	// safego.Run nutzt das automatisch — siehe internal/shared/safego.
-	SentryDSN string
+	SentryDSN           string
 	CasdoorURL          string
 	CasdoorClientID     string
 	CasdoorClientSecret string
@@ -184,8 +184,8 @@ func Load() (*Config, error) {
 		// einen Schalter umlegen. Jetzt ist der Endpoint immer aktiv (IP-
 		// allowlisted auf Loopback + Docker-Netz), opt-out via
 		// VAKT_METRICS_DISABLED=true wenn jemand das explizit nicht will.
-		MetricsEnabled:      getEnv("VAKT_METRICS_DISABLED", "false") != "true",
-		EPSSEnabled:         getEnv("VAKT_EPSS_ENABLED", "false") == "true",
+		MetricsEnabled: getEnv("VAKT_METRICS_DISABLED", "false") != "true",
+		EPSSEnabled:    getEnv("VAKT_EPSS_ENABLED", "false") == "true",
 	}
 
 	// CORS origins — default to wildcard to preserve dev behaviour.

@@ -41,10 +41,10 @@ type MultiFrameworkScore struct {
 
 // MultiGap beschreibt eine identifizierte Lücke pro Framework/Bereich.
 type MultiGap struct {
-	Framework  string `json:"framework"`
-	Area       string `json:"area"`
-	AreaTitle  string `json:"area_title"`
-	Score      int    `json:"score"`
+	Framework string `json:"framework"`
+	Area      string `json:"area"`
+	AreaTitle string `json:"area_title"`
+	Score     int    `json:"score"`
 }
 
 // runMeta wird im JSONB-meta-Feld der nis2_anonymous_runs-Tabelle gespeichert,
@@ -133,10 +133,10 @@ func (s *Service) LoadMultiRunResult(ctx context.Context, token string) (*MultiR
 // loadMultiRun lädt einen anonymen Run via Token (Multi-Framework-Variante).
 func (s *Service) loadMultiRun(ctx context.Context, token string) (*MultiRun, error) {
 	var (
-		answersJSON  []byte
-		scoreJSON    []byte
-		completedAt  *time.Time
-		expiresAt    time.Time
+		answersJSON []byte
+		scoreJSON   []byte
+		completedAt *time.Time
+		expiresAt   time.Time
 	)
 	if err := s.db.QueryRow(ctx, `
 		SELECT answers, score_by_area, completed_at, expires_at

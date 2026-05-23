@@ -400,10 +400,10 @@ func (r *AgentRunner) auditApprovedToolCall(ctx context.Context, req AgentRunReq
 		return
 	}
 	details, _ := json.Marshal(map[string]string{
-		"tool":           toolName,
-		"run_id":         req.RunID,
-		"approved_by":    approvedByUserID,
-		"actor":          "ai_agent",
+		"tool":        toolName,
+		"run_id":      req.RunID,
+		"approved_by": approvedByUserID,
+		"actor":       "ai_agent",
 	})
 	if _, err := r.db.Exec(ctx, `
 		INSERT INTO audit_log

@@ -23,9 +23,9 @@ func Register(g *echo.Group, h *Handler) {
 	// SAML 2.0 SP — CE feature since v0.17.0 (ADR-0022: KMU-Hygiene, kein Pro-Gate)
 	// Direct SP (crewjam/saml) when org_saml_configs row exists; falls back to Casdoor proxy.
 	g.GET("/saml/metadata", h.SAMLDirectMetadata)
-	g.GET("/saml/initiate", h.SAMLInitiate)    // SP-initiated: returns IdP redirect URL
-	g.POST("/saml/callback", h.SAMLCallback)   // Casdoor-based fallback (IdP-initiated)
-	g.POST("/saml/acs", h.SAMLDirectACS)       // Primary ACS (direct SP or Casdoor fallback)
+	g.GET("/saml/initiate", h.SAMLInitiate)  // SP-initiated: returns IdP redirect URL
+	g.POST("/saml/callback", h.SAMLCallback) // Casdoor-based fallback (IdP-initiated)
+	g.POST("/saml/acs", h.SAMLDirectACS)     // Primary ACS (direct SP or Casdoor fallback)
 
 	// Password reset — local auth only, no auth middleware required.
 	g.POST("/password-reset/request", h.RequestPasswordReset)

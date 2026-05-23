@@ -29,12 +29,12 @@ func NewService(db *pgxpool.Pool) *Service { return &Service{db: db} }
 
 // Run ist der API-View eines anonymen Runs.
 type Run struct {
-	Token       string                  `json:"token"`
-	Answers     map[string]AnswerEntry  `json:"answers"`
-	Score       *int                    `json:"score,omitempty"`
-	ScoreByArea map[Area]int            `json:"score_by_area,omitempty"`
-	CompletedAt *time.Time              `json:"completed_at,omitempty"`
-	ExpiresAt   time.Time               `json:"expires_at"`
+	Token       string                 `json:"token"`
+	Answers     map[string]AnswerEntry `json:"answers"`
+	Score       *int                   `json:"score,omitempty"`
+	ScoreByArea map[Area]int           `json:"score_by_area,omitempty"`
+	CompletedAt *time.Time             `json:"completed_at,omitempty"`
+	ExpiresAt   time.Time              `json:"expires_at"`
 }
 
 // AnswerEntry — eine Antwort pro Frage.
@@ -103,11 +103,11 @@ func (s *Service) Answer(ctx context.Context, token, questionID string, value in
 // LoadRun lädt einen anonymen Run via Token. Liefert Fehler wenn abgelaufen.
 func (s *Service) LoadRun(ctx context.Context, token string) (*Run, error) {
 	var (
-		answersJSON   []byte
-		score         *int
-		byAreaJSON    []byte
-		completedAt   *time.Time
-		expiresAt     time.Time
+		answersJSON []byte
+		score       *int
+		byAreaJSON  []byte
+		completedAt *time.Time
+		expiresAt   time.Time
 	)
 	if err := s.db.QueryRow(ctx, `
 		SELECT answers, score, score_by_area, completed_at, expires_at

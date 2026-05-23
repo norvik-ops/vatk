@@ -27,18 +27,18 @@ import (
 	"github.com/matharnica/vakt/internal/modules/secvault"
 	"github.com/matharnica/vakt/internal/modules/secvitals"
 	"github.com/matharnica/vakt/internal/services/alerting"
+	"github.com/matharnica/vakt/internal/services/crossevidence"
 	"github.com/matharnica/vakt/internal/services/siem"
 	"github.com/matharnica/vakt/internal/shared/bsi"
-	"github.com/matharnica/vakt/internal/shared/nis2wizard"
 	"github.com/matharnica/vakt/internal/shared/controltests"
-	"github.com/matharnica/vakt/internal/services/crossevidence"
 	"github.com/matharnica/vakt/internal/shared/demo"
 	"github.com/matharnica/vakt/internal/shared/emaildigest"
 	"github.com/matharnica/vakt/internal/shared/errorbudget"
-	cloudintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/cloud"
-	ghintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/github"
+	"github.com/matharnica/vakt/internal/shared/nis2wizard"
 	"github.com/matharnica/vakt/internal/shared/notifications"
 	"github.com/matharnica/vakt/internal/shared/notify"
+	cloudintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/cloud"
+	ghintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/github"
 	"github.com/matharnica/vakt/internal/shared/retention"
 	"github.com/matharnica/vakt/internal/shared/scheduledreports"
 )
@@ -1363,7 +1363,6 @@ func handleSIEMForward(pool *pgxpool.Pool) asynq.HandlerFunc {
 		return nil
 	}
 }
-
 
 // handleDORADeadlineStatus computes and persists the DORA Ampel-Status for all
 // IKT-DORA incidents across all orgs. Runs every 5 minutes (S37-4).

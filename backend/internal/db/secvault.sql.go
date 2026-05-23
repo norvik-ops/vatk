@@ -1030,9 +1030,9 @@ SET status='dismissed', dismiss_reason=$1, dismiss_count=dismiss_count+1
 WHERE id=$2::uuid AND org_id=$3::uuid`
 
 type DismissSVScanResultParams struct {
-	Reason   string `json:"reason"`
-	ID       string `json:"id"`
-	OrgID    string `json:"org_id"`
+	Reason string `json:"reason"`
+	ID     string `json:"id"`
+	OrgID  string `json:"org_id"`
 }
 
 func (q *Queries) DismissSVScanResult(ctx context.Context, arg DismissSVScanResultParams) (int64, error) {

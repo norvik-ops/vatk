@@ -21,10 +21,10 @@ func NewHandler(svc *Service) *Handler {
 
 // SCIM schema URNs.
 const (
-	schemaUser         = "urn:ietf:params:scim:schemas:core:2.0:User"
-	schemaGroup        = "urn:ietf:params:scim:schemas:core:2.0:Group"
-	schemaListResponse = "urn:ietf:params:scim:api:messages:2.0:ListResponse"
-	schemaPatchOp      = "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+	schemaUser            = "urn:ietf:params:scim:schemas:core:2.0:User"
+	schemaGroup           = "urn:ietf:params:scim:schemas:core:2.0:Group"
+	schemaListResponse    = "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+	schemaPatchOp         = "urn:ietf:params:scim:api:messages:2.0:PatchOp"
 	schemaServiceProvider = "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"
 )
 
@@ -51,15 +51,15 @@ type scimEmail struct {
 }
 
 type scimUserResponse struct {
-	Schemas    []string    `json:"schemas"`
-	ID         string      `json:"id"`
-	ExternalID string      `json:"externalId,omitempty"`
-	UserName   string      `json:"userName"`
-	Name       scimName    `json:"name,omitempty"`
-	DisplayName string     `json:"displayName,omitempty"`
-	Emails     []scimEmail `json:"emails,omitempty"`
-	Active     bool        `json:"active"`
-	Meta       scimMeta    `json:"meta"`
+	Schemas     []string    `json:"schemas"`
+	ID          string      `json:"id"`
+	ExternalID  string      `json:"externalId,omitempty"`
+	UserName    string      `json:"userName"`
+	Name        scimName    `json:"name,omitempty"`
+	DisplayName string      `json:"displayName,omitempty"`
+	Emails      []scimEmail `json:"emails,omitempty"`
+	Active      bool        `json:"active"`
+	Meta        scimMeta    `json:"meta"`
 }
 
 type scimGroupResponse struct {
@@ -123,21 +123,21 @@ func (h *Handler) GetServiceProviderConfig(c echo.Context) error {
 		MaxResults int  `json:"maxResults"`
 	}
 	return c.JSON(http.StatusOK, map[string]any{
-		"schemas":              []string{schemaServiceProvider},
-		"documentationUri":     "https://vakt.io/docs/scim",
-		"patch":                supported{Supported: true},
-		"bulk":                 supported{Supported: false},
-		"filter":               filter{Supported: true, MaxResults: 200},
-		"changePassword":       supported{Supported: false},
-		"sort":                 supported{Supported: false},
-		"etag":                 supported{Supported: false},
+		"schemas":          []string{schemaServiceProvider},
+		"documentationUri": "https://vakt.io/docs/scim",
+		"patch":            supported{Supported: true},
+		"bulk":             supported{Supported: false},
+		"filter":           filter{Supported: true, MaxResults: 200},
+		"changePassword":   supported{Supported: false},
+		"sort":             supported{Supported: false},
+		"etag":             supported{Supported: false},
 		"authenticationSchemes": []map[string]any{
 			{
-				"type":             "oauthbearertoken",
-				"name":             "SCIM Token",
-				"description":      "Vakt SCIM Bearer token (managed in Admin › SCIM Tokens)",
-				"specUri":          "https://www.rfc-editor.org/rfc/rfc6750",
-				"primary":          true,
+				"type":        "oauthbearertoken",
+				"name":        "SCIM Token",
+				"description": "Vakt SCIM Bearer token (managed in Admin › SCIM Tokens)",
+				"specUri":     "https://www.rfc-editor.org/rfc/rfc6750",
+				"primary":     true,
 			},
 		},
 	})
