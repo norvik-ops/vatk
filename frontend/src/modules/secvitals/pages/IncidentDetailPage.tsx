@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { formatDate, formatDateTime } from '../../../shared/utils/date'
+import { useFormatDate } from '../../../shared/hooks/useFormatDate'
 import { Spinner } from '../../../components/Spinner'
 import { ArrowLeft, Save, Clock, CheckCircle2, AlertTriangle, FileDown, ShieldAlert } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
@@ -22,7 +22,6 @@ import { Sparkles } from 'lucide-react'
 import { ReportabilityWizard } from '../components/ReportabilityWizard'
 import { ClassifyReportingWizard } from '../components/ClassifyReportingWizard'
 import type { Incident, UpdateIncidentInput, DeadlineInfo, IncidentReport } from '../types'
-import { formatLocale } from '../../../shared/utils/locale'
 
 const SEVERITY_CLASS: Record<Incident['severity'], string> = {
   low: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -75,6 +74,7 @@ function DeadlineRow({
   incidentId: string
 }) {
   const mark = useMarkDeadlineReported(incidentId)
+  const { formatDateTime } = useFormatDate()
   const isDone = info.status === 'done'
 
   return (
@@ -90,10 +90,10 @@ function DeadlineRow({
         <div>
           <p className="text-sm font-medium">{label}</p>
           <p className="text-xs text-muted-foreground">
-            {new Date(info.deadline).toLocaleString(formatLocale())}
+            {formatDateTime(info.deadline)}
             {isDone && info.reported_at && (
               <span className="ml-2 text-green-400">
-                ✓ Gemeldet: {new Date(info.reported_at).toLocaleString(formatLocale())}
+                ✓ Gemeldet: {formatDateTime(info.reported_at)}
               </span>
             )}
             {!isDone && (
@@ -131,6 +131,7 @@ function DeadlineRow({
 export default function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { formatDate, formatDateTime } = useFormatDate()
   const { data: incident, isLoading, isError } = useIncident(id ?? '')
   const update = useUpdateIncident(id ?? '')
   const { data: incidentReports } = useIncidentReports(id ?? '')
@@ -354,7 +355,7 @@ export default function IncidentDetailPage() {
                           <div key={r.id} className="flex items-center justify-between text-xs bg-muted/30 rounded px-2 py-1.5">
                             <span className="font-medium">{r.report_type} — {r.authority}</span>
                             <span className="text-muted-foreground">
-                              {new Date(r.generated_at).toLocaleString(formatLocale())}
+                              {formatDateTime(r.generated_at)}
                             </span>
                             <a
                               href={`/api/v1/secvitals/incident-reports/${r.id}/pdf`}
@@ -522,8 +523,11 @@ export default function IncidentDetailPage() {
 
             <Card>
               <CardContent className="pt-4 space-y-1 text-xs text-muted-foreground">
+                {/* eslint-disable-next-line @typescript-eslint/no-deprecated */}
                 <p>Entdeckt: {formatDateTime(incident.discovered_at)}</p>
+                {/* eslint-disable-next-line @typescript-eslint/no-deprecated */}
                 {incident.resolved_at && <p>Gelöst: {formatDateTime(incident.resolved_at)}</p>}
+                {/* eslint-disable-next-line @typescript-eslint/no-deprecated */}
                 <p>Erstellt: {formatDate(incident.created_at)}</p>
               </CardContent>
             </Card>

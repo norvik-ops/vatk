@@ -537,7 +537,7 @@ function ApiKeysContent() {
                     variant="ghost"
                     size="sm"
                     className="text-secondary hover:text-primary hover:bg-muted/40"
-                    onClick={() => { void navigate('/settings/audit-log'); }}
+                    onClick={() => { navigate('/settings/audit-log'); }}
                     title="Audit-Trail anzeigen"
                   >
                     <ScrollText className="w-4 h-4" />

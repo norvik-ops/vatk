@@ -56,7 +56,7 @@ import { ErrorState } from '../../../shared/components/ErrorState'
 import { exportAsRTF } from '../../../shared/utils/exportRtf'
 import { useMilestoneToast } from '../../../shared/components/MilestoneToast'
 import { ComplianceTooltip } from '../../../shared/components/ComplianceTooltip'
-import { formatLocale } from '../../../shared/utils/locale'
+import { useFormatDate } from '../../../shared/hooks/useFormatDate'
 
 // ── DORA → ISO 27001 mapping info block ──────────────────────────────────────
 
@@ -150,6 +150,7 @@ function AuditorLinksTab({ frameworkId }: { frameworkId: string }) {
   const [label, setLabel] = useState('')
   const [expiresInDays, setExpiresInDays] = useState('30')
   const [createdUrl, setCreatedUrl] = useState<string | null>(null)
+  const { formatDate } = useFormatDate()
 
   const { data: links, isLoading } = useAuditorLinks()
   const revokeLink = useRevokeAuditorLink()
@@ -218,7 +219,8 @@ function AuditorLinksTab({ frameworkId }: { frameworkId: string }) {
                 <TableRow key={link.id}>
                   <TableCell className="font-medium">{link.label ?? '—'}</TableCell>
                   <TableCell>
-                    {new Date(link.expires_at).toLocaleDateString(formatLocale())}
+                    {/* eslint-disable-next-line @typescript-eslint/no-deprecated */}
+                    {formatDate(link.expires_at)}
                   </TableCell>
                   <TableCell>{link.access_count}</TableCell>
                   <TableCell>
@@ -814,6 +816,7 @@ function ControlsTab({
 export default function FrameworkDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { formatDate } = useFormatDate()
   const frameworkId = id ?? ''
 
   const { data: framework, isLoading: frameworkLoading, isError: frameworkError, refetch: refetchFramework } = useFramework(frameworkId)
@@ -997,7 +1000,7 @@ export default function FrameworkDetailPage() {
                         <Badge variant={gapSeverityVariant(gap.reason)}>{gapSeverityLabel(gap.reason)}</Badge>
                         {gap.expires_at && (
                           <span className="text-xs text-secondary">
-                            Läuft ab: {new Date(gap.expires_at).toLocaleDateString(formatLocale())}
+                            Läuft ab: {formatDate(gap.expires_at)}
                           </span>
                         )}
                       </div>

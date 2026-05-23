@@ -42,5 +42,6 @@ export function formatRelative(dateStr: string): string {
   if (hours < 24) return `vor ${String(hours)} Stunden`
   const days = Math.floor(hours / 24)
   if (days < 7) return `vor ${String(days)} Tagen`
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   return formatDate(dateStr)
 }
