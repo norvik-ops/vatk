@@ -69,27 +69,15 @@ function mockHttp(page: import('@playwright/test').Page) {
     if (url.includes('/secreflex/training-modules')) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: MODULES, pagination: { page: 1, limit: 25, total: 1, total_pages: 1 } }) })
     }
-    if (url.includes('/auth/login')) {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          token: 'v2.local.testtoken',
-          user: { id: 'user-1', email: 'admin@example.com', role: 'admin', org_id: 'org-1', mfa_enabled: false },
-        }),
-      })
-    }
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
   })
 }
 
+const FAKE_USER = { id: 'user-1', email: 'admin@example.com', display_name: 'Test Admin', roles: ['Admin'], role: 'Admin' }
+
 async function login(page: import('@playwright/test').Page) {
+  await page.addInitScript((u) => { localStorage.setItem('vakt_user', JSON.stringify(u)) }, FAKE_USER)
   await mockHttp(page)
-  await page.goto('/login')
-  await page.fill('input[type="email"]', 'admin@example.com')
-  await page.fill('input[type="password"]', 'changeme')
-  await page.click('button[type="submit"]')
-  await page.waitForURL('**/dashboard', { timeout: 10_000 })
 }
 
 test.describe('SecReflex — Campaigns', () => {

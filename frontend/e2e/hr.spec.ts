@@ -30,21 +30,10 @@ const RUN = {
   updated_at: '2026-05-01T10:00:00Z',
 }
 
-function mockAuth(page: import('@playwright/test').Page) {
-  return page.route('**/api/v1/auth/login', route =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        token: 'v2.local.testtoken',
-        user: { id: 'user-1', email: 'admin@example.com', role: 'admin', org_id: 'org-1', mfa_enabled: false },
-      }),
-    })
-  )
-}
+const FAKE_USER = { id: 'user-1', email: 'admin@example.com', display_name: 'Test Admin', roles: ['Admin'], role: 'Admin' }
 
 async function login(page: import('@playwright/test').Page) {
-  await mockAuth(page)
+  await page.addInitScript((u) => { localStorage.setItem('vakt_user', JSON.stringify(u)) }, FAKE_USER)
   await page.route('**/api/v1/**', route => {
     const url = route.request().url()
     if (url.includes('/hr/employees') && !url.includes('/checklist-runs')) {
@@ -58,11 +47,6 @@ async function login(page: import('@playwright/test').Page) {
     }
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
   })
-  await page.goto('/login')
-  await page.fill('input[type="email"]', 'admin@example.com')
-  await page.fill('input[type="password"]', 'changeme')
-  await page.click('button[type="submit"]')
-  await page.waitForURL('**/dashboard', { timeout: 10_000 })
 }
 
 test.describe('SecHR — Employees', () => {

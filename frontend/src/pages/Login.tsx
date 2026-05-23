@@ -96,6 +96,7 @@ export default function Login() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (emailValidation.error || passwordValidation.error || !email || !password) return
     setError(null)
     setLoading(true)
     try {

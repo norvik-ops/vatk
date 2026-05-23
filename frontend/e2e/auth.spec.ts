@@ -23,8 +23,11 @@ test.describe('Authentication', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          token: 'v2.local.testtoken',
-          user: { id: 'user-1', email: 'admin@example.com', role: 'admin', org_id: 'org-1', mfa_enabled: false },
+          access_token: 'v4.local.testtoken',
+          refresh_token: 'testrefresh',
+          expires_in: 3600,
+          user: { id: 'user-1', email: 'admin@example.com', display_name: 'Test Admin', roles: ['Admin'] },
+          session_id: 'sess-1',
         }),
       })
     )

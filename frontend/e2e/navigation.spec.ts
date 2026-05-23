@@ -1,20 +1,13 @@
 import { test, expect } from './fixtures'
 
-const FAKE_TOKEN = 'v2.local.testtoken'
+const FAKE_USER = { id: 'user-1', email: 'admin@example.com', display_name: 'Test Admin', roles: ['Admin'], role: 'Admin' }
 
 test.describe('Navigation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript((token) => {
-      localStorage.setItem('vakt_token', token)
-    }, FAKE_TOKEN)
+    await page.addInitScript((u) => {
+      localStorage.setItem('vakt_user', JSON.stringify(u))
+    }, FAKE_USER)
 
-    await page.route('**/api/v1/auth/me', route =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ id: 'user-1', email: 'admin@example.com', role: 'admin', org_id: 'org-1', mfa_enabled: false }),
-      })
-    )
     await page.route('**/api/v1/**', route =>
       route.fulfill({ status: 200, contentType: 'application/json', body: '{"data":[],"pagination":{"page":1,"limit":25,"total":0,"total_pages":1}}' })
     )
