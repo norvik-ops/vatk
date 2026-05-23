@@ -2,9 +2,9 @@ import { test, expect } from './fixtures'
 
 const DEMO_CREDS = {
   admin_email: 'admin@demo-abc123.demo',
-  admin_password: 'abcdef1234567890',
+  admin_password: 'abcdef1234567890', // gitleaks:allow
   analyst_email: 'analyst@demo-abc123.demo',
-  analyst_password: '1234567890abcdef',
+  analyst_password: '1234567890abcdef', // gitleaks:allow
   expires_in: 14400,
 }
 
