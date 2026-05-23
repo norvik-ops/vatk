@@ -92,7 +92,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
 
   const emailValidation = useFieldValidation(email, [required, emailRule])
-  const passwordValidation = useFieldValidation(password, [required, minLength(8)])
+  const passwordValidation = useFieldValidation(password, [required, minLength(10)])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()

@@ -131,11 +131,11 @@ export default function InviteAcceptPage() {
             <Input
               id="password"
               type="password"
-              placeholder="Mindestens 8 Zeichen"
+              placeholder="Mindestens 10 Zeichen"
               value={password}
               onChange={(e) => { setPassword(e.target.value); }}
               required
-              minLength={8}
+              minLength={10}
             />
           </div>
           <div className="space-y-1">
