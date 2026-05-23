@@ -175,8 +175,8 @@ func TestUpdateDPIAInput_NoVVTEntryIDField(t *testing.T) {
 // (FR-PO10; service.go UpdateDSR conditional at line ~404)
 func TestUpdateDSR_EvidenceEnqueueOnlyOnCompleted(t *testing.T) {
 	cases := []struct {
-		status         string
-		shouldEnqueue  bool
+		status        string
+		shouldEnqueue bool
 	}{
 		{"completed", true},
 		{"rejected", false},

@@ -102,8 +102,8 @@ func TestMajorCycle_SemverExtraction(t *testing.T) {
 		{"1.21.5", "1.21"},
 		{"v3.9.7", "3.9"}, // v-prefix must be stripped
 		{"18.0.1", "18.0"},
-		{"2.0", "2.0"},   // two-part version
-		{"5", "5"},       // single-part: returns as-is
+		{"2.0", "2.0"},    // two-part version
+		{"5", "5"},        // single-part: returns as-is
 		{"v1.22", "1.22"}, // v-prefix with two-part
 	}
 
@@ -127,7 +127,7 @@ func TestNormaliseCycle_VPrefixAndCase(t *testing.T) {
 		{"v3.9", "3.9"},
 		{"V3.9", "3.9"},
 		{"3.9", "3.9"},
-		{"JAMMY", "jammy"},  // Ubuntu codenames
+		{"JAMMY", "jammy"}, // Ubuntu codenames
 		{"v18.04", "18.04"},
 		{"", ""},
 	}

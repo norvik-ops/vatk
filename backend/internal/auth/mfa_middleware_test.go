@@ -159,8 +159,8 @@ func TestMFAEnforce_OrgRequireMFAFalse_AllowsThrough(t *testing.T) {
 // with TOTP enabled passes when the org requires MFA.
 func TestMFAEnforce_OrgRequiresMFA_UserHasTOTP_AllowsThrough(t *testing.T) {
 	db := &fakeMFADB{
-		orgRow:  &fakeRow{val: true},  // require_mfa = true
-		totpRow: &fakeRow{val: true},  // totp enabled = true
+		orgRow:  &fakeRow{val: true}, // require_mfa = true
+		totpRow: &fakeRow{val: true}, // totp enabled = true
 	}
 	c, rec := mfaRequest(t, "/api/v1/secvitals/controls", "org-1", "user-1")
 	mw := auth.MFAEnforceMiddlewareForTest(db)
