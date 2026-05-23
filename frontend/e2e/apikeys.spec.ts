@@ -40,7 +40,7 @@ function mockApiKeys(page: Parameters<typeof test>[1]['page']) {
   return page.route('**/api/v1/**', (route) => {
     const url = route.request().url()
     if (url.includes('/api-keys') && route.request().method() === 'GET') {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(API_KEYS) })
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: API_KEYS }) })
     }
     if (url.includes('/rotate') && route.request().method() === 'POST') {
       return route.fulfill({
@@ -66,19 +66,19 @@ test.describe('ApiKeysPage', () => {
     await mockApiKeys(page)
     await page.goto('/settings/api-keys')
 
+    // First click opens the RotateKeyDialog confirmation.
     const rotateBtn = page.locator('button', { hasText: /rotier|rotate/i }).first()
     await rotateBtn.waitFor({ state: 'visible', timeout: 8000 })
     await rotateBtn.click()
 
-    // Modal should appear showing the new raw key.
+    // Confirm rotation in the dialog → fires POST → NewKeyDialog shows raw key.
+    const confirmBtn = page.locator('button', { hasText: /jetzt rotieren/i })
+    await confirmBtn.waitFor({ state: 'visible', timeout: 5000 })
+    await confirmBtn.click()
+
+    // NewKeyDialog should show the raw key.
     await expect(
-      page.locator('input[readonly]').filter({ hasText: /vk_new/ }).or(
-        page.locator('code', { hasText: /vk_new/ }),
-      ).or(
-        page.locator('[data-testid="raw-key"]'),
-      ).or(
-        page.getByText('vk_new_secret_key_abc123'),
-      ),
+      page.locator('input[readonly]').or(page.getByText('vk_new_secret_key_abc123')),
     ).toBeVisible({ timeout: 8000 })
   })
 
@@ -91,7 +91,7 @@ test.describe('ApiKeysPage', () => {
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify(API_KEYS_IN_GRACE),
+          body: JSON.stringify({ data: API_KEYS_IN_GRACE }),
         })
       }
       return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
@@ -112,9 +112,13 @@ test.describe('ApiKeysPage', () => {
     const rotatePromise = page.waitForRequest(
       (req) => req.url().includes('/rotate') && req.method() === 'POST',
     )
+    // First click opens RotateKeyDialog, second click in dialog fires the POST.
     const rotateBtn = page.locator('button', { hasText: /rotier|rotate/i }).first()
     await rotateBtn.waitFor({ state: 'visible', timeout: 8000 })
     await rotateBtn.click()
+    const confirmBtn = page.locator('button', { hasText: /jetzt rotieren/i })
+    await confirmBtn.waitFor({ state: 'visible', timeout: 5000 })
+    await confirmBtn.click()
     await rotatePromise
   })
 })

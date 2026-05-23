@@ -12,7 +12,7 @@ async function authenticate(page: import('@playwright/test').Page) {
 test.describe('SecPrivacy — DSR', () => {
   test.beforeEach(async ({ page }) => {
     await authenticate(page)
-    await page.goto('/secprivacy/dsrs')
+    await page.goto('/secprivacy/dsr')
   })
 
   test('DSR list page renders', async ({ page }) => {
@@ -21,9 +21,9 @@ test.describe('SecPrivacy — DSR', () => {
 
   test('can open create DSR dialog', async ({ page }) => {
     await page.getByRole('button', { name: /dsr anlegen|anlegen|neue anfrage|erstellen/i }).first().click()
-    await expect(page.getByRole('dialog')).toBeVisible()
-    await expect(page.getByLabel(/name/i)).toBeVisible()
-    await expect(page.getByLabel(/e-mail/i)).toBeVisible()
+    await expect(page.getByRole('dialog', { name: 'Datenschutzanfrage anlegen' })).toBeVisible()
+    await expect(page.getByPlaceholder(/mustermann|name/i)).toBeVisible()
+    await expect(page.locator('input[type="email"]')).toBeVisible()
   })
 
   test('export button is visible and clickable', async ({ page }) => {

@@ -37,7 +37,7 @@ test.describe('Assets (SecPulse)', () => {
 
     await page.goto('/secpulse/assets')
     await page.getByRole('button', { name: /neues asset|new asset|asset anlegen/i }).first().click()
-    await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 3000 })
+    await expect(page.getByRole('dialog', { name: 'Neues Asset' })).toBeVisible({ timeout: 3000 })
     await expect(page.locator('input[id="asset-name"]')).toBeVisible()
   })
 })

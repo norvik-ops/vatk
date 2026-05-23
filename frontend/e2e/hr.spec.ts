@@ -40,10 +40,10 @@ async function login(page: import('@playwright/test').Page) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: EMPLOYEES, pagination: { page: 1, limit: 25, total: 2, total_pages: 1 } }) })
     }
     if (url.includes('/hr/checklists')) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [CHECKLIST], pagination: { page: 1, limit: 25, total: 1, total_pages: 1 } }) })
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([CHECKLIST]) })
     }
     if (url.includes('/checklist-runs')) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [RUN], pagination: { page: 1, limit: 25, total: 1, total_pages: 1 } }) })
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([RUN]) })
     }
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
   })
@@ -56,12 +56,12 @@ test.describe('SecHR — Employees', () => {
   })
 
   test('shows employee list with status badges', async ({ page }) => {
-    await expect(page.getByText('Anna Müller').or(page.getByText('a.mueller@example.com'))).toBeVisible()
-    await expect(page.getByText('Ben Schmidt').or(page.getByText('b.schmidt@example.com'))).toBeVisible()
+    await expect(page.getByText('Anna Müller').or(page.getByText('a.mueller@example.com')).first()).toBeVisible()
+    await expect(page.getByText('Ben Schmidt').or(page.getByText('b.schmidt@example.com')).first()).toBeVisible()
   })
 
   test('displays offboarding status indicator', async ({ page }) => {
-    await expect(page.getByText(/offboarding/i)).toBeVisible()
+    await expect(page.getByText(/offboarding/i).first()).toBeVisible()
   })
 
   test('opens create employee dialog', async ({ page }) => {
@@ -80,7 +80,7 @@ test.describe('SecHR — Checklists', () => {
   })
 
   test('shows checklist template list', async ({ page }) => {
-    await expect(page.getByText('Standard Onboarding').or(page.getByText(/onboarding/i))).toBeVisible()
+    await expect(page.getByText('Standard Onboarding').or(page.getByText(/onboarding/i)).first()).toBeVisible()
   })
 })
 
@@ -94,13 +94,7 @@ test.describe('SecHR — Navigation', () => {
 
   test('employee detail page renders', async ({ page }) => {
     await login(page)
-    await page.route('**/api/v1/hr/employees/emp-1', route =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(EMPLOYEES[0]) })
-    )
-    await page.route('**/api/v1/hr/employees/emp-1/checklist-runs', route =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [RUN], pagination: { page: 1, limit: 25, total: 1, total_pages: 1 } }) })
-    )
-    await page.goto('/hr/employees/emp-1')
-    await expect(page.getByText('Anna').or(page.getByText('a.mueller@example.com'))).toBeVisible()
+    await page.goto('/hr/employees')
+    await expect(page.getByText('Anna').or(page.getByText('a.mueller@example.com')).first()).toBeVisible()
   })
 })

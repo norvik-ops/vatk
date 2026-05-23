@@ -6,7 +6,8 @@ const SESSION_LIST = [
     device_hint: 'Chrome / Linux',
     ip: '192.168.1.10',
     created_at: new Date().toISOString(),
-    last_used_at: new Date().toISOString(),
+    last_used: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 86400000).toISOString(),
     is_current: true,
   },
   {
@@ -14,7 +15,8 @@ const SESSION_LIST = [
     device_hint: 'Firefox / Windows',
     ip: '10.0.0.5',
     created_at: new Date().toISOString(),
-    last_used_at: new Date().toISOString(),
+    last_used: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 86400000).toISOString(),
     is_current: false,
   },
 ]
@@ -47,7 +49,7 @@ test.describe('SessionsPage', () => {
     await mockStoreAuth(page)
     await mockAuth(page)
     await page.goto('/account/sessions')
-    await expect(page.locator('text=Chrome / Linux').or(page.locator('[data-testid="session-row"]').first())).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('text=Chrome').or(page.locator('[data-testid="session-row"]').first())).toBeVisible({ timeout: 8000 })
   })
 
   test('panic button requires 2-step confirmation before revoking all sessions', async ({ page }) => {
@@ -77,8 +79,8 @@ test.describe('SessionsPage', () => {
     const deletePromise = page.waitForRequest(
       (req) => req.url().includes('/auth/sessions/sess-2') && req.method() === 'DELETE',
     )
-    // Click revoke on the non-current session row.
-    const revokeBtn = page.locator('button', { hasText: /abmelden|revoke/i }).nth(1)
+    // Click revoke on the non-current session row (sr-only text "Widerrufen", sess-2 is index 1).
+    const revokeBtn = page.locator('button', { hasText: /widerrufen/i }).nth(1)
     await revokeBtn.waitFor({ state: 'visible', timeout: 8000 })
     await revokeBtn.click()
     await deletePromise

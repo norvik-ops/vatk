@@ -8,13 +8,13 @@ test.describe('Authentication', () => {
 
   test('shows error on invalid credentials', async ({ page }) => {
     await page.route('**/api/v1/auth/login', route =>
-      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Invalid credentials' }) })
+      route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Invalid credentials' }) })
     )
     await page.goto('/login')
     await page.fill('input[type="email"]', 'wrong@example.com')
     await page.fill('input[type="password"]', 'wrongpassword')
     await page.click('button[type="submit"]')
-    await expect(page.locator('text=Invalid credentials').or(page.locator('[role="alert"]'))).toBeVisible()
+    await expect(page.getByRole('alert').filter({ hasText: 'Invalid credentials' })).toBeVisible()
   })
 
   test('logs in successfully with valid credentials', async ({ page }) => {

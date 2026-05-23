@@ -54,7 +54,7 @@ test.describe('AgentRunPanel', () => {
 
     // Expect a plan card or tool-call card to appear.
     await expect(
-      page.locator('text=Analysiere').or(page.locator('[data-type="plan"]')).or(page.locator('text=Plan')),
+      page.locator('text=Analysiere').or(page.locator('[data-type="plan"]')).or(page.locator('text=Plan')).first(),
     ).toBeVisible({ timeout: 10000 })
   })
 
@@ -81,26 +81,20 @@ test.describe('AgentRunPanel', () => {
     // Expand by clicking the toggle.
     await jsonToggle.click()
 
-    // After expansion the toggle label changes to "einklappen" and the
-    // Arguments section becomes visible.
-    await expect(
-      page.locator('button', { hasText: /einklappen/i }).first()
-        .or(page.locator('text=Arguments:')),
-    ).toBeVisible({ timeout: 5000 })
+    // After expansion the Arguments section becomes visible.
+    await expect(page.locator('text=Arguments:').first()).toBeVisible({ timeout: 5000 })
   })
 
   test('stop button is visible while agent is running', async ({ page }) => {
     await mockStoreAuth(page)
 
-    // Use a never-ending stream to keep isRunning=true.
+    // Leave the agent/run route unfulfilled so fetch never resolves — isRunning stays true.
     await page.route('**/api/v1/**', async (route) => {
       const url = route.request().url()
-      if (url.includes('/ai/agent')) {
-        return route.fulfill({
-          status: 200,
-          contentType: 'text/event-stream',
-          body: 'data: {"type":"plan","step":1,"text":"Running…"}\n\n',
-        })
+      if (url.includes('/ai/agent/run')) {
+        // Intentionally not calling route.fulfill(): the request hangs,
+        // keeping isRunning=true so the stop button remains visible.
+        return
       }
       return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
     })

@@ -61,10 +61,10 @@ function mockHttp(page: import('@playwright/test').Page) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
     }
     if (url.includes('/secreflex/templates')) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [TEMPLATE], pagination: { page: 1, limit: 25, total: 1, total_pages: 1 } }) })
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([TEMPLATE]) })
     }
-    if (url.includes('/secreflex/groups')) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [GROUP], pagination: { page: 1, limit: 25, total: 1, total_pages: 1 } }) })
+    if (url.includes('/secreflex/target-groups')) {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([GROUP]) })
     }
     if (url.includes('/secreflex/training-modules')) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: MODULES, pagination: { page: 1, limit: 25, total: 1, total_pages: 1 } }) })
@@ -108,7 +108,7 @@ test.describe('SecReflex — Templates', () => {
   })
 
   test('shows template list', async ({ page }) => {
-    await expect(page.getByText('IT-Support Passwort-Reset').or(page.getByText(/passwort/i))).toBeVisible()
+    await expect(page.getByText('IT-Support Passwort-Reset').or(page.getByText(/passwort/i)).first()).toBeVisible()
   })
 })
 
@@ -126,6 +126,7 @@ test.describe('SecReflex — Training', () => {
 test.describe('SecReflex — Navigation', () => {
   test('SecReflex is accessible from sidebar', async ({ page }) => {
     await login(page)
+    await page.goto('/settings')
     const link = page.getByRole('link', { name: /aware|reflex|phishing|training/i })
     await expect(link.first()).toBeVisible()
   })

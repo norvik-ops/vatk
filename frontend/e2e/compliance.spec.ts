@@ -23,7 +23,7 @@ test.describe('Compliance (SecVitals)', () => {
     )
 
     await page.goto('/secvitals')
-    await expect(page.locator('text=ISO 27001').or(page.locator('text=NIS2'))).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('text=ISO 27001').or(page.locator('text=NIS2')).first()).toBeVisible({ timeout: 8000 })
   })
 
   test('navigates to controls list', async ({ page }) => {

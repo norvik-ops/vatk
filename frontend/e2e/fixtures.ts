@@ -42,6 +42,55 @@ export const test = base.extend({
             { status: 200, headers: { 'Content-Type': 'application/json' } },
           )
         }
+        // NotificationBell calls .filter() on this — must be array, not paginated object
+        if (url.includes('/api/v1/dashboard/notifications')) {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        // Dashboard scoreTrend guard uses .length which is undefined on objects → crash
+        if (url.includes('/api/v1/secvitals/score-history')) {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        // QuickWinsCard calls .filter() on controls — must be array
+        if (url.includes('/api/v1/secvitals/controls')) {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        // MyTasksWidget uses tasks.slice() — must be array
+        if (url.includes('/api/v1/secvitals/my-tasks')) {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        // SLADashboardPage calls all.filter() — must be array
+        if (url.includes('/api/v1/secpulse/sla-dashboard')) {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        // SecPrivacyOverviewPage calls dpias?.filter() — must be array
+        if (url.includes('/api/v1/secprivacy/dpias')) {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        // SecPrivacyOverviewPage calls avvs?.filter() — must be array
+        if (url.includes('/api/v1/secprivacy/avvs')) {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
         return origFetch(input, init)
       }
     })

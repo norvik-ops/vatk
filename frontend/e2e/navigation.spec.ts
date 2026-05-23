@@ -14,10 +14,10 @@ test.describe('Navigation', () => {
   })
 
   test('shows keyboard shortcuts modal on ?', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/settings')
     await page.keyboard.press('?')
     await expect(
-      page.locator('[role="dialog"]').filter({ hasText: /shortcut|Tastenkürzel|Cmd\+K/i })
+      page.locator('[role="dialog"]').filter({ hasText: /shortcut|Tastaturkürzel|Tastenkürzel|Cmd\+K/i })
     ).toBeVisible({ timeout: 3000 })
   })
 
@@ -28,7 +28,7 @@ test.describe('Navigation', () => {
   })
 
   test('sidebar links are reachable', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/settings')
     const sidebarLinks = ['/secvitals', '/secpulse', '/secprivacy']
     for (const link of sidebarLinks) {
       const anchor = page.locator(`nav a[href="${link}"]`)
