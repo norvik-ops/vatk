@@ -1,8 +1,7 @@
 import { test as setup } from '@playwright/test'
-import path from 'path'
 import fs from 'fs'
-
-const AUTH_FILE = path.join(__dirname, '../.playwright/auth.json')
+import path from 'path'
+import { AUTH_FILE } from '../playwright.config'
 
 setup('demo-login', async ({ page, baseURL }) => {
   const base = baseURL ?? 'http://localhost:5173'

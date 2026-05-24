@@ -9,6 +9,68 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.24.0] — 2026-05-24
+
+Pre-v1.0 Consolidation Wave — Module Depth, AI-Native v2, Security Docs, UX Polish, Architecture Hygiene
+
+### Added
+
+#### Vakt Aware — Module Depth (S55)
+- **8 Phishing Templates** — ready to use in every fresh instance: credential harvesting, invoice fraud, IT helpdesk, parcel notification, CEO fraud, MS 365, bank alert, software update.
+- **5 Training Modules** — Phishing Awareness, Password Hygiene, Clean Desk Policy, MFA & 2-Factor, Social Engineering. Completions automatically flow as evidence into Vakt Comply.
+- **Comply Evidence Banner** — resolving a finding shows "Finding resolution saved as evidence in Vakt Comply" + link. Training completions show "Saved automatically as evidence."
+- **Extended Getting-Started Guide** — Step 6 (First Scan) and Step 7 (First Campaign), each with prerequisites, expected duration, and a direct action link.
+- **Demo seed enrichment** — campaign click events pre-populated in demo instances for realistic campaign analytics.
+
+#### Vakt Comply & Scan — Module Depth (S54)
+- **Scanner status endpoint** — `GET /api/v1/secpulse/scanner-status` returns `{trivy, nuclei, openvas}` availability; admin dashboard shows scanner health.
+- **HR → Comply evidence flow** — completing an HR onboarding/offboarding checklist emits an evidence event in Vakt Comply (`/secvitals/evidence/auto`) with ISO 27001 A.6.1/A.6.5 control-mapping suggestion.
+- **Control suggestion for HR evidence** — unassigned HR evidence shows a rule-based control suggestion, reducing manual mapping overhead.
+
+#### AI-Native v2 (S52)
+- **Evidence Freshness Check** — daily job flags controls with evidence older than 90 days as `evidence_stale` insight cards (24h dedup per control).
+- **Gap-Explain (SSE)** — `POST /api/v1/secvitals/ai/controls/:id/explain` streams a German-language gap explanation into the control detail page. Local AI advisor, no external API.
+- **Risk Narrative** — `POST /api/v1/secvitals/ai/risks/:id/narrative` generates and persists a risk narrative; displayed in Risk Detail with a "Regenerate" option.
+- **AI Weekly Digest** — opt-in in Settings → AI Advisor. Every Monday 08:00 UTC: digest of open gaps, stale evidence, and unresolved high-severity findings.
+- **Evidence Suggestion Banner** — Finding Detail shows `evidence_suggestion` insight cards for the current finding with one-click navigation to the suggested control.
+- **AI Insights Widget** — Vakt Comply dashboard shows up to 5 dismissable AI insight cards sourced from `ck_ai_insights`.
+
+#### UX Polish (S58)
+- **Inline-Edit Controls** — Control title and status editable directly in the table row (double-click → field, Enter saves, Escape cancels). No modal for these fields.
+- **Inline-Edit Findings & Risks** — Status and severity inline-editable. Bulk status-change via BulkActionBar + "Change status to…" dropdown for selected findings.
+- **Optimistic UI for toggle states** — all boolean status PATCH calls update the UI immediately; on HTTP error: automatic rollback + error toast. No spinner wait.
+- **Toast-Undo for delete actions** — all DELETE calls show a 5-second countdown toast with "Undo". DELETE executes only after the countdown expires.
+- **AI Source Attribution** — AI responses include structured `sources` chips (e.g. "NIS2 Art. 21", "ISO 27001 A.6.1") extracted from the response. Chips navigate to the corresponding control or framework page.
+
+#### Enterprise Trust & Security Docs (S60)
+- **TOM (Art. 32 DSGVO)** — `docs/security/tom.md`: Technical and Organisational Measures document, verified against Go implementation (16/16 claims confirmed).
+- **VVT Template (Art. 30 DSGVO)** — `docs/security/vvt.md`: Records of Processing Activities template with 9 pre-filled processing activities.
+- **Internal Self-Pentest Guide** — `docs/security/pentest-intern.md`: OWASP Top 10 checklist with curl commands for IDOR, privilege escalation, SQL/prompt injection, brute-force, token revocation, and Vakt-specific attack surfaces (SSRF, mass assignment).
+- **External Pentest RFP** — `docs/security/pentest-rfp.md`: ready-to-send RFP targeting Q3 2026 with scope, deliverables, timeline, budget (€3–8k), and 5-vendor shortlist.
+- **SCIM 2.0 Verification Checklist** — `docs/security/scim-verification.md`: 10-point manual verification checklist with curl commands and Okta integration reference.
+
+### Changed
+
+#### Architecture Hygiene (S59)
+- **Audit package consolidated** — `auditexport` + `auditreport` merged into `shared/audit` with `ExportHandler` / `ReportHandler`.
+- **Worker handlers split** — 1,443-line `handlers.go` split into 5 domain files: `auth_handlers.go`, `scan_handlers.go`, `comply_handlers.go`, `aware_handlers.go`, `privacy_handlers.go`.
+- **secvitals repository split** — 4,724-line `repository.go` split into 9 domain files < 600 lines each.
+- **Integration test CI job** — new GitHub Actions job runs Go integration tests (`//go:build integration`) against a real PostgreSQL container on every push to `main`.
+
+### Security
+
+#### Security Hardening (S57)
+- **Silent SQL error logging** — raw SQL errors no longer surface to API consumers; structured logging with context in `mfa_sensitive`, `org_ip_allowlist`, `audit`, `dataexport`, `license`, `auth`, `ai/service`.
+- **MFA middleware hardened** — 8 unit tests added; fail-closed on org-DB error (503) and TOTP-DB error (403).
+- **AI streaming hardened** — SSE endpoints validate content type and connection state; panics caught and logged.
+- **TOM correction** — SCIM Bearer tokens are SHA-256 hashed (not bcrypt) — deterministic lookup required for API tokens. Documented in `docs/security/tom.md`.
+
+### Fixed
+- `no-unnecessary-type-arguments` ESLint rule — removed redundant `Error` type argument from TanStack Query mutation hooks.
+- TypeScript strict mode — `useMutation` context generic added for optimistic rollback hooks.
+
+---
+
 ## [0.23.0] — 2026-05-23
 
 Security Hardening Wave 2 + Release Readiness Phase 1
