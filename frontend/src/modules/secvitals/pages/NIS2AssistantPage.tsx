@@ -546,7 +546,7 @@ function Step4Checklist({ classification, checkedItems, onToggle, onBack }: Step
             Als PDF exportieren
           </Button>
           <Button onClick={() => { navigate('/secvitals'); }}>
-            In SecVitals öffnen
+            In Vakt Comply öffnen
             <ExternalLink className="w-4 h-4 ml-1.5" />
           </Button>
         </div>
@@ -648,7 +648,7 @@ export default function NIS2AssistantPage() {
         actions={
           <Button variant="outline" size="sm" onClick={() => { navigate('/secvitals'); }}>
             <Shield className="w-3.5 h-3.5 mr-1" />
-            Zurück zu SecVitals
+            Zurück zu Vakt Comply
           </Button>
         }
       />

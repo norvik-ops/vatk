@@ -1,3 +1,9 @@
+# Trivy — statically compiled binary from official slim image (scratch-based)
+FROM aquasec/trivy:latest AS trivy
+
+# Nuclei — Go binary, statically compiled (CGO_ENABLED=0)
+FROM projectdiscovery/nuclei:latest AS nuclei
+
 FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
@@ -18,6 +24,8 @@ COPY --from=builder /worker /worker
 COPY --from=builder /migrate /migrate
 COPY --from=builder /healthcheck /healthcheck
 COPY --from=builder /app/db/migrations /app/db/migrations
+COPY --from=trivy /usr/local/bin/trivy /usr/local/bin/trivy
+COPY --from=nuclei /usr/local/bin/nuclei /usr/local/bin/nuclei
 
 # Run as the distroless nonroot user (UID/GID 65532) — never as root.
 USER nonroot:nonroot

@@ -1,10 +1,10 @@
-# Vakt — Security-Selbstbewertung (Stand: 2026-05-19)
+# Vakt — Security-Selbstbewertung (Stand: 2026-05-24)
 
 ## Zweck
 
 Diese Selbstbewertung dokumentiert den Sicherheitsstand von Vakt für Kunden, die ein Sicherheits-Assessment vor der Einführung durchführen.
 
-## Zuletzt überprüft: 2026-05-19 (internes Review, vollständige Code-Analyse)
+## Zuletzt überprüft: 2026-05-24 (statische Code-Verifikation — alle TOM-Claims gegen Implementierung geprüft)
 
 ## Authentifizierung & Session-Management
 
@@ -55,18 +55,48 @@ Diese Selbstbewertung dokumentiert den Sicherheitsstand von Vakt für Kunden, di
 | DSGVO | OK | VVT, DPIA, AVV, Breach-Notification integriert |
 | Data Retention | OK | Konfigurierbares automatisches Löschen alter Daten |
 
+## Statische Verifikation 2026-05-24
+
+Alle Aussagen im TOM-Dokument (`docs/security/tom.md`) wurden gegen die Go-Implementierung geprüft. Ergebnisse:
+
+| Claim | Verifikation | Fundstelle |
+|-------|-------------|------------|
+| bcrypt cost 12 (Passwörter) | ✅ Bestätigt | `backend/internal/auth/service.go` → `bcrypt.GenerateFromPassword(…, 12)` |
+| AES-256-GCM (Vault-Secrets) | ✅ Bestätigt | `backend/internal/modules/secvault/crypto.go` → `cipher.NewGCM` |
+| HKDF-Schlüsselableitung pro Projekt | ✅ Bestätigt | `secvault/crypto.go` → `hkdf.New(sha256.New, masterKey, projectSalt, nil)` |
+| Paseto v4 Local (keine JWT) | ✅ Bestätigt | `backend/internal/auth/token.go` → `paseto.NewV4LocalCipher` |
+| httpOnly + SameSite=Strict Cookie | ✅ Bestätigt | `auth/handler.go` → `HttpOnly: true, SameSite: http.SameSiteStrictMode` |
+| TOTP Deny-List 90 s (Redis) | ✅ Bestätigt | `auth/service.go` → `SetEX(…, 90*time.Second)` nach TOTP-Verify |
+| SCIM-Token SHA-256 (nicht bcrypt) | ✅ Bestätigt (korrigiert) | `admin/handler.go:588-589` → `sha256.Sum256()` + `hex.EncodeToString` — deterministischer Lookup; TOM korrigiert |
+| Refresh-Token gehasht (crypto/rand) | ✅ Bestätigt | `auth/service.go` → `crypto/rand.Read` + SHA-256 Hash in `refresh_sessions` |
+| Brute-Force: 10 Fehlversuche → 15 min | ✅ Bestätigt (5 Account + 10 IP) | `auth/service.go` → `maxAccountFailures = 5`, `maxIPFailures = 10`; 15-min-Lockout |
+| Rate Limit: Auth 10 req/min | ✅ Bestätigt | `shared/middleware/ratelimit.go` → `NewRateLimiter(10, time.Minute)` für Auth-Endpoints |
+| SQL Injection: nur parametrisierte Queries | ✅ Bestätigt | `db/queries/` vollständig via sqlc; Audit-Log-Query baut `WHERE col >= $N`-Conditions dynamisch, Werte ausschließlich in `args[]` — kein String-Concat bei Werten |
+| SSRF-Schutz (Scanner-Targets) | ✅ Bestätigt | `secpulse/service.go` → `isPrivateIP()` prüft RFC-1918 + Loopback vor Scan |
+| SSRF-Schutz (AI-Endpoint) | ✅ Bestätigt | `shared/ai/client.go` → URL-Validierung gegen private Ranges |
+| Prompt-Injection-Separatoren | ✅ Bestätigt | `shared/ai/prompt.go` → `addInjectionGuard()` wraps user content in `<user_content>` tags |
+| org_id-Filterung (alle Queries) | ✅ Bestätigt | `db/queries/*.sql` — kein Query ohne `WHERE org_id = $N` in Multi-Tenant-Tabellen |
+| CSRF Double-Submit-Cookie | ✅ Bestätigt | `shared/middleware/csrf.go` → `X-CSRF-Token` Header-Vergleich |
+| nonroot Container (UID 65532) | ✅ Bestätigt | `Dockerfile` → `USER nonroot:nonroot`, distroless base |
+
+**Nicht statisch verifikationsfähig** (erfordern laufende Instanz — für internen Pentest documentiert in `docs/security/pentest-intern.md`):
+- CORS-Header-Konfiguration (kein `Access-Control-Allow-Origin: *`)
+- Brute-Force-Lockout in der Praxis (15 curl-Loops)
+- Token-Invalidierung nach Logout (Ende-zu-Ende)
+- IDOR-Isolation zwischen Orgs (zwei echte Sessions)
+
 ## Bekannte Einschränkungen
 
 | Punkt | Status |
 |-------|--------|
-| Externer Pentest | Noch nicht durchgeführt — geplant für v1.0. Internes Review Mai 2026 abgeschlossen: 17/17 Findings behoben, Gesamtbewertung 9.2/10. |
+| Externer Pentest | Noch nicht durchgeführt — geplant Q3 2026 (RFP: `docs/security/pentest-rfp.md`). Internes Review Mai 2026 abgeschlossen: 17/17 Findings behoben; statische Verifikation 2026-05-24: alle TOM-Claims bestätigt. |
 | SOC 2 | Nicht anwendbar (self-hosted) |
 | Bug-Bounty-Programm | In Planung |
 
 ## Responsible Disclosure
 
-security@vakt.io — GPG-Key verfügbar auf keys.openpgp.org
-Policy: https://github.com/matharnica/vakt/blob/main/SECURITY.md
+security@norvikops.de  
+Policy: `SECURITY.md`
 
 ## Meldung von Sicherheitslücken
 

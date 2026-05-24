@@ -48,9 +48,11 @@ func (w *HREvidenceWriter) WriteChecklistCompletion(ctx context.Context, in hr.C
 
 	_, err = w.pool.Exec(ctx, `
 		INSERT INTO ck_evidence
-			(control_id, org_id, title, description, source, collector_data, status)
+			(control_id, org_id, title, description, source, collector_data, status,
+			 auto_source_type, auto_collected_at)
 		VALUES
-			(NULL, $1::uuid, $2, $3, 'hr_checklist_completed', $4, 'approved')
+			(NULL, $1::uuid, $2, $3, 'hr_checklist_completed', $4, 'approved',
+			 'hr', NOW())
 	`, in.OrgID, title, description, data)
 	if err != nil {
 		return fmt.Errorf("insert hr evidence: %w", err)

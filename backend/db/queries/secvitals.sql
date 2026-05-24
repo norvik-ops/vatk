@@ -336,6 +336,9 @@ RETURNING id, org_id, title, description, category,
           residual_likelihood, residual_impact,
           created_at, updated_at;
 
+-- name: DeleteCKRisk :execrows
+DELETE FROM ck_risks WHERE id = $1 AND org_id = $2;
+
 -- name: CKSupplierExists :one
 SELECT EXISTS(SELECT 1 FROM ck_suppliers WHERE id = $1 AND org_id = $2);
 

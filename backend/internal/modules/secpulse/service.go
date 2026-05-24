@@ -421,6 +421,25 @@ func (s *Service) UpdateFinding(ctx context.Context, orgID, findingID string, in
 		}
 	}
 
+	// Enqueue AI evidence-suggestion check when finding is resolved (S52-5).
+	if input.Status != nil && *input.Status == "resolved" && s.asynqClient != nil {
+		suggPayload := struct {
+			FindingID    string `json:"finding_id"`
+			OrgID        string `json:"org_id"`
+			Severity     string `json:"severity"`
+			FindingTitle string `json:"finding_title"`
+		}{
+			FindingID:    findingID,
+			OrgID:        orgID,
+			Severity:     finding.Severity,
+			FindingTitle: finding.Title,
+		}
+		if suggBytes, marshalErr := json.Marshal(suggPayload); marshalErr == nil {
+			suggTask := asynq.NewTask("secvitals:ai_evidence_suggestion", suggBytes, asynq.MaxRetry(1))
+			_, _ = s.asynqClient.EnqueueContext(ctx, suggTask, asynq.Queue(crossevidence.Queue))
+		}
+	}
+
 	// Collect auto-evidence into the unassigned inbox when finding is resolved
 	// (best-effort). ADR-0018: safego.Run + WithoutCancel.
 	if input.Status != nil && *input.Status == "resolved" {

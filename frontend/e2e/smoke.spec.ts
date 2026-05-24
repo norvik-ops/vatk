@@ -1,0 +1,49 @@
+import { test, expect } from '@playwright/test'
+
+/**
+ * Smoke tests — laufen gegen die Live-Demo (secdemo.norvikops.de).
+ * Jeder Test prüft: Seite lädt, kein Error-Boundary, kein JS-Absturz,
+ * main-Element sichtbar.
+ *
+ * Auth kommt aus .playwright/auth.json, erzeugt von smoke-setup.ts.
+ */
+
+const MODULES = [
+  { name: 'Dashboard',    path: '/' },
+  { name: 'Vakt Comply',  path: '/secvitals' },
+  { name: 'Vakt Scan',    path: '/secpulse' },
+  { name: 'Vakt Vault',   path: '/secvault' },
+  { name: 'Vakt Aware',   path: '/secreflex' },
+  { name: 'Vakt Privacy', path: '/secprivacy' },
+  { name: 'Vakt HR',      path: '/hr' },
+  { name: 'Settings',     path: '/settings' },
+]
+
+for (const mod of MODULES) {
+  test(`${mod.name} — lädt ohne Fehler`, async ({ page }) => {
+    const jsErrors: string[] = []
+    page.on('pageerror', (err) => jsErrors.push(err.message))
+
+    await page.goto(mod.path, { waitUntil: 'domcontentloaded' })
+    await page.waitForLoadState('networkidle', { timeout: 20_000 })
+
+    // Kein Error-Boundary
+    await expect(
+      page.getByText(/something went wrong|unexpected application error|ein fehler ist aufgetreten/i)
+    ).not.toBeVisible()
+
+    // Kein JS-Absturz
+    expect(jsErrors, `JS-Fehler auf ${mod.path}: ${jsErrors.join(' | ')}`).toHaveLength(0)
+
+    // Seite hat sichtbaren Inhalt
+    await expect(page.locator('main').first()).toBeVisible({ timeout: 5_000 })
+
+    // Session ist noch aktiv (kein Redirect zur Login-Seite)
+    expect(page.url()).not.toContain('/login')
+  })
+}
+
+test('Login-Seite nach Logout erreichbar', async ({ page }) => {
+  await page.goto('/login')
+  await expect(page.locator('#email')).toBeVisible({ timeout: 5_000 })
+})

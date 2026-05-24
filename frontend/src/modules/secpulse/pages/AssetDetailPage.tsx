@@ -97,7 +97,7 @@ export default function AssetDetailPage() {
   return (
     <div className="flex flex-col h-full">
       <Breadcrumbs items={[
-        { label: 'SecPulse', href: '/secpulse' },
+        { label: 'Vakt Scan', href: '/secpulse' },
         { label: 'Assets', href: '/secpulse/assets' },
         { label: asset.name },
       ]} />

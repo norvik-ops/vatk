@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { apiFetch } from '../../../api/client'
 import type { Finding, FindingsListResponse } from '../types'
 
@@ -49,12 +49,26 @@ export function useFinding(id: string) {
 
 export function usePatchFinding(id: string) {
   const queryClient = useQueryClient()
-  return useMutation<Finding, Error, PatchFindingInput>({
+  return useMutation<Finding, Error, PatchFindingInput, { prevQueries: [QueryKey, FindingsListResponse | undefined][] }>({
     mutationFn: (data) =>
       apiFetch<Finding>(`/secpulse/findings/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ['secpulse', 'findings'] })
+      const prevQueries = queryClient.getQueriesData<FindingsListResponse>({ queryKey: ['secpulse', 'findings'] })
+      queryClient.setQueriesData<FindingsListResponse>(
+        { queryKey: ['secpulse', 'findings'] },
+        (old) => old ? { ...old, data: old.data.map((f) => f.id === id ? { ...f, ...data } : f) } : old,
+      )
+      return { prevQueries }
+    },
+    onError: (_err, _data, ctx) => {
+      if (ctx?.prevQueries) {
+        for (const [key, data] of ctx.prevQueries) queryClient.setQueryData(key, data)
+      }
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['secpulse', 'findings', id] })
       void queryClient.invalidateQueries({ queryKey: ['secpulse', 'findings'] })

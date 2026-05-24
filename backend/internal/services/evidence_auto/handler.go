@@ -1,6 +1,7 @@
 package evidence_auto
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -11,14 +12,37 @@ import (
 
 // AutoEvidence is the response shape for a single auto-collected evidence item.
 type AutoEvidence struct {
-	ID              string     `json:"id"`
-	OrgID           string     `json:"org_id"`
-	Title           string     `json:"title"`
-	Description     string     `json:"description,omitempty"`
-	AutoSourceType  string     `json:"auto_source_type"`
-	AutoSourceRef   string     `json:"auto_source_ref,omitempty"`
-	AutoCollectedAt *time.Time `json:"auto_collected_at,omitempty"`
-	CreatedAt       time.Time  `json:"created_at"`
+	ID                   string     `json:"id"`
+	OrgID                string     `json:"org_id"`
+	Title                string     `json:"title"`
+	Description          string     `json:"description,omitempty"`
+	AutoSourceType       string     `json:"auto_source_type"`
+	AutoSourceRef        string     `json:"auto_source_ref,omitempty"`
+	AutoCollectedAt      *time.Time `json:"auto_collected_at,omitempty"`
+	CreatedAt            time.Time  `json:"created_at"`
+	SuggestedControlHint string     `json:"suggested_control_hint,omitempty"`
+}
+
+// hrControlHint returns a suggested control text for HR checklist completions.
+// Uses collector_data.checklist_type to determine onboarding vs offboarding.
+func hrControlHint(collectorData []byte) string {
+	if len(collectorData) == 0 {
+		return ""
+	}
+	var data struct {
+		ChecklistType string `json:"checklist_type"`
+	}
+	if err := json.Unmarshal(collectorData, &data); err != nil {
+		return ""
+	}
+	switch data.ChecklistType {
+	case "onboarding":
+		return "ISO 27001 A.6.1 Überprüfung von Bewerbern / NIS2 Art. 21 Zugangsmanagement"
+	case "offboarding":
+		return "ISO 27001 A.6.5 Verantwortlichkeiten beim Ausscheiden / NIS2 Art. 21 Zugangsmanagement"
+	default:
+		return "ISO 27001 A.6 Personenbezogene Maßnahmen"
+	}
 }
 
 // Handler handles HTTP requests for auto-evidence endpoints.
@@ -40,7 +64,8 @@ func (h *Handler) ListAutoEvidence(c echo.Context) error {
 
 	rows, err := h.db.Query(c.Request().Context(), `
 		SELECT id::text, org_id::text, title, COALESCE(description,''),
-		       auto_source_type, COALESCE(auto_source_ref,''), auto_collected_at, created_at
+		       auto_source_type, COALESCE(auto_source_ref,''), auto_collected_at, created_at,
+		       COALESCE(collector_data, '{}'::jsonb)
 		FROM ck_evidence
 		WHERE org_id = $1::uuid
 		  AND control_id IS NULL
@@ -60,12 +85,17 @@ func (h *Handler) ListAutoEvidence(c echo.Context) error {
 	items := make([]AutoEvidence, 0)
 	for rows.Next() {
 		var ev AutoEvidence
+		var collectorData []byte
 		if err := rows.Scan(
 			&ev.ID, &ev.OrgID, &ev.Title, &ev.Description,
 			&ev.AutoSourceType, &ev.AutoSourceRef, &ev.AutoCollectedAt, &ev.CreatedAt,
+			&collectorData,
 		); err != nil {
 			log.Error().Err(err).Msg("scan auto evidence row")
 			continue
+		}
+		if ev.AutoSourceType == "hr" {
+			ev.SuggestedControlHint = hrControlHint(collectorData)
 		}
 		items = append(items, ev)
 	}

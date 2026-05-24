@@ -1,4 +1,4 @@
-package auditexport
+package audit
 
 import (
 	"fmt"
@@ -10,18 +10,18 @@ import (
 )
 
 // Handler handles HTTP requests for the audit export endpoint.
-type Handler struct {
+type ExportHandler struct {
 	db *pgxpool.Pool
 }
 
 // NewHandler creates a new Handler.
-func NewHandler(db *pgxpool.Pool) *Handler {
-	return &Handler{db: db}
+func NewExportHandler(db *pgxpool.Pool) *ExportHandler {
+	return &ExportHandler{db: db}
 }
 
 // Export handles GET /export/audit-package.
 // It generates a ZIP containing all compliance data and streams it to the client.
-func (h *Handler) Export(c echo.Context) error {
+func (h *ExportHandler) Export(c echo.Context) error {
 	orgID, ok := c.Get("org_id").(string)
 	if !ok || orgID == "" {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})

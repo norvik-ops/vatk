@@ -31,7 +31,7 @@ const CLAUSES: Clause[] = [
     id: 'A.5',
     title: 'Organisatorische Maßnahmen',
     count: 37,
-    module: 'SecVitals',
+    module: 'Vakt Comply',
     modulePath: '/secvitals',
     controls: [
       { id: 'A.5.1',  title: 'Informationssicherheitsrichtlinien',              module: 'secvitals/policies' },
@@ -77,7 +77,7 @@ const CLAUSES: Clause[] = [
     id: 'A.6',
     title: 'Personenbezogene Maßnahmen',
     count: 8,
-    module: 'SecReflex',
+    module: 'Vakt Aware',
     modulePath: '/secreflex',
     controls: [
       { id: 'A.6.1', title: 'Überprüfung von Bewerbern',          module: 'secvitals' },
@@ -94,7 +94,7 @@ const CLAUSES: Clause[] = [
     id: 'A.7',
     title: 'Physische Maßnahmen',
     count: 14,
-    module: 'SecVitals',
+    module: 'Vakt Comply',
     modulePath: '/secvitals',
     controls: [
       { id: 'A.7.1',  title: 'Physische Sicherheitsbereiche',                  module: 'secvitals' },
@@ -117,7 +117,7 @@ const CLAUSES: Clause[] = [
     id: 'A.8',
     title: 'Technologische Maßnahmen',
     count: 34,
-    module: 'SecPulse + SecVault',
+    module: 'Vakt Scan + Vakt Vault',
     modulePath: '/secpulse',
     controls: [
       { id: 'A.8.1',  title: 'Benutzerendgeräte',                                          module: 'secpulse' },
@@ -170,14 +170,14 @@ function moduleToPath(module: ModuleKey): string {
 
 function moduleLabel(module: ModuleKey): string {
   const labels: Record<ModuleKey, string> = {
-    secpulse: 'SecPulse',
-    secvault: 'SecVault',
-    secvitals: 'SecVitals',
-    secprivacy: 'SecPrivacy',
-    secreflex: 'SecReflex',
-    'secvitals/policies': 'SecVitals · Richtlinien',
-    'secvitals/incidents': 'SecVitals · Vorfälle',
-    'secvitals/audits': 'SecVitals · Audits',
+    secpulse: 'Vakt Scan',
+    secvault: 'Vakt Vault',
+    secvitals: 'Vakt Comply',
+    secprivacy: 'Vakt Privacy',
+    secreflex: 'Vakt Aware',
+    'secvitals/policies': 'Vakt Comply · Richtlinien',
+    'secvitals/incidents': 'Vakt Comply · Vorfälle',
+    'secvitals/audits': 'Vakt Comply · Audits',
   }
   return labels[module]
 }

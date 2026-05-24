@@ -134,8 +134,21 @@ export interface Risk {
   treatment_status?: TreatmentStatus
   residual_likelihood?: number | null
   residual_impact?: number | null
+  ai_narrative?: string | null
   created_at: string
   updated_at: string
+}
+
+export interface AIInsight {
+  id: string
+  type: 'evidence_stale' | 'evidence_suggestion' | 'gap_explain_saved'
+  title: string
+  message: string
+  control_id?: string | null
+  risk_id?: string | null
+  finding_id?: string | null
+  urgency: 1 | 2 | 3
+  created_at: string
 }
 
 export interface UpdateRiskTreatmentInput {

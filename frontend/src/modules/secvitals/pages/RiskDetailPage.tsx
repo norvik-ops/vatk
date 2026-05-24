@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2 } from 'lucide-react'
 import { Spinner } from '../../../components/Spinner'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
@@ -13,6 +13,7 @@ import { Label } from '../../../components/ui/label'
 import { Textarea } from '../../../components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { useRisk, useUpdateRisk } from '../hooks/useRisks'
+import { useRiskNarrative } from '../hooks/useAIInsights'
 import RiskTreatmentPanel from '../components/RiskTreatmentPanel'
 import type { Risk, UpdateRiskInput } from '../types'
 import { useFormatDate } from '../../../shared/hooks/useFormatDate'
@@ -30,6 +31,38 @@ const STATUS_LABELS: Record<Risk['status'], string> = {
 const TREATMENT_LABELS: Record<Risk['treatment'], string> = {
   avoid: 'Vermeiden', mitigate: 'Mindern', transfer: 'Übertragen', accept: 'Akzeptieren',
 }
+function AIRiskNarrativePanel({ riskId, existingNarrative }: { riskId: string; existingNarrative: string | null }) {
+  const generate = useRiskNarrative(riskId)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-brand" />KI-Risikonarrative
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {existingNarrative && (
+          <p className="text-xs text-primary leading-relaxed whitespace-pre-wrap">{existingNarrative}</p>
+        )}
+        {generate.isError && (
+          <p className="text-xs text-red-400">{generate.error?.message ?? 'Fehler beim Generieren.'}</p>
+        )}
+        <button
+          onClick={() => { generate.mutate(); }}
+          disabled={generate.isPending}
+          className="inline-flex items-center gap-1.5 text-xs text-brand hover:text-brand/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {generate.isPending
+            ? <><Loader2 className="w-3 h-3 animate-spin" /> Generiert…</>
+            : <><Sparkles className="w-3 h-3" />{existingNarrative ? 'Neu generieren' : 'KI-Narrative generieren'}</>
+          }
+        </button>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function RiskDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -84,7 +117,7 @@ export default function RiskDetailPage() {
   return (
     <div className="flex flex-col h-full">
       <Breadcrumbs items={[
-        { label: 'SecVitals', href: '/secvitals' },
+        { label: 'Vakt Comply', href: '/secvitals' },
         { label: 'Risiken', href: '/secvitals/risks' },
         { label: risk.title },
       ]} />
@@ -198,6 +231,9 @@ export default function RiskDetailPage() {
             </Card>
           </div>
           </div>
+
+          {/* S52-3: AI Risk Narrative */}
+          <AIRiskNarrativePanel riskId={id ?? ''} existingNarrative={risk.ai_narrative ?? null} />
 
           {/* Treatment workflow — full width section below the main grid */}
           <div>

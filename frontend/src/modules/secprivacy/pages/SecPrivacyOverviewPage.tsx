@@ -70,7 +70,7 @@ export default function SecPrivacyOverviewPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="SecPrivacy"
+        title="Vakt Privacy"
         description="DSGVO-Dokumentation: Verarbeitungen, DSFAs, Verträge und Datenpannen."
       />
 

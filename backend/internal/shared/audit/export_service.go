@@ -1,4 +1,4 @@
-package auditexport
+package audit
 
 import (
 	"archive/zip"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 // AuditPackage holds the generated ZIP and metadata.
@@ -23,7 +24,9 @@ type AuditPackage struct {
 func GeneratePackage(ctx context.Context, db *pgxpool.Pool, orgID string) (*AuditPackage, error) {
 	// Fetch org name
 	var orgName string
-	_ = db.QueryRow(ctx, `SELECT name FROM organizations WHERE id = $1::uuid`, orgID).Scan(&orgName)
+	if err := db.QueryRow(ctx, `SELECT name FROM organizations WHERE id = $1::uuid`, orgID).Scan(&orgName); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("audit export: could not resolve org name")
+	}
 	if orgName == "" {
 		orgName = orgID
 	}
@@ -375,19 +378,25 @@ func buildGapData(ctx context.Context, db *pgxpool.Pool, orgID, orgName string, 
 
 	// ── Open counts ───────────────────────────────────────────────────────────
 	var openFindings int
-	_ = db.QueryRow(ctx, `
+	if err := db.QueryRow(ctx, `
 		SELECT COUNT(*) FROM vb_findings
-		WHERE org_id = $1::uuid AND status NOT IN ('resolved','false_positive')`, orgID).Scan(&openFindings)
+		WHERE org_id = $1::uuid AND status NOT IN ('resolved','false_positive')`, orgID).Scan(&openFindings); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("audit export: could not count open findings")
+	}
 
 	var openRisks int
-	_ = db.QueryRow(ctx, `
+	if err := db.QueryRow(ctx, `
 		SELECT COUNT(*) FROM ck_risks
-		WHERE org_id = $1::uuid AND status NOT IN ('accepted','closed','mitigated')`, orgID).Scan(&openRisks)
+		WHERE org_id = $1::uuid AND status NOT IN ('accepted','closed','mitigated')`, orgID).Scan(&openRisks); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("audit export: could not count open risks")
+	}
 
 	var openIncidents int
-	_ = db.QueryRow(ctx, `
+	if err := db.QueryRow(ctx, `
 		SELECT COUNT(*) FROM ck_incidents
-		WHERE org_id = $1::uuid AND status NOT IN ('resolved','closed')`, orgID).Scan(&openIncidents)
+		WHERE org_id = $1::uuid AND status NOT IN ('resolved','closed')`, orgID).Scan(&openIncidents); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("audit export: could not count open incidents")
+	}
 
 	// ── Assemble framework gaps ───────────────────────────────────────────────
 	var frameworks []frameworkGap

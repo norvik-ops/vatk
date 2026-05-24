@@ -79,4 +79,7 @@ func Register(g *echo.Group, h *Handler) {
 
 	// --- Community: CI/CD evidence webhook (push model for any CI system) ---
 	assets.POST("/ci-evidence", h.ReceiveCIEvidence, rw)
+
+	// --- Community: Scanner availability status ---
+	assets.GET("/scanner-status", h.GetScannerStatus)
 }

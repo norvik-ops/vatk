@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldAlert, Plus, List, BarChart2, ChevronsUpDown, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react'
+import { ShieldAlert, Plus, List, BarChart2, ChevronsUpDown, ChevronUp, ChevronDown, RefreshCw, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -16,8 +17,9 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
 import { BulkActionBar } from '../../../shared/components/BulkActionBar'
 import { useSortableTable } from '../../../shared/hooks/useSortableTable'
+import { useDeferredDelete } from '../../../shared/hooks/useDeferredDelete'
 import { toast } from '../../../shared/hooks/useToast'
-import { useRisks, useCreateRisk } from '../hooks/useRisks'
+import { useRisks, useCreateRisk, useDeleteRisk, useUpdateRiskStatus } from '../hooks/useRisks'
 import { useFirstAction } from '../../../shared/hooks/useFirstAction'
 import { apiFetch } from '../../../api/client'
 import RiskHeatmap from '../components/RiskHeatmap'
@@ -108,18 +110,16 @@ const SCORE_COLOR = (score: number) => {
   return 'bg-green-500/20 text-green-400 border-green-500/30'
 }
 
-function RiskCard({
+function InlineRiskStatus({
   risk,
-  onClick,
-  selected,
-  onToggleSelect,
+  onStatusChange,
 }: {
   risk: Risk
-  onClick: () => void
-  selected: boolean
-  onToggleSelect: (id: string) => void
+  onStatusChange: (risk: Risk, status: Risk['status']) => void
 }) {
   const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const [displayStatus, setDisplayStatus] = useState<Risk['status']>(risk.status)
 
   const STATUS_LABELS: Record<Risk['status'], string> = {
     open: t('secvitals.risksPage.statusOpen'),
@@ -127,6 +127,63 @@ function RiskCard({
     accepted: t('secvitals.risksPage.statusAccepted'),
     closed: t('secvitals.risksPage.statusClosed'),
   }
+
+  function handleChange(value: string) {
+    const newStatus = value as Risk['status']
+    setDisplayStatus(newStatus)
+    setEditing(false)
+    onStatusChange(risk, newStatus)
+  }
+
+  if (editing) {
+    return (
+      <Select
+        defaultOpen
+        value={displayStatus}
+        onValueChange={handleChange}
+        onOpenChange={(open) => { if (!open) setEditing(false) }}
+      >
+        <SelectTrigger className="h-6 text-xs w-28" onClick={(e) => { e.stopPropagation() }}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent onClick={(e) => { e.stopPropagation() }}>
+          <SelectItem value="open">{STATUS_LABELS.open}</SelectItem>
+          <SelectItem value="mitigated">{STATUS_LABELS.mitigated}</SelectItem>
+          <SelectItem value="accepted">{STATUS_LABELS.accepted}</SelectItem>
+          <SelectItem value="closed">{STATUS_LABELS.closed}</SelectItem>
+        </SelectContent>
+      </Select>
+    )
+  }
+
+  return (
+    <Badge
+      variant="secondary"
+      className="cursor-pointer hover:bg-muted/80 transition-colors"
+      onClick={(e) => { e.stopPropagation(); setEditing(true) }}
+      title="Klicken zum Bearbeiten"
+    >
+      {STATUS_LABELS[displayStatus]}
+    </Badge>
+  )
+}
+
+function RiskCard({
+  risk,
+  onClick,
+  selected,
+  onToggleSelect,
+  onStatusChange,
+  onDelete,
+}: {
+  risk: Risk
+  onClick: () => void
+  selected: boolean
+  onToggleSelect: (id: string) => void
+  onStatusChange: (risk: Risk, status: Risk['status']) => void
+  onDelete: (risk: Risk) => void
+}) {
+  const { t } = useTranslation()
 
   const TREATMENT_LABELS: Record<Risk['treatment'], string> = {
     avoid: t('secvitals.risksPage.treatmentAvoid'),
@@ -156,7 +213,17 @@ function RiskCard({
               {risk.category && <p className="text-xs text-muted-foreground mt-0.5">{risk.category}</p>}
             </div>
           </div>
-          <Badge className={SCORE_COLOR(risk.risk_score)}>Score {risk.risk_score}</Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge className={SCORE_COLOR(risk.risk_score)}>Score {risk.risk_score}</Badge>
+            <button
+              className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              onClick={(e) => { e.stopPropagation(); onDelete(risk) }}
+              title="Risiko löschen"
+              aria-label={`Risiko "${risk.title}" löschen`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
         {risk.description && (
           <p className="text-xs text-muted-foreground line-clamp-2">{risk.description}</p>
@@ -167,7 +234,7 @@ function RiskCard({
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">{TREATMENT_LABELS[risk.treatment]}</span>
-          <Badge variant="secondary">{STATUS_LABELS[risk.status]}</Badge>
+          <InlineRiskStatus risk={risk} onStatusChange={onStatusChange} />
         </div>
       </CardContent>
     </Card>
@@ -190,17 +257,43 @@ function emptyForm(): CreateRiskInput {
 export default function RisksPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState<CreateRiskInput>(emptyForm())
   const [view, setView] = useState<'list' | 'heatmap'>('list')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set())
   const [bulkStatusDialogOpen, setBulkStatusDialogOpen] = useState(false)
   const [pendingBulkStatus, setPendingBulkStatus] = useState<Risk['status']>('open')
   const [isApplyingBulk, setIsApplyingBulk] = useState(false)
   const { data: risks, isLoading, isError, pagination } = useRisks(page)
   const createRisk = useCreateRisk()
+  const deleteRisk = useDeleteRisk()
+  const updateRiskStatus = useUpdateRiskStatus()
   useFirstAction('risk:first-created', (risks?.length ?? 0) > 0)
+
+  const { scheduleDelete } = useDeferredDelete<Risk>({
+    getLabel: (r) => r.title,
+    onDelete: async (r) => {
+      await deleteRisk.mutateAsync(r.id)
+      setHiddenIds((prev) => { const next = new Set(prev); next.delete(r.id); return next })
+    },
+    onUndo: (r) => {
+      void queryClient.invalidateQueries({ queryKey: ['secvitals', 'risks'] })
+      setHiddenIds((prev) => { const next = new Set(prev); next.delete(r.id); return next })
+    },
+  })
+
+  function handleDeleteRisk(risk: Risk) {
+    scheduleDelete(risk, () => { setHiddenIds((prev) => new Set(prev).add(risk.id)) })
+  }
+
+  function handleStatusChange(risk: Risk, status: Risk['status']) {
+    updateRiskStatus.mutate({ risk, status }, {
+      onError: () => { toast('Status konnte nicht gespeichert werden', 'error') },
+    })
+  }
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -265,7 +358,7 @@ export default function RisksPage() {
     createRisk.mutate(form, { onSuccess: () => { setDialogOpen(false); } })
   }
 
-  const displayRisks = view === 'list' ? sortedRisks : (risks ?? [])
+  const displayRisks = (view === 'list' ? sortedRisks : (risks ?? [])).filter((r) => !hiddenIds.has(r.id))
   const high = displayRisks.filter((r) => r.risk_score >= 15)
   const medium = displayRisks.filter((r) => r.risk_score >= 9 && r.risk_score < 15)
   const low = displayRisks.filter((r) => r.risk_score < 9)
@@ -378,6 +471,8 @@ export default function RisksPage() {
                       onClick={() => { navigate(`/secvitals/risks/${r.id}`); }}
                       selected={selected.has(r.id)}
                       onToggleSelect={toggleSelect}
+                      onStatusChange={handleStatusChange}
+                      onDelete={handleDeleteRisk}
                     />
                   ))}
                 </div>
@@ -394,6 +489,8 @@ export default function RisksPage() {
                       onClick={() => { navigate(`/secvitals/risks/${r.id}`); }}
                       selected={selected.has(r.id)}
                       onToggleSelect={toggleSelect}
+                      onStatusChange={handleStatusChange}
+                      onDelete={handleDeleteRisk}
                     />
                   ))}
                 </div>
@@ -410,6 +507,8 @@ export default function RisksPage() {
                       onClick={() => { navigate(`/secvitals/risks/${r.id}`); }}
                       selected={selected.has(r.id)}
                       onToggleSelect={toggleSelect}
+                      onStatusChange={handleStatusChange}
+                      onDelete={handleDeleteRisk}
                     />
                   ))}
                 </div>

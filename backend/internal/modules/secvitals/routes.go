@@ -142,6 +142,7 @@ func registerRoutes(g *echo.Group, h *Handler) {
 	g.POST("/risks", h.CreateRisk, rw)
 	g.GET("/risks/:id", h.GetRisk)
 	g.PATCH("/risks/:id", h.UpdateRisk, rw)
+	g.DELETE("/risks/:id", h.DeleteRisk, rw)
 	// CRITICAL: /risks/:id/treatment must be registered BEFORE /risks/:id/controls to avoid route conflict.
 	g.PATCH("/risks/:id/treatment", h.UpdateRiskTreatment, rw)
 

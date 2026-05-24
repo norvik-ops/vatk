@@ -116,10 +116,11 @@ func (r *Repository) SetOrgRequireMFA(ctx context.Context, orgID string, require
 	return nil
 }
 
-// OrgAISettings holds the per-org AI model configuration (S32-3).
+// OrgAISettings holds the per-org AI model configuration (S32-3, S52-4).
 type OrgAISettings struct {
-	ModelOverride   string `json:"model_override"`    // empty = use system default
-	BaseURLOverride string `json:"base_url_override"` // empty = use system default (Pro only)
+	ModelOverride       string `json:"model_override"`        // empty = use system default
+	BaseURLOverride     string `json:"base_url_override"`     // empty = use system default (Pro only)
+	WeeklyDigestEnabled bool   `json:"weekly_digest_enabled"` // S52-4: Monday AI digest
 }
 
 // GetOrgAISettings returns the per-org AI model configuration.
@@ -127,9 +128,9 @@ func (r *Repository) GetOrgAISettings(ctx context.Context, orgID string) (*OrgAI
 	var s OrgAISettings
 	var model, baseURL *string
 	err := r.db.QueryRow(ctx,
-		`SELECT ai_model_override, ai_base_url_override FROM organizations WHERE id = $1::uuid`,
+		`SELECT ai_model_override, ai_base_url_override, ai_weekly_digest_enabled FROM organizations WHERE id = $1::uuid`,
 		orgID,
-	).Scan(&model, &baseURL)
+	).Scan(&model, &baseURL, &s.WeeklyDigestEnabled)
 	if err != nil {
 		return nil, fmt.Errorf("get org ai settings %s: %w", orgID, err)
 	}
@@ -143,14 +144,15 @@ func (r *Repository) GetOrgAISettings(ctx context.Context, orgID string) (*OrgAI
 }
 
 // SetOrgAISettings updates the per-org AI model configuration.
-func (r *Repository) SetOrgAISettings(ctx context.Context, orgID, modelOverride, baseURLOverride string) error {
+func (r *Repository) SetOrgAISettings(ctx context.Context, orgID, modelOverride, baseURLOverride string, weeklyDigest bool) error {
 	tag, err := r.db.Exec(ctx, `
 		UPDATE organizations
-		SET ai_model_override    = NULLIF($2, ''),
-		    ai_base_url_override = NULLIF($3, ''),
-		    updated_at           = NOW()
+		SET ai_model_override         = NULLIF($2, ''),
+		    ai_base_url_override      = NULLIF($3, ''),
+		    ai_weekly_digest_enabled  = $4,
+		    updated_at                = NOW()
 		WHERE id = $1::uuid`,
-		orgID, modelOverride, baseURLOverride,
+		orgID, modelOverride, baseURLOverride, weeklyDigest,
 	)
 	if err != nil {
 		return fmt.Errorf("set org ai settings %s: %w", orgID, err)

@@ -8,6 +8,15 @@ import (
 
 // Job type constants for ComplyKit Asynq tasks.
 const (
+	// TaskEvidenceFreshnessCheck is the task type for the daily evidence-freshness AI insight job.
+	TaskEvidenceFreshnessCheck = "secvitals:evidence_freshness_check"
+
+	// TaskAIWeeklyDigest is the task type for the Monday AI compliance digest.
+	TaskAIWeeklyDigest = "secvitals:ai_weekly_digest"
+
+	// TaskAIEvidenceSuggestion is the task type for per-finding AI evidence suggestions.
+	TaskAIEvidenceSuggestion = "secvitals:ai_evidence_suggestion"
+
 	// TaskEvidenceExpiryAlert is the task type for daily evidence expiry alerts.
 	TaskEvidenceExpiryAlert = "secvitals:evidence_expiry_alert"
 
@@ -74,4 +83,16 @@ func NewDORADeadlineStatusTask() *asynq.Task {
 // Unique window of 23 hours prevents duplicate tasks within a daily cron window.
 func NewNIS2ObligationCheckTask() *asynq.Task {
 	return asynq.NewTask(TaskNIS2ObligationCheck, nil, asynq.Unique(23*time.Hour))
+}
+
+// NewEvidenceFreshnessCheckTask creates the daily evidence-freshness AI insight task.
+// Unique window of 23 hours prevents duplicate tasks within a daily cron window.
+func NewEvidenceFreshnessCheckTask() *asynq.Task {
+	return asynq.NewTask(TaskEvidenceFreshnessCheck, nil, asynq.Unique(23*time.Hour))
+}
+
+// NewAIWeeklyDigestTask creates the Monday AI compliance digest task.
+// Unique window of 7 days prevents duplicate tasks within a weekly cron window.
+func NewAIWeeklyDigestTask() *asynq.Task {
+	return asynq.NewTask(TaskAIWeeklyDigest, nil, asynq.Unique(7*24*time.Hour))
 }

@@ -192,6 +192,7 @@ type Querier interface {
 	DeleteCKQuestion(ctx context.Context, arg DeleteCKQuestionParams) (int64, error)
 	DeleteCKQuestionnaire(ctx context.Context, arg DeleteCKQuestionnaireParams) (int64, error)
 	DeleteCKResilienceTest(ctx context.Context, arg DeleteCKResilienceTestParams) (int64, error)
+	DeleteCKRisk(ctx context.Context, arg DeleteCKRiskParams) (int64, error)
 	DeleteCKSupplier(ctx context.Context, arg DeleteCKSupplierParams) (int64, error)
 	DeleteCKTask(ctx context.Context, arg DeleteCKTaskParams) (int64, error)
 	DeleteHRChecklist(ctx context.Context, arg DeleteHRChecklistParams) error

@@ -233,6 +233,20 @@ func buildScheduler(cfg *config.Config) *asynq.Scheduler {
 		log.Error().Err(err).Msg("failed to register siem forward cron")
 	}
 
+	// S52-1: daily at 08:30 UTC — evidence freshness AI insight generation.
+	if _, err := scheduler.Register("30 8 * * *",
+		secvitals.NewEvidenceFreshnessCheckTask(),
+	); err != nil {
+		log.Error().Err(err).Msg("failed to register evidence freshness check cron")
+	}
+
+	// S52-4: every Monday at 08:00 UTC — AI compliance weekly digest (opt-in orgs only).
+	if _, err := scheduler.Register("0 8 * * 1",
+		secvitals.NewAIWeeklyDigestTask(),
+	); err != nil {
+		log.Error().Err(err).Msg("failed to register AI weekly digest cron")
+	}
+
 	return scheduler
 }
 

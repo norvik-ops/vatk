@@ -1,23 +1,45 @@
 # ADR-0031: Phase-1-Release-Strategie (v0.22.0 → v1.0)
 
-**Status:** Akzeptiert (Amendment 2026-05-23: Pre-v1.0-Scope auf 4 Sprints erweitert)
+**Status:** Akzeptiert (Amendment 2026-05-24c: S54 + S55 abgeschlossen — Gate ist jetzt separate v1.0-Readiness-Analyse)
 **Datum:** 2026-05-23
 **Entscheider:** Stefan Moseler
+
+## Amendment 2026-05-24c: S54 + S55 abgeschlossen — separate Readiness-Analyse vor v1.0
+
+S54 (commit `575bb3d`, 2026-05-24) und S55 (commit `3756a90`, 2026-05-24) wurden vollständig implementiert. Entscheidung: v1.0.0 wird **nicht automatisch nach S55** getaggt, sondern nach einer eigenständig durchgeführten v1.0-Readiness-Analyse. Diese prüft alle 9 Quality-Gates aus dieser ADR gegen den aktuellen Stand. Danach entweder `git tag v1.0.0` oder ein weiterer Sprint, falls Gates nicht erfüllt sind.
+
+**Abgeschlossene Pre-v1.0-Sprints:**
+
+| Sprint | Fokus | Status |
+|--------|-------|--------|
+| S45 | Infra-Hygiene: sechealth→vakt, SBOM, cosign, lint-Gates | ✅ `v0.23.0` |
+| S46 | Observability: `/metrics`, Startup-Diagnostics, Graceful-Shutdown-Test, Runbook | ✅ |
+| S47 | UX-Qualität: Empty States, Onboarding-Wizard, Error-Messages, Mobile | ✅ |
+| S48 | Trust+Docs: README, Getting-Started, Operator-Runbook, ADR-Index, SECURITY.md | ✅ |
+| S53 | Performance+HA: Bundle-Split, pgBouncer, Redis-Sentinel-Guide | ✅ |
+| S54 | Modul-Tiefe: UI-Naming, Trivy-Bundle, HR→Comply-Sichtbarkeit, Evidence-Badges | ✅ |
+| S55 | Aware-Tiefe: 8 Phishing-Templates, 5 Trainings, Scan+Aware→Comply, Demo-Seeding | ✅ |
+| — | **→ Separate v1.0-Readiness-Analyse → `git tag v1.0.0` oder weiterer Sprint** | ⏳ |
+
+## Amendment 2026-05-24b: S54 + S55 sind pre-v1.0
+
+Modul-Tiefe-Analyse (2026-05-24) hat drei weitere v1.0-Blocker identifiziert: (1) Interne Code-Namen ("SecPulse", "SecReflex") tauchen sichtbar im UI auf. (2) Vakt Scan bricht bei erstem Scan-Versuch ohne Erklärung (kein Trivy gebündelt). (3) HR→Comply-Evidence-Flow existiert im Backend, ist für den Nutzer vollständig unsichtbar. Zusätzlich startet Vakt Aware mit leerer Template-Bibliothek.
+
+**Geänderte Entscheidung:** S54 (Modul-Tiefe + Naming-Cleanup) und S55 (Aware-Tiefe + Erster Eindruck) werden als Pre-v1.0-Sprints hinzugefügt. Gate: separate v1.0-Readiness-Analyse nach S55 (siehe Amendment 2026-05-24c).
+
+## Amendment 2026-05-24: S53 Performance + HA-Basics ist pre-v1.0
+
+S48 hat eine Performance-Baseline dokumentiert — S53 liefert die Verbesserungen. Bundle-Split und pgBouncer betreffen den ersten Eindruck (Ladezeit) und die Produktionsstabilität (Connection-Overload bei >10 Nutzern). Beides ist v1.0-relevant: KMU-IT-Admins haben keine zweite Chance gegeben wenn die App beim ersten Start hängt.
+
+**Geänderte Entscheidung:** S53 wird aus dem Post-v1.0-Block in die Pre-v1.0-Welle verschoben. S52 (AI-Native v2) bleibt post-v1.0. (Nachfolgend durch Amendment 2026-05-24b auf 7 Sprints erweitert.)
 
 ## Amendment 2026-05-23: v1.0 muss genuinely good sein
 
 Die ursprüngliche Entscheidung sah einen einzigen Pre-v1.0-Sprint (v0.23.0) vor. Nach Diskussion wurde das als zu dünn erkannt: First impressions in Open Source sind permanent. Ein v1.0 mit fehlenden Metriken, inkonsistenten UX-Zuständen oder veralteter Dokumentation ist kein "wir bessern nach" — es ist eine Absage an Nutzer die keine zweite Chance geben.
 
-**Geänderte Entscheidung:** Pre-v1.0-Scope wird auf 4 Sprints (S45–S48) ausgeweitet:
+**Geänderte Entscheidung:** Pre-v1.0-Scope wird auf 4 Sprints (S45–S48) ausgeweitet.
 
-| Sprint | Fokus | Milestone |
-|--------|-------|-----------|
-| S45 | Infra-Hygiene: sechealth→vakt, SBOM, cosign, lint-Gates | v0.23.0 |
-| S46 | Observability: `/metrics`, Startup-Diagnostics, Graceful-Shutdown-Test, Runbook | — |
-| S47 | UX-Qualität: Empty States, Onboarding-Wizard, Error-Messages, Mobile | — |
-| S48 | Trust+Docs: README, Getting-Started, Operator-Runbook, ADR-Index, SECURITY.md | **→ v1.0.0** |
-
-Die 9 Quality-Gates aus der ursprünglichen Entscheidung bleiben gültig und werden durch Sprint-48-Akzeptanzkriterien erweitert. Details in `.forgehive/PRODUKTREIFE-BACKLOG.md` Sprints 45–48.
+Die 9 Quality-Gates aus der ursprünglichen Entscheidung bleiben gültig und werden durch Sprint-48/53-Akzeptanzkriterien erweitert. Details in `.forgehive/PRODUKTREIFE-BACKLOG.md` Sprints 45–48, 53.
 
 ## Kontext
 

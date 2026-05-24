@@ -213,7 +213,7 @@ export default function Login() {
                   <button
                     key={u.email}
                     type="button"
-                    onClick={() => { setEmail(u.email); setPassword(u.password) }}
+                    onClick={() => { setEmail(u.email ?? ''); setPassword(u.password ?? '') }}
                     className="w-full text-left rounded-md border border-border bg-surface px-3 py-2 hover:bg-muted transition-colors"
                   >
                     <span className="text-xs font-medium block">{u.label}</span>
@@ -221,16 +221,25 @@ export default function Login() {
                   </button>
                 ))}
                 {!demoStarting && demoError && (
-                  <p className="text-xs text-red-500">{t('auth.demoUnavailable')}</p>
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-red-500">{t('auth.demoUnavailable')}</p>
+                    <a
+                      href="https://github.com/norvik-ops/vatk/blob/main/docs/guides/getting-started.md"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-brand underline hover:text-brand/80"
+                    >
+                      {t('auth.demoUnavailableInstall')}
+                    </a>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-center">
+            <div className="rounded-lg border border-amber-500/50 bg-amber-500/20 px-3 py-2.5 text-center">
               <p className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Demo-Umgebung</p>
               <p className="text-[11px] text-amber-300/80 mt-1">
-                {t('auth.demoDisclaimer')}{' '}
-                <a href="https://sec.norvikops.de" className="underline hover:text-amber-200">sec.norvikops.de</a>
+                {t('auth.demoDisclaimer')}
               </p>
             </div>
           </>

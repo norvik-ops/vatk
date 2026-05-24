@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Download, FileText, ChevronRight, RefreshCw, Info,
   Circle, Clock, CheckCircle2, MinusCircle, Trash2, ListChecks, History,
-  Pencil, X, ShieldAlert, CalendarDays,
+  Pencil, X, ShieldAlert, CalendarDays, Sparkles, Square, Loader2,
 } from 'lucide-react'
 import { Spinner } from '../../../components/Spinner'
 import { useQuery } from '@tanstack/react-query'
@@ -38,6 +38,7 @@ import { maturityLabel, maturityColor } from '../utils/tisax'
 import { ControlMappingsBadge } from '../components/ControlMappingsBadge'
 import { useTranslation } from 'react-i18next'
 import { TermTooltip } from '../../../shared/components/TermTooltip'
+import { useAIStream } from '../../../shared/hooks/useAIStream'
 import { toast } from '../../../shared/hooks/useToast'
 import { handleApiError } from '../../../shared/utils/errorMessages'
 import { useAuthStore } from '../../../shared/stores/auth'
@@ -273,6 +274,65 @@ function NotApplicableDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// ── S52-2: Gap-Explain Panel ─────────────────────────────────────────────────
+
+function GapExplainPanel({ controlId, controlTitle }: { controlId: string; controlTitle: string }) {
+  const { text, isStreaming, error, start, stop } = useAIStream()
+
+  const handleExplain = () => {
+    void start({
+      endpoint: `/secvitals/ai/controls/${controlId}/explain`,
+      prompt: controlTitle,
+    })
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-brand" />
+          KI-Erklärung
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {!text && !isStreaming && !error && (
+          <button
+            onClick={handleExplain}
+            className="text-sm text-brand border border-brand/40 rounded-lg py-1.5 px-3 hover:bg-brand/10 transition-colors"
+          >
+            AI erklären — warum ist dieser Control offen?
+          </button>
+        )}
+        {(isStreaming || text) && !error && (
+          <div className="space-y-2">
+            <p className="text-xs text-primary leading-relaxed whitespace-pre-wrap">
+              {text}
+              {isStreaming && <span className="inline-block w-1.5 h-3 ml-0.5 bg-brand/70 animate-pulse align-middle" aria-hidden="true" />}
+            </p>
+            {isStreaming ? (
+              <button onClick={stop} className="inline-flex items-center gap-1 text-xs text-secondary border border-border rounded px-2 py-1 hover:bg-surface/80">
+                <Square className="w-3 h-3" /> Stopp
+              </button>
+            ) : (
+              <button onClick={handleExplain} className="text-xs text-secondary hover:text-brand transition-colors">
+                Neu laden
+              </button>
+            )}
+          </div>
+        )}
+        {isStreaming && !text && (
+          <div className="flex items-center gap-2 text-xs text-secondary">
+            <Loader2 className="w-3 h-3 animate-spin" /> Analyse läuft…
+          </div>
+        )}
+        {error && !isStreaming && (
+          <p className="text-xs text-red-400">{error.message}</p>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -588,7 +648,7 @@ export default function ControlDetailPage() {
   return (
     <div className="flex flex-col h-full">
       <Breadcrumbs items={[
-        { label: 'SecVitals', href: '/secvitals' },
+        { label: 'Vakt Comply', href: '/secvitals' },
         { label: framework?.name ?? 'Framework', href: frameworkId ? `/secvitals/frameworks/${frameworkId}` : '/secvitals/frameworks' },
         { label: control?.title ?? 'Control' },
       ]} />
@@ -1065,6 +1125,11 @@ export default function ControlDetailPage() {
             <EvidenceFileUpload controlId={controlId} />
           </CardContent>
         </Card>
+
+        {/* S52-2: Gap-Explain — AI explains why this control is open */}
+        {(control?.status === 'missing' || control?.status === 'partial') && (
+          <GapExplainPanel controlId={controlId} controlTitle={control?.title ?? ''} />
+        )}
 
         {/* Collaborative Tasks */}
         <TasksPanel entityType="control" entityId={controlId} />

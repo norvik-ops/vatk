@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-pdf/fpdf"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 type reportData struct {
@@ -22,6 +23,7 @@ type reportData struct {
 	Info        int
 	Open        int
 	Findings    []reportFinding
+	DataError   bool // true wenn mindestens eine DB-Abfrage fehlgeschlagen ist
 }
 
 type reportFinding struct {
@@ -34,9 +36,11 @@ type reportFinding struct {
 func gatherReportData(ctx context.Context, db *pgxpool.Pool, orgID, title string) (*reportData, error) {
 	d := &reportData{Title: title, GeneratedAt: time.Now()}
 
-	_ = db.QueryRow(ctx, `SELECT name FROM organizations WHERE id=$1::uuid`, orgID).Scan(&d.OrgName)
+	if err := db.QueryRow(ctx, `SELECT name FROM organizations WHERE id=$1::uuid`, orgID).Scan(&d.OrgName); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("secpulse reportpdf: org name lookup failed")
+	}
 
-	_ = db.QueryRow(ctx, `
+	if err := db.QueryRow(ctx, `
 		SELECT
 			COUNT(*) FILTER (WHERE severity='critical'),
 			COUNT(*) FILTER (WHERE severity='high'),
@@ -46,7 +50,10 @@ func gatherReportData(ctx context.Context, db *pgxpool.Pool, orgID, title string
 			COUNT(*) FILTER (WHERE status NOT IN ('resolved','false_positive')),
 			COUNT(*)
 		FROM vb_findings WHERE org_id=$1::uuid`, orgID,
-	).Scan(&d.Critical, &d.High, &d.Medium, &d.Low, &d.Info, &d.Open, &d.Total)
+	).Scan(&d.Critical, &d.High, &d.Medium, &d.Low, &d.Info, &d.Open, &d.Total); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("secpulse reportpdf: stats query failed — PDF will show zero counts")
+		d.DataError = true
+	}
 
 	rows, err := db.Query(ctx, `
 		SELECT f.title, f.severity, f.status, COALESCE(a.name,'–')
@@ -58,7 +65,10 @@ func gatherReportData(ctx context.Context, db *pgxpool.Pool, orgID, title string
 			                WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END,
 			f.created_at DESC
 		LIMIT 200`, orgID)
-	if err == nil {
+	if err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("secpulse reportpdf: findings query failed")
+		d.DataError = true
+	} else {
 		defer rows.Close()
 		for rows.Next() {
 			var f reportFinding
@@ -91,6 +101,17 @@ func GenerateReportPDF(ctx context.Context, db *pgxpool.Pool, orgID, title strin
 
 	// ── Title page ────────────────────────────────────────────────────────────
 	pdf.AddPage()
+
+	// Fehlerindikator: wenn DB-Abfragen fehlgeschlagen sind, wird ein
+	// deutlich sichtbarer Warnhinweis am Seitenanfang eingeblendet.
+	if d.DataError {
+		pdf.SetFillColor(220, 38, 38)
+		pdf.Rect(0, 0, 210, 12, "F")
+		pdf.SetTextColor(255, 255, 255)
+		pdf.SetFont("Helvetica", "B", 8)
+		pdf.SetXY(15, 3)
+		pdf.CellFormat(180, 6, "HINWEIS: Datenbankfehler — Bericht unvollständig. Bitte erneut generieren oder Administrator kontaktieren.", "", 1, "C", false, 0, "")
+	}
 
 	// Header bar
 	pdf.SetFillColor(37, 99, 235)

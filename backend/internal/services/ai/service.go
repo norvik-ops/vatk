@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 type ReportType string
@@ -36,10 +37,12 @@ type ComplianceContext struct {
 func GatherContext(ctx context.Context, db *pgxpool.Pool, orgID string) (*ComplianceContext, error) {
 	cc := &ComplianceContext{GeneratedAt: time.Now()}
 
-	_ = db.QueryRow(ctx, `SELECT name FROM organizations WHERE id = $1::uuid`, orgID).Scan(&cc.OrgName)
+	if err := db.QueryRow(ctx, `SELECT name FROM organizations WHERE id = $1::uuid`, orgID).Scan(&cc.OrgName); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai: could not resolve org name")
+	}
 
 	// Control statistics
-	_ = db.QueryRow(ctx, `
+	if err := db.QueryRow(ctx, `
         SELECT
             COUNT(*) FILTER (WHERE status = 'implemented'),
             COUNT(*) FILTER (WHERE status = 'in_progress'),
@@ -47,30 +50,38 @@ func GatherContext(ctx context.Context, db *pgxpool.Pool, orgID string) (*Compli
             COUNT(*)
         FROM ck_controls
         WHERE org_id = $1::uuid AND status != 'not_applicable'`, orgID,
-	).Scan(&cc.Implemented, &cc.InProgress, &cc.Missing, &cc.TotalControls)
+	).Scan(&cc.Implemented, &cc.InProgress, &cc.Missing, &cc.TotalControls); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai: could not gather control statistics")
+	}
 
 	if cc.TotalControls > 0 {
 		cc.OverallScore = (cc.Implemented * 100) / cc.TotalControls
 	}
 
 	// Open findings
-	_ = db.QueryRow(ctx, `
+	if err := db.QueryRow(ctx, `
         SELECT COUNT(*) FROM vb_findings
         WHERE org_id = $1::uuid AND status NOT IN ('resolved', 'false_positive')`, orgID,
-	).Scan(&cc.OpenFindings)
+	).Scan(&cc.OpenFindings); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai: could not count open findings")
+	}
 
 	// Critical risks
-	_ = db.QueryRow(ctx, `
+	if err := db.QueryRow(ctx, `
         SELECT COUNT(*) FROM ck_risks
         WHERE org_id = $1::uuid AND status NOT IN ('accepted','closed','mitigated')
           AND likelihood * impact >= 15`, orgID,
-	).Scan(&cc.CriticalRisks)
+	).Scan(&cc.CriticalRisks); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai: could not count critical risks")
+	}
 
 	// Open incidents
-	_ = db.QueryRow(ctx, `
+	if err := db.QueryRow(ctx, `
         SELECT COUNT(*) FROM ck_incidents
         WHERE org_id = $1::uuid AND status NOT IN ('resolved','closed')`, orgID,
-	).Scan(&cc.OpenIncidents)
+	).Scan(&cc.OpenIncidents); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai: could not count open incidents")
+	}
 
 	// Active frameworks
 	rows, err := db.Query(ctx, `SELECT name FROM ck_frameworks WHERE org_id = $1::uuid AND is_active = true ORDER BY name`, orgID)
@@ -234,7 +245,9 @@ func GatherAdviceContext(ctx context.Context, db *pgxpool.Pool, orgID string) (*
 	ac := &AdviceContext{}
 
 	// Org name
-	_ = db.QueryRow(ctx, `SELECT name FROM organizations WHERE id = $1::uuid`, orgID).Scan(&ac.OrgName)
+	if err := db.QueryRow(ctx, `SELECT name FROM organizations WHERE id = $1::uuid`, orgID).Scan(&ac.OrgName); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai advice: could not resolve org name")
+	}
 	if ac.OrgName == "" {
 		ac.OrgName = "Ihre Organisation"
 	}
@@ -260,21 +273,27 @@ func GatherAdviceContext(ctx context.Context, db *pgxpool.Pool, orgID string) (*
 	}
 
 	// Open CAPAs
-	_ = db.QueryRow(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT COUNT(*)::int FROM ck_capas WHERE org_id=$1::uuid AND status != 'closed'`,
-		orgID).Scan(&ac.OpenCAPAs)
+		orgID).Scan(&ac.OpenCAPAs); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai advice: could not count open CAPAs")
+	}
 
 	// Overdue controls
-	_ = db.QueryRow(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT COUNT(*)::int FROM ck_controls
 		 WHERE org_id=$1::uuid AND next_review_due IS NOT NULL AND next_review_due < NOW()`,
-		orgID).Scan(&ac.OverdueControls)
+		orgID).Scan(&ac.OverdueControls); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai advice: could not count overdue controls")
+	}
 
 	// Overdue tasks
-	_ = db.QueryRow(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT COUNT(*)::int FROM ck_tasks
 		 WHERE org_id=$1::uuid AND due_date IS NOT NULL AND due_date < NOW() AND status != 'done'`,
-		orgID).Scan(&ac.OverdueTasks)
+		orgID).Scan(&ac.OverdueTasks); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai advice: could not count overdue tasks")
+	}
 
 	// Critical risk titles (score >= 15, top 5)
 	riskRows, err := db.Query(ctx,
@@ -293,16 +312,20 @@ func GatherAdviceContext(ctx context.Context, db *pgxpool.Pool, orgID string) (*
 	}
 
 	// Open incidents
-	_ = db.QueryRow(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT COUNT(*)::int FROM ck_incidents
 		 WHERE org_id=$1::uuid AND status NOT IN ('resolved','closed')`,
-		orgID).Scan(&ac.OpenIncidents)
+		orgID).Scan(&ac.OpenIncidents); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai advice: could not count open incidents")
+	}
 
 	// Policies in draft or with no version (need review)
-	_ = db.QueryRow(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT COUNT(*)::int FROM ck_policies
 		 WHERE org_id=$1::uuid AND (status = 'draft' OR version IS NULL OR version = '')`,
-		orgID).Scan(&ac.DraftPolicies)
+		orgID).Scan(&ac.DraftPolicies); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("ai advice: could not count draft policies")
+	}
 
 	return ac, nil
 }
@@ -311,7 +334,7 @@ func buildAdvicePrompt(ac *AdviceContext) string {
 	var sb strings.Builder
 
 	sb.WriteString("Compliance-Status für ")
-	sb.WriteString(ac.OrgName)
+	sb.WriteString(wrapUserContent(ac.OrgName))
 	sb.WriteString(":\n\n")
 
 	if len(ac.FrameworkScores) > 0 {
@@ -322,7 +345,7 @@ func buildAdvicePrompt(ac *AdviceContext) string {
 				pct = (fs.Implemented * 100) / fs.Total
 			}
 			fmt.Fprintf(&sb, "- %s: %d/%d Controls implementiert (%d%%)\n",
-				fs.Name, fs.Implemented, fs.Total, pct)
+				sanitizeUserInput(fs.Name), fs.Implemented, fs.Total, pct)
 		}
 		sb.WriteString("\n")
 	}
@@ -330,7 +353,11 @@ func buildAdvicePrompt(ac *AdviceContext) string {
 	sb.WriteString("Offene Probleme:\n")
 	if len(ac.CriticalRisks) > 0 {
 		fmt.Fprintf(&sb, "- %d kritische Risiken: ", len(ac.CriticalRisks))
-		sb.WriteString(strings.Join(ac.CriticalRisks, ", "))
+		sanitized := make([]string, len(ac.CriticalRisks))
+		for i, r := range ac.CriticalRisks {
+			sanitized[i] = wrapUserContent(r)
+		}
+		sb.WriteString(strings.Join(sanitized, ", "))
 		sb.WriteString("\n")
 	}
 	if ac.OverdueControls > 0 {
@@ -366,7 +393,7 @@ func (s *Service) ComplianceAdvice(ctx context.Context, orgID string) (string, e
 		return "", fmt.Errorf("gather advice context: %w", err)
 	}
 
-	system := "Du bist ein ISO-27001/NIS2-Compliance-Berater. Antworte auf Deutsch, präzise und handlungsorientiert."
+	system := addInjectionGuard("Du bist ein ISO-27001/NIS2-Compliance-Berater. Antworte auf Deutsch, präzise und handlungsorientiert.")
 	userPrompt := buildAdvicePrompt(ac)
 
 	// Sprint 15: gateAndGenerate hängt Rate-Limit + Quota + Cache vor den Call.
@@ -391,19 +418,26 @@ func (s *Service) GenerateReport(ctx context.Context, orgID string, reportType R
 		return "", fmt.Errorf("unknown report type: %s", reportType)
 	}
 
-	// Sprint 15: gateAndGenerate. system="" → reines Generate ohne System-Message,
-	// damit das bestehende Report-Verhalten erhalten bleibt.
-	return s.gateAndGenerate(ctx, orgID, "report-"+string(reportType), "", prompt)
+	system := addInjectionGuard("Du bist ein erfahrener IT-Sicherheitsberater für DACH-Unternehmen. Antworte ausschließlich auf Deutsch.")
+	return s.gateAndGenerate(ctx, orgID, "report-"+string(reportType), system, prompt)
 }
 
 func buildGapAnalysisPrompt(cc *ComplianceContext) string {
-	gaps := strings.Join(cc.TopGaps, "\n- ")
+	sanitizedGaps := make([]string, len(cc.TopGaps))
+	for i, g := range cc.TopGaps {
+		sanitizedGaps[i] = wrapUserContent(g)
+	}
+	gaps := strings.Join(sanitizedGaps, "\n- ")
 	if gaps == "" {
 		gaps = "(keine offenen Lücken)"
 	}
-	frameworks := strings.Join(cc.ActiveFrameworks, ", ")
+	sanitizedFrameworks := make([]string, len(cc.ActiveFrameworks))
+	for i, f := range cc.ActiveFrameworks {
+		sanitizedFrameworks[i] = sanitizeUserInput(f)
+	}
+	frameworks := strings.Join(sanitizedFrameworks, ", ")
 
-	return fmt.Sprintf(`Du bist ein erfahrener IT-Sicherheitsberater. Erstelle eine professionelle Gap-Analyse auf Deutsch für folgendes Unternehmen:
+	return fmt.Sprintf(`Erstelle eine professionelle Gap-Analyse auf Deutsch für folgendes Unternehmen:
 
 Organisation: %s
 Aktive Frameworks: %s
@@ -427,7 +461,7 @@ Schreibe eine strukturierte Gap-Analyse mit:
 5. Risikoeinschätzung
 
 Antworte ausschließlich auf Deutsch. Verwende professionelle aber verständliche Sprache für IT-Führungskräfte.`,
-		cc.OrgName, frameworks, cc.OverallScore,
+		wrapUserContent(cc.OrgName), frameworks, cc.OverallScore,
 		cc.Implemented, cc.TotalControls, cc.InProgress, cc.Missing,
 		cc.OpenFindings, cc.CriticalRisks, cc.OpenIncidents,
 		cc.GeneratedAt.Format("02.01.2006"),
@@ -436,11 +470,15 @@ Antworte ausschließlich auf Deutsch. Verwende professionelle aber verständlich
 }
 
 func buildRiskSummaryPrompt(cc *ComplianceContext) string {
-	risks := strings.Join(cc.TopRisks, "\n- ")
+	sanitizedRisks := make([]string, len(cc.TopRisks))
+	for i, r := range cc.TopRisks {
+		sanitizedRisks[i] = wrapUserContent(r)
+	}
+	risks := strings.Join(sanitizedRisks, "\n- ")
 	if risks == "" {
 		risks = "(keine kritischen Risiken)"
 	}
-	return fmt.Sprintf(`Du bist ein erfahrener IT-Sicherheitsberater. Erstelle eine Risikoanalyse auf Deutsch:
+	return fmt.Sprintf(`Erstelle eine Risikoanalyse auf Deutsch:
 
 Organisation: %s
 Kritische und hohe Risiken: %d
@@ -458,13 +496,17 @@ Erstelle eine strukturierte Risikoübersicht mit:
 4. Mittelfristige Risikominderung
 
 Antworte ausschließlich auf Deutsch.`,
-		cc.OrgName, cc.CriticalRisks, cc.OpenIncidents, cc.OverallScore, cc.OpenFindings, risks,
+		wrapUserContent(cc.OrgName), cc.CriticalRisks, cc.OpenIncidents, cc.OverallScore, cc.OpenFindings, risks,
 	)
 }
 
 func buildExecutiveSummaryPrompt(cc *ComplianceContext) string {
-	frameworks := strings.Join(cc.ActiveFrameworks, ", ")
-	return fmt.Sprintf(`Du bist ein erfahrener IT-Sicherheitsberater. Erstelle eine Executive Summary auf Deutsch für das Top-Management:
+	sanitizedFrameworks := make([]string, len(cc.ActiveFrameworks))
+	for i, f := range cc.ActiveFrameworks {
+		sanitizedFrameworks[i] = sanitizeUserInput(f)
+	}
+	frameworks := strings.Join(sanitizedFrameworks, ", ")
+	return fmt.Sprintf(`Erstelle eine Executive Summary auf Deutsch für das Top-Management:
 
 Organisation: %s
 Datum: %s
@@ -483,7 +525,7 @@ Schreibe eine prägnante Executive Summary (max. 300 Wörter) mit:
 5. Empfehlung für das Management
 
 Sprache: Deutsch, nicht-technisch, für Geschäftsführung geeignet.`,
-		cc.OrgName, cc.GeneratedAt.Format("02.01.2006"),
+		wrapUserContent(cc.OrgName), cc.GeneratedAt.Format("02.01.2006"),
 		frameworks, cc.OverallScore, cc.Implemented, cc.TotalControls,
 		cc.OpenFindings, cc.CriticalRisks, cc.OpenIncidents,
 	)

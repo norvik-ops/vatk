@@ -72,4 +72,11 @@ func RegisterWithOptions(g *echo.Group, db *pgxpool.Pool, provider, baseURL, api
 	g.POST("/ai/agent/run", agentH.AgentRun)
 	g.POST("/ai/agent/runs/:run_id/approve", agentH.ApproveRun)
 	g.POST("/ai/agent/runs/:run_id/reject", agentH.RejectRun)
+	// Sprint 52 (S52-2): Gap-Explain SSE streaming per control.
+	g.POST("/ai/controls/:id/explain", h.GapExplain)
+	// Sprint 52 (S52-3): Risk narrative generation + persistence.
+	g.POST("/ai/risks/:id/narrative", h.RiskNarrative)
+	// Sprint 52 (S52-6): AI Insights list + dismiss.
+	g.GET("/ai/insights", h.ListInsights)
+	g.DELETE("/ai/insights/:id", h.DismissInsight)
 }

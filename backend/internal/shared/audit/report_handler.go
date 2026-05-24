@@ -1,4 +1,4 @@
-package auditreport
+package audit
 
 import (
 	"fmt"
@@ -12,18 +12,18 @@ import (
 )
 
 // Handler handles the audit report endpoint.
-type Handler struct {
+type ReportHandler struct {
 	db *pgxpool.Pool
 }
 
 // NewHandler creates a new Handler.
-func NewHandler(db *pgxpool.Pool) *Handler {
-	return &Handler{db: db}
+func NewReportHandler(db *pgxpool.Pool) *ReportHandler {
+	return &ReportHandler{db: db}
 }
 
 // GenerateAuditReport handles GET /api/v1/secvitals/audit-report.
 // It collects all compliance data for the organisation and renders a PDF.
-func (h *Handler) GenerateAuditReport(c echo.Context) error {
+func (h *ReportHandler) GenerateAuditReport(c echo.Context) error {
 	orgID, ok := c.Get("org_id").(string)
 	if !ok || orgID == "" {
 		return c.JSON(http.StatusUnauthorized, map[string]string{

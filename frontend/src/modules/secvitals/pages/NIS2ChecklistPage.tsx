@@ -19,7 +19,7 @@ const NIS2_REQUIREMENTS: NIS2Requirement[] = [
     article: 'Art. 21 Abs. 2 lit. a',
     title: 'Risikoanalyse und Sicherheitskonzepte',
     description: 'Konzepte fur die Risikoanalyse und Sicherheit von Informationssystemen',
-    module: 'SecVitals',
+    module: 'Vakt Comply',
     path: '/secvitals/risks',
     checkHint: 'Risiko-Register befullt und regelmaßig uberpruft',
   },
@@ -28,7 +28,7 @@ const NIS2_REQUIREMENTS: NIS2Requirement[] = [
     article: 'Art. 21 Abs. 2 lit. b',
     title: 'Bewaltigung von Sicherheitsvorfallen',
     description: 'Erkennung, Analyse, Eindammung und Reaktion auf Sicherheitsvorfalle',
-    module: 'SecVitals',
+    module: 'Vakt Comply',
     path: '/secvitals/incidents',
     checkHint: 'Vorfall-Register gefuhrt, Meldeprozesse dokumentiert',
   },
@@ -47,7 +47,7 @@ const NIS2_REQUIREMENTS: NIS2Requirement[] = [
     title: 'Sicherheit der Lieferkette',
     description:
       'Sicherheit in der Lieferkette einschl. sicherheitsbezogener Aspekte der Beziehungen zwischen Einrichtungen und unmittelbaren Anbietern',
-    module: 'SecPrivacy (AVV)',
+    module: 'Vakt Privacy (AVV)',
     path: '/secprivacy/avv',
     checkHint: 'Auftragsverarbeitungsvertrage aktuell und vollstandig',
   },
@@ -57,7 +57,7 @@ const NIS2_REQUIREMENTS: NIS2Requirement[] = [
     title: 'Sicherheit beim Erwerb, Entwicklung und Wartung',
     description:
       'Sicherheit beim Erwerb, bei der Entwicklung und Wartung von Netz- und Informationssystemen',
-    module: 'SecPulse',
+    module: 'Vakt Scan',
     path: '/secpulse/findings',
     checkHint: 'Vulnerability-Scanning aktiv, kritische Findings geschlossen',
   },
@@ -67,7 +67,7 @@ const NIS2_REQUIREMENTS: NIS2Requirement[] = [
     title: 'Wirksamkeit von Risikomanagementmaßnahmen',
     description:
       'Konzepte und Verfahren zur Bewertung der Wirksamkeit der Risikomanagementmaßnahmen',
-    module: 'SecVitals',
+    module: 'Vakt Comply',
     path: '/secvitals',
     checkHint: 'Compliance-Score dokumentiert, Framework-Bewertung durchgefuhrt',
   },
@@ -77,7 +77,7 @@ const NIS2_REQUIREMENTS: NIS2Requirement[] = [
     title: 'Grundlegende Cyberhygiene und Schulungen',
     description:
       'Grundlegende Verfahren im Bereich der Cyberhygiene und Schulungen zur Cybersicherheit',
-    module: 'SecReflex',
+    module: 'Vakt Aware',
     path: '/secreflex',
     checkHint: 'Awareness-Trainings nachweisbar durchgefuhrt',
   },
@@ -87,7 +87,7 @@ const NIS2_REQUIREMENTS: NIS2Requirement[] = [
     title: 'Kryptografie und Verschlusselung',
     description:
       'Konzepte und Verfahren fur den Einsatz von Kryptografie und gegebenenfalls Verschlusselung',
-    module: 'SecVault',
+    module: 'Vakt Vault',
     path: '/secvault',
     checkHint: 'Secrets verschlusselt gespeichert, Verschlusselungsrichtlinie dokumentiert',
   },
@@ -97,7 +97,7 @@ const NIS2_REQUIREMENTS: NIS2Requirement[] = [
     title: 'Personalsicherheit und Zugriffskontrolle',
     description:
       'Sicherheit des Personals, Konzepte fur die Zugriffskontrolle und Asset-Management',
-    module: 'SecPulse (Assets)',
+    module: 'Vakt Scan (Assets)',
     path: '/secpulse/assets',
     checkHint: 'Asset-Inventar vollstandig, Benutzerrechte dokumentiert',
   },
@@ -115,11 +115,11 @@ const NIS2_REQUIREMENTS: NIS2Requirement[] = [
 
 /** Returns a Tailwind colour pair for the module badge. */
 function moduleBadgeClass(module: string): string {
-  if (module.startsWith('SecVitals')) return 'bg-blue-900/40 text-blue-300 border-blue-800'
-  if (module.startsWith('SecPulse')) return 'bg-orange-900/40 text-orange-300 border-orange-800'
-  if (module.startsWith('SecVault')) return 'bg-yellow-900/40 text-yellow-300 border-yellow-800'
-  if (module.startsWith('SecReflex')) return 'bg-purple-900/40 text-purple-300 border-purple-800'
-  if (module.startsWith('SecPrivacy')) return 'bg-teal-900/40 text-teal-300 border-teal-800'
+  if (module.startsWith('Vakt Comply')) return 'bg-blue-900/40 text-blue-300 border-blue-800'
+  if (module.startsWith('Vakt Scan')) return 'bg-orange-900/40 text-orange-300 border-orange-800'
+  if (module.startsWith('Vakt Vault')) return 'bg-yellow-900/40 text-yellow-300 border-yellow-800'
+  if (module.startsWith('Vakt Aware')) return 'bg-purple-900/40 text-purple-300 border-purple-800'
+  if (module.startsWith('Vakt Privacy')) return 'bg-teal-900/40 text-teal-300 border-teal-800'
   return 'bg-surface2 text-muted border-transparent'
 }
 

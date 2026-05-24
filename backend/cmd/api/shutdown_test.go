@@ -82,7 +82,7 @@ func TestShutdownDrainsInFlightRequests(t *testing.T) {
 	handlerStarted := make(chan struct{})
 
 	e.GET("/slow", func(c echo.Context) error {
-		close(handlerStarted)          // signal: handler is executing
+		close(handlerStarted)             // signal: handler is executing
 		time.Sleep(80 * time.Millisecond) // simulate in-flight work
 		handlerFinished.Done()
 		return c.String(http.StatusOK, "done")

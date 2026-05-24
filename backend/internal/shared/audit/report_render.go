@@ -1,4 +1,4 @@
-package auditreport
+package audit
 
 import (
 	"bytes"

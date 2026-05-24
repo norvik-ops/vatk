@@ -1,7 +1,7 @@
 // Copyright (c) 2026 NorvikOps. All rights reserved.
 // SPDX-License-Identifier: Elastic-2.0
 
-package auditreport
+package audit
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,8 +15,8 @@ import (
 // The group must already have auth middleware applied.
 // Accessible by Admin, SecurityAnalyst, Viewer, and AuditorReadOnly roles.
 // Requires the FeatureAuditPDF Pro license feature.
-func RegisterRoutes(g *echo.Group, db *pgxpool.Pool) {
-	h := NewHandler(db)
+func RegisterReport(g *echo.Group, db *pgxpool.Pool) {
+	h := NewReportHandler(db)
 	ro := auth.RequireRole("Admin", "SecurityAnalyst", "Viewer", "AuditorReadOnly")
 	g.GET("/audit-report", h.GenerateAuditReport, ro, features.Require(features.FeatureAuditPDF))
 }

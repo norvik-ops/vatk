@@ -60,6 +60,28 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (!id.includes('/node_modules/')) return
+          if (id.includes('/recharts/') || id.includes('/d3-') || id.includes('/victory-vendor')) {
+            return 'vendor-charts'
+          }
+          if (id.includes('/@tanstack/') || id.includes('/zustand/')) {
+            return 'vendor-state'
+          }
+          if (id.includes('/i18next') || id.includes('/react-i18next')) {
+            return 'vendor-i18n'
+          }
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router') || id.includes('/scheduler/')) {
+            return 'vendor-react'
+          }
+          return 'vendor-ui'
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

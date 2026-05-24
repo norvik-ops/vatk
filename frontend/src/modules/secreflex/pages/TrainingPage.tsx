@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GraduationCap, ChevronDown, ChevronUp, UserPlus, Download } from 'lucide-react'
+import { GraduationCap, ChevronDown, ChevronUp, UserPlus, Download, Shield } from 'lucide-react'
 import { Spinner } from '../../../components/Spinner'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Badge } from '../../../components/ui/badge'
@@ -8,6 +8,7 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog'
 import { Label } from '../../../components/ui/label'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { Link } from 'react-router-dom'
 import { useTrainingModules, useAssignments, useAssignModule } from '../hooks/useTraining'
 import type { TrainingModule } from '../types'
 import { assignmentStatusVariant } from '../../../lib/statusMapping'
@@ -170,6 +171,14 @@ export default function TrainingPage() {
       />
 
       <div className="flex-1 p-6 space-y-3">
+        <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-3 text-sm text-blue-800 dark:text-blue-200">
+          <Shield className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>
+            Absolvierte Trainings werden automatisch als Evidence in{' '}
+            <Link to="/secvitals/evidence/auto" className="underline font-medium">Vakt Comply</Link>{' '}
+            gespeichert.
+          </span>
+        </div>
         {isLoading ? (
           <div className="flex justify-center py-16">
             <Spinner size="md" />

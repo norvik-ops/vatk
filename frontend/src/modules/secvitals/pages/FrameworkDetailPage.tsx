@@ -843,7 +843,7 @@ export default function FrameworkDetailPage() {
   return (
     <div className="flex flex-col h-full">
       <Breadcrumbs items={[
-        { label: 'SecVitals', href: '/secvitals' },
+        { label: 'Vakt Comply', href: '/secvitals' },
         { label: framework?.name ?? 'Framework' },
       ]} />
       <PageHeader

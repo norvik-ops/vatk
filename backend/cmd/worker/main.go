@@ -191,6 +191,15 @@ func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 	// SIEM forward: every 5 minutes — forward pending audit entries to configured SIEM
 	mux.HandleFunc(siem.TaskSIEMForward, handleSIEMForward(pool))
 
+	// S52-1: daily evidence freshness AI insight generation
+	mux.HandleFunc(secvitals.TaskEvidenceFreshnessCheck, handleEvidenceFreshnessCheck(cfg, pool))
+
+	// S52-5: per-finding AI evidence suggestion (enqueued when finding resolved)
+	mux.HandleFunc(secvitals.TaskAIEvidenceSuggestion, handleAIEvidenceSuggestion(cfg, pool))
+
+	// S52-4: Monday AI compliance weekly digest
+	mux.HandleFunc(secvitals.TaskAIWeeklyDigest, handleAIWeeklyDigest(cfg, pool))
+
 	return srv, mux
 }
 

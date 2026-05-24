@@ -448,7 +448,7 @@ export default function IncidentsPage() {
               <Label htmlFor="inc-breach">{t('secvitals.incidentsPage.labelBreachId', 'Datenpannen-ID (optional)')}</Label>
               <Input
                 id="inc-breach"
-                placeholder="breach-uuid (aus SecPrivacy)"
+                placeholder="breach-uuid (aus Vakt Privacy)"
                 value={form.breach_id ?? ''}
                 onChange={(e) => { setForm((f) => ({ ...f, breach_id: e.target.value || undefined })); }}
                 data-testid="create-breach-id-input"

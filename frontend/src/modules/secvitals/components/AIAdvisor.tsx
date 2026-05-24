@@ -1,11 +1,53 @@
-import { useState } from 'react'
-import { Sparkles, Loader2, AlertTriangle, Square } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Sparkles, Loader2, AlertTriangle, Square, ExternalLink } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { FeatureLockedError } from '../../../api/client'
 import { ProGate } from '../../../shared/components/ProGate'
 import { useAIStream } from '../../../shared/hooks/useAIStream'
 import { LocalLLMBadge } from '../../../shared/components/LocalLLMBadge'
 import { TokenCostIndicator } from '../../../shared/components/TokenCostIndicator'
+
+interface SourceRef {
+  label: string
+  href: string
+}
+
+function extractSources(text: string): SourceRef[] {
+  const found = new Map<string, string>()
+
+  // NIS2 Art. N — link to secvitals compliance overview
+  for (const m of text.matchAll(/NIS2\s+Art\.\s*(\d+[a-z]?)/gi)) {
+    const label = `NIS2 Art. ${m[1]}`
+    if (!found.has(label)) found.set(label, '/secvitals?framework=nis2')
+  }
+
+  // ISO 27001 A.N.N / ISO27001 A.N
+  for (const m of text.matchAll(/ISO\s*27001\s+([A-Z]\.\d+(?:\.\d+)?)/gi)) {
+    const label = `ISO 27001 ${m[1]}`
+    if (!found.has(label)) found.set(label, '/secvitals?framework=iso27001')
+  }
+
+  // BSI IT-Grundschutz
+  for (const m of text.matchAll(/BSI(?:\s+IT-Grundschutz)?\s+(ORP|APP|SYS|INF|NET|OPS|DER|CON|IND|ISMS)\.\d+/gi)) {
+    const label = `BSI ${m[1]}`
+    if (!found.has(label)) found.set(label, '/secvitals?framework=bsi')
+  }
+
+  // DSGVO / GDPR Art. N
+  for (const m of text.matchAll(/(?:DSGVO|GDPR)\s+Art\.\s*(\d+)/gi)) {
+    const label = `DSGVO Art. ${m[1]}`
+    if (!found.has(label)) found.set(label, '/secvitals?framework=dsgvo')
+  }
+
+  // DORA Art. N
+  for (const m of text.matchAll(/DORA\s+Art\.\s*(\d+)/gi)) {
+    const label = `DORA Art. ${m[1]}`
+    if (!found.has(label)) found.set(label, '/secvitals?framework=dora')
+  }
+
+  return Array.from(found.entries()).slice(0, 8).map(([label, href]) => ({ label, href }))
+}
 
 interface Props {
   /** When false the component renders a "not configured" notice instead of the action button. */
@@ -18,10 +60,14 @@ interface Props {
 
 // Sprint 15 S15-6/7/8/9: AIAdvisor nutzt jetzt den Streaming-Endpoint,
 // zeigt Token/Time-Indikator und Local-LLM-Badge an, und hat einen Stop-Button.
+// S58-6: Source-Attribution — extrahiert Compliance-Referenzen als klickbare Chip-Links.
 export function AIAdvisor({ aiAvailable, providerHost, model }: Props) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { text, isStreaming, error, durationMs, start, stop } = useAIStream()
   const [featureLockedError, setFeatureLockedError] = useState<FeatureLockedError | null>(null)
+
+  const sources = useMemo(() => (text && !isStreaming) ? extractSources(text) : [], [text, isStreaming])
 
   const startAdvice = async () => {
     setFeatureLockedError(null)
@@ -105,6 +151,21 @@ export function AIAdvisor({ aiAvailable, providerHost, model }: Props) {
             )}
             {!isStreaming && <TokenCostIndicator durationMs={durationMs} />}
           </div>
+          {sources.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/50">
+              <span className="text-xs text-secondary self-center">Quellen:</span>
+              {sources.map((src) => (
+                <button
+                  key={src.label}
+                  onClick={() => { navigate(src.href) }}
+                  className="inline-flex items-center gap-1 text-xs text-brand border border-brand/30 rounded-full px-2 py-0.5 hover:bg-brand/10 transition-colors"
+                >
+                  {src.label}
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 // WriteEntry describes a single compliance audit event.
@@ -51,14 +52,16 @@ func Write(ctx context.Context, db *pgxpool.Pool, e WriteEntry) {
 		details, _ = json.Marshal(e.Details)
 	}
 
-	_, _ = db.Exec(ctx, `
+	if _, err := db.Exec(ctx, `
 		INSERT INTO audit_log
 		  (org_id, user_id, user_email, action, resource_type, resource_id, resource_name, details, ip_address)
 		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9)`,
 		e.OrgID, userID, userEmail, e.Action,
 		e.ResourceType, resourceID, resourceName,
 		details, ipAddress,
-	)
+	); err != nil {
+		log.Error().Err(err).Str("org_id", e.OrgID).Str("action", e.Action).Msg("audit: failed to write audit log entry")
+	}
 }
 
 // toNullableString returns nil when s is empty so that the DB column stores NULL

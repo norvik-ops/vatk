@@ -138,10 +138,12 @@ func DBMiddleware(db *pgxpool.Pool, staticLic *License, rdb ...*redis.Client) ec
 
 			// Check revocation blocklist first.
 			var revokedCount int
-			_ = db.QueryRow(ctx,
+			if err := db.QueryRow(ctx,
 				`SELECT COUNT(*) FROM ls_revoked_subscriptions WHERE org_id = $1::uuid`,
 				orgID,
-			).Scan(&revokedCount)
+			).Scan(&revokedCount); err != nil {
+				log.Warn().Err(err).Str("org_id", orgID).Msg("license: could not check revocation blocklist")
+			}
 			if revokedCount > 0 {
 				log.Debug().Str("org_id", orgID).Msg("license: org is in revocation blocklist — downgrading to community")
 				comm := communityLicense()

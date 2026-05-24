@@ -37,33 +37,29 @@ import { Skeleton } from '../../../components/ui/skeleton'
 import { exportToCSV } from '../../../lib/csv'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { useFormatDate } from '../../../shared/hooks/useFormatDate'
+import { useNoScannersAvailable } from '../hooks/useScannerStatus'
 
 // ── Inline editable status cell ──────────────────────────────────────────────
 
 function InlineStatusCell({ finding }: { finding: Finding }) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
+  const [displayStatus, setDisplayStatus] = useState<Finding['status']>(finding.status)
   const patch = usePatchFinding(finding.id)
 
   function handleChange(value: string) {
     const newStatus = value as Finding['status']
+    const prev = displayStatus
+    setDisplayStatus(newStatus)
     setEditing(false)
     patch.mutate(
       { status: newStatus },
       {
         onError: () => {
+          setDisplayStatus(prev)
           toast(t('secpulse.findingsPage.saveFailed'), 'error')
         },
       },
-    )
-  }
-
-  if (patch.isPending) {
-    return (
-      <span className="flex items-center gap-1.5 text-sm text-secondary">
-        <Spinner size="sm" className="w-3.5 h-3.5" />
-        {finding.status.replace(/_/g, ' ')}
-      </span>
     )
   }
 
@@ -71,7 +67,7 @@ function InlineStatusCell({ finding }: { finding: Finding }) {
     return (
       <Select
         defaultOpen
-        value={finding.status}
+        value={displayStatus}
         onValueChange={handleChange}
         onOpenChange={(open) => { if (!open) setEditing(false) }}
       >
@@ -98,7 +94,7 @@ function InlineStatusCell({ finding }: { finding: Finding }) {
       onClick={(e) => { e.stopPropagation(); setEditing(true) }}
       title="Klicken zum Bearbeiten"
     >
-      {finding.status.replace(/_/g, ' ')}
+      {displayStatus.replace(/_/g, ' ')}
     </span>
   )
 }
@@ -189,6 +185,7 @@ export default function FindingsPage() {
   const { t } = useTranslation()
   const { formatDate } = useFormatDate()
   const navigate = useNavigate()
+  const noScannersAvailable = useNoScannersAvailable()
   const [filters, setFilters] = useSavedFilters('findings', {
     severityFilter: 'all',
     statusFilter: 'all',
@@ -445,6 +442,26 @@ export default function FindingsPage() {
           </Select>
 
         </div>
+
+        {noScannersAvailable && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-amber-400">Scanner nicht eingerichtet</p>
+              <p className="text-[11px] text-secondary mt-0.5">
+                Trivy und Nuclei sind im Docker-Image gebündelt — prüfe ob die Instanz korrekt gestartet wurde. OpenVAS ist optional via <code className="text-[10px]">VAKT_OPENVAS_URL</code>.
+              </p>
+            </div>
+            <a
+              href="/docs/guides/scanner-setup"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 text-[11px] font-medium text-amber-400 hover:text-amber-300 transition-colors whitespace-nowrap"
+            >
+              Setup-Guide →
+            </a>
+          </div>
+        )}
 
         {isLoading && (
           <div className="space-y-2">

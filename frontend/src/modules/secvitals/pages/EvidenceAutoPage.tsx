@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GitBranch, Shield, Bug, CheckCircle2, Inbox } from 'lucide-react'
+import { GitBranch, Shield, Bug, CheckCircle2, Inbox, Users } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -26,14 +26,18 @@ import { useFormatDate } from '../../../shared/hooks/useFormatDate'
 function SourceIcon({ type }: { type: AutoEvidence['auto_source_type'] }) {
   if (type === 'github') return <GitBranch className="w-4 h-4 text-secondary" />
   if (type === 'secreflex') return <Shield className="w-4 h-4 text-secondary" />
+  if (type === 'hr') return <Users className="w-4 h-4 text-secondary" />
   return <Bug className="w-4 h-4 text-secondary" />
 }
 
 function SourceBadge({ type }: { type: AutoEvidence['auto_source_type'] }) {
   const labels: Record<AutoEvidence['auto_source_type'], string> = {
     github: 'GitHub',
-    secreflex: 'Training',
-    secpulse: 'Scanner',
+    secreflex: 'Vakt Aware',
+    secpulse: 'Vakt Scan',
+    hr: 'Vakt HR',
+    ci_pipeline: 'CI/CD',
+    ci_webhook: 'CI/CD',
   }
   return (
     <Badge variant="secondary" className="text-[10px] capitalize">
@@ -200,6 +204,11 @@ export default function EvidenceAutoPage() {
                     {ev.description && (
                       <p className="text-xs text-muted-foreground line-clamp-1">
                         {ev.description}
+                      </p>
+                    )}
+                    {ev.suggested_control_hint && (
+                      <p className="text-[11px] text-blue-400">
+                        Vorschlag: {ev.suggested_control_hint}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">

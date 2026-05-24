@@ -20,18 +20,20 @@ func (s *Service) DraftPolicy(ctx context.Context, topic, framework string) (str
 	if topic == "" {
 		return "", fmt.Errorf("topic is required")
 	}
-	system := `Du bist ein erfahrener IT-Security-Berater für DACH-Mittelstand. ` +
-		`Erstelle eine schlanke, umsetzbare Sicherheitsrichtlinie in deutscher Sprache. ` +
-		`Format: Markdown mit Abschnitten "Zweck", "Geltungsbereich", "Anforderungen", ` +
-		`"Rollen & Verantwortlichkeiten", "Verstöße". Vermeide Floskeln und Marketing-Sprache. ` +
-		`Halte den Text unter 600 Wörtern.`
+	system := addInjectionGuard(
+		`Du bist ein erfahrener IT-Security-Berater für DACH-Mittelstand. ` +
+			`Erstelle eine schlanke, umsetzbare Sicherheitsrichtlinie in deutscher Sprache. ` +
+			`Format: Markdown mit Abschnitten "Zweck", "Geltungsbereich", "Anforderungen", ` +
+			`"Rollen & Verantwortlichkeiten", "Verstöße". Vermeide Floskeln und Marketing-Sprache. ` +
+			`Halte den Text unter 600 Wörtern.`,
+	)
 
 	prompt := fmt.Sprintf(
 		"Erstelle einen Richtlinien-Entwurf zum Thema: %s.",
-		topic,
+		wrapUserContent(topic),
 	)
 	if framework != "" {
-		prompt += fmt.Sprintf("\nDie Richtlinie soll den Anforderungen von %s genügen.", framework)
+		prompt += fmt.Sprintf("\nDie Richtlinie soll den Anforderungen von %s genügen.", wrapUserContent(framework))
 	}
 
 	return s.client.GenerateWithSystem(ctx, system, prompt)
@@ -44,16 +46,18 @@ func (s *Service) IncidentResponseGuide(ctx context.Context, incidentSummary, in
 	if incidentSummary == "" {
 		return "", fmt.Errorf("incident summary is required")
 	}
-	system := `Du bist ein erfahrener Incident-Response-Coach. ` +
-		`Du beantwortest mit einer nummerierten Sofort-Checkliste in deutscher Sprache. ` +
-		`Format: 5-8 konkrete Schritte. Pro Schritt: ein Satz Aktion + (in Klammern) ein Satz Begründung/Risiko. ` +
-		`Beziehe gesetzliche Fristen ein, wenn relevant (NIS2: T+24h Erstmeldung, T+72h Update; ` +
-		`DSGVO Art. 33: 72h-Meldepflicht bei Personenbezug; DORA: T+4h Erstmeldung kritisch). ` +
-		`Keine Floskeln, kein "wir empfehlen" — direkte Imperative.`
+	system := addInjectionGuard(
+		`Du bist ein erfahrener Incident-Response-Coach. ` +
+			`Du beantwortest mit einer nummerierten Sofort-Checkliste in deutscher Sprache. ` +
+			`Format: 5-8 konkrete Schritte. Pro Schritt: ein Satz Aktion + (in Klammern) ein Satz Begründung/Risiko. ` +
+			`Beziehe gesetzliche Fristen ein, wenn relevant (NIS2: T+24h Erstmeldung, T+72h Update; ` +
+			`DSGVO Art. 33: 72h-Meldepflicht bei Personenbezug; DORA: T+4h Erstmeldung kritisch). ` +
+			`Keine Floskeln, kein "wir empfehlen" — direkte Imperative.`,
+	)
 
-	prompt := fmt.Sprintf("Vorfall: %s.", incidentSummary)
+	prompt := fmt.Sprintf("Vorfall: %s.", wrapUserContent(incidentSummary))
 	if incidentType != "" {
-		prompt += fmt.Sprintf("\nTyp: %s.", incidentType)
+		prompt += fmt.Sprintf("\nTyp: %s.", wrapUserContent(incidentType))
 	}
 
 	return s.client.GenerateWithSystem(ctx, system, prompt)

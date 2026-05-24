@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckSquare, Square, ChevronRight, AlertCircle } from 'lucide-react'
+import { CheckSquare, Square, ChevronRight, AlertCircle, FileCheck } from 'lucide-react'
 import { apiFetch } from '../../../api/client'
 import { Button } from '../../../components/ui/button'
 import { Skeleton } from '../../../components/ui/skeleton'
@@ -133,15 +133,30 @@ export default function ChecklistRunPage() {
 
       {/* Completed state */}
       {run?.status === 'completed' && (
-        <div className="flex items-center gap-3 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
-          <CheckSquare className="w-5 h-5 text-green-400 shrink-0" aria-hidden="true" />
-          <div>
-            <p className="text-[13px] font-semibold text-green-400">Checkliste abgeschlossen</p>
-            {run.completed_at && (
-              <p className="text-[11px] text-secondary">am {formatDate(run.completed_at, { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-            )}
+        <>
+          <div className="flex items-center gap-3 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
+            <CheckSquare className="w-5 h-5 text-green-400 shrink-0" aria-hidden="true" />
+            <div>
+              <p className="text-[13px] font-semibold text-green-400">Checkliste abgeschlossen</p>
+              {run.completed_at && (
+                <p className="text-[11px] text-secondary">am {formatDate(run.completed_at, { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+              )}
+            </div>
           </div>
-        </div>
+          <div className="flex items-center gap-3 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3">
+            <FileCheck className="w-5 h-5 text-blue-400 shrink-0" aria-hidden="true" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-blue-400">Evidence an Vakt Comply übermittelt</p>
+              <p className="text-[11px] text-secondary">Checklisten-Abschluss als Compliance-Nachweis gespeichert</p>
+            </div>
+            <Link
+              to="/secvitals/evidence/auto"
+              className="shrink-0 text-[11px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              In Comply ansehen →
+            </Link>
+          </div>
+        </>
       )}
 
       {/* Progress bar */}

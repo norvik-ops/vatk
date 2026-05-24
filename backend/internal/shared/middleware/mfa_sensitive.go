@@ -71,9 +71,11 @@ func isMFARequiredForSensitiveCalls(ctx context.Context, db *pgxpool.Pool, orgID
 		return false
 	}
 	var required bool
-	_ = db.QueryRow(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT require_mfa_sensitive_calls FROM organizations WHERE id = $1::uuid`, orgID,
-	).Scan(&required)
+	).Scan(&required); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("mfa_sensitive: could not load MFA requirement — defaulting to false")
+	}
 	return required
 }
 
@@ -82,8 +84,10 @@ func loadUserTOTPSecret(ctx context.Context, db *pgxpool.Pool, userID string) st
 		return ""
 	}
 	var secret string
-	_ = db.QueryRow(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT secret FROM totp_secrets WHERE user_id = $1::uuid AND enabled = true`, userID,
-	).Scan(&secret)
+	).Scan(&secret); err != nil {
+		log.Warn().Err(err).Str("user_id", userID).Msg("mfa_sensitive: could not load TOTP secret")
+	}
 	return secret
 }

@@ -364,8 +364,9 @@ func (h *Handler) GetOrgAISettings(c echo.Context) error {
 
 // UpdateOrgAISettingsInput is the request body for PUT /api/v1/admin/org/ai-settings.
 type UpdateOrgAISettingsInput struct {
-	ModelOverride   string `json:"model_override"`
-	BaseURLOverride string `json:"base_url_override"`
+	ModelOverride       string `json:"model_override"`
+	BaseURLOverride     string `json:"base_url_override"`
+	WeeklyDigestEnabled bool   `json:"weekly_digest_enabled"`
 }
 
 // UpdateOrgAISettings handles PUT /api/v1/admin/org/ai-settings.
@@ -384,7 +385,7 @@ func (h *Handler) UpdateOrgAISettings(c echo.Context) error {
 	if in.BaseURLOverride != "" && !features.IsEnabled(c, features.FeatureAIAdvisor) {
 		in.BaseURLOverride = ""
 	}
-	if err := h.service.repo.SetOrgAISettings(c.Request().Context(), orgID, in.ModelOverride, in.BaseURLOverride); err != nil {
+	if err := h.service.repo.SetOrgAISettings(c.Request().Context(), orgID, in.ModelOverride, in.BaseURLOverride, in.WeeklyDigestEnabled); err != nil {
 		log.Error().Err(err).Str("org_id", orgID).Msg("update org ai settings failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "failed to update AI settings",

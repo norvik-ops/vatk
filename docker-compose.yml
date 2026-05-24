@@ -54,11 +54,15 @@ services:
       dockerfile: Dockerfile
     user: "65532:65532"
     env_file: .env
+    environment:
+      VAKT_DB_URL: "postgres://vakt:${POSTGRES_PASSWORD:?}@pgbouncer:5432/vakt?sslmode=disable"
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      pgbouncer:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
@@ -82,9 +86,13 @@ services:
     entrypoint: ["/worker"]
     user: "65532:65532"
     env_file: .env
+    environment:
+      VAKT_DB_URL: "postgres://vakt:${POSTGRES_PASSWORD:?}@pgbouncer:5432/vakt?sslmode=disable"
     restart: unless-stopped
     depends_on:
       redis:
+        condition: service_healthy
+      pgbouncer:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
@@ -120,6 +128,36 @@ services:
         limits:
           memory: 512m
           cpus: '1.0'
+
+  pgbouncer:
+    image: edoburu/pgbouncer:1.22.1
+    environment:
+      DB_USER: vakt
+      DB_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: vakt
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "100"
+      DEFAULT_POOL_SIZE: "20"
+      # pgx sends extra_float_digits on connect — pgBouncer must ignore it
+      IGNORE_STARTUP_PARAMETERS: "extra_float_digits"
+      SERVER_RESET_QUERY: "DISCARD ALL"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 32m
+          cpus: '0.1'
 
   redis:
     image: redis:7-alpine

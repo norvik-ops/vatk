@@ -72,9 +72,11 @@ func loadOrgIPAllowlist(ctx context.Context, db *pgxpool.Pool, orgID string) str
 		return ""
 	}
 	var raw *string
-	_ = db.QueryRow(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT admin_ip_allowlist FROM organizations WHERE id = $1::uuid`, orgID,
-	).Scan(&raw)
+	).Scan(&raw); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("org_ip_allowlist: could not load allowlist — skipping check")
+	}
 	if raw == nil {
 		return ""
 	}

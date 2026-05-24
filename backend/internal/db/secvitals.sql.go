@@ -9148,6 +9148,23 @@ func (q *Queries) UpdateCKRisk(ctx context.Context, arg UpdateCKRiskParams) (Upd
 	return i, err
 }
 
+const deleteCKRisk = `-- name: DeleteCKRisk :execrows
+DELETE FROM ck_risks WHERE id = $1 AND org_id = $2
+`
+
+type DeleteCKRiskParams struct {
+	ID    string `json:"id"`
+	OrgID string `json:"org_id"`
+}
+
+func (q *Queries) DeleteCKRisk(ctx context.Context, arg DeleteCKRiskParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteCKRisk, arg.ID, arg.OrgID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const updateCKRiskTreatment = `-- name: UpdateCKRiskTreatment :one
 UPDATE ck_risks SET
   treatment_option    = $3,

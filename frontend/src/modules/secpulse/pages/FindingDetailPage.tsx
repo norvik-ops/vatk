@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Spinner } from '../../../components/Spinner'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Lightbulb, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Breadcrumbs } from '../../../shared/components/Breadcrumbs'
@@ -17,8 +17,41 @@ import { cn } from '../../../lib/utils'
 import { findingSeverityClass } from '../../../lib/statusMapping'
 import { Comments } from '../../../shared/components/Comments'
 import { useFormatDate } from '../../../shared/hooks/useFormatDate'
+import { useAIInsights, useDismissInsight } from '../../secvitals/hooks/useAIInsights'
 
 const severityClass = findingSeverityClass
+
+function EvidenceSuggestionBanner({ findingId }: { findingId: string }) {
+  const { data } = useAIInsights()
+  const dismiss = useDismissInsight()
+  const suggestions = data?.items.filter(
+    (i) => i.type === 'evidence_suggestion' && i.finding_id === findingId
+  ) ?? []
+
+  if (suggestions.length === 0) return null
+
+  return (
+    <div className="px-6 pt-4 space-y-2">
+      {suggestions.map((insight) => (
+        <div key={insight.id} className="flex items-start gap-3 rounded-lg border border-brand/30 bg-brand/5 px-4 py-3">
+          <Lightbulb className="w-4 h-4 mt-0.5 shrink-0 text-brand" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-primary">{insight.title}</p>
+            <p className="text-xs text-secondary mt-0.5">{insight.message}</p>
+          </div>
+          <button
+            onClick={() => { dismiss.mutate(insight.id); }}
+            disabled={dismiss.isPending}
+            className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+            aria-label="Hinweis verwerfen"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function FindingDetailPage() {
   const { t } = useTranslation()
@@ -31,6 +64,7 @@ export default function FindingDetailPage() {
   const [status, setStatus] = useState<Finding['status'] | ''>('')
   const [notes, setNotes] = useState('')
   const [saved, setSaved] = useState(false)
+  const [savedResolved, setSavedResolved] = useState(false)
 
   useEffect(() => {
     if (!saved) return
@@ -48,11 +82,13 @@ export default function FindingDetailPage() {
 
   async function handleSave() {
     if (!id) return
+    const willResolve = (status || finding?.status) === 'resolved'
     await patch.mutateAsync({
       ...(status ? { status: status } : {}),
       notes: notes || undefined,
     })
     setSaved(true)
+    if (willResolve) setSavedResolved(true)
   }
 
   if (isLoading) return (
@@ -73,7 +109,7 @@ export default function FindingDetailPage() {
   return (
     <div className="flex flex-col h-full">
       <Breadcrumbs items={[
-        { label: 'SecPulse', href: '/secpulse' },
+        { label: 'Vakt Scan', href: '/secpulse' },
         { label: 'Findings', href: '/secpulse/findings' },
         { label: finding.title },
       ]} />
@@ -85,6 +121,8 @@ export default function FindingDetailPage() {
           </Button>
         }
       />
+
+      <EvidenceSuggestionBanner findingId={finding.id} />
 
       <div className="p-6 grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
@@ -130,7 +168,15 @@ export default function FindingDetailPage() {
               </div>
 
               {patch.isError && <p className="text-sm text-red-600">{patch.error.message}</p>}
-              {saved && <p className="text-sm text-green-600">{t('secpulse.findingDetail.saved')}</p>}
+              {saved && !savedResolved && <p className="text-sm text-green-600">{t('secpulse.findingDetail.saved')}</p>}
+              {savedResolved && (
+                <p className="text-sm text-green-600">
+                  {t('secpulse.findingDetail.saved')} —{' '}
+                  <Link to="/secvitals/evidence/auto" className="underline">
+                    Finding-Auflösung als Evidence in Vakt Comply gespeichert
+                  </Link>
+                </p>
+              )}
 
               <Button onClick={() => { void handleSave() }} disabled={patch.isPending}>
                 {patch.isPending ? t('secpulse.findingDetail.saving') : t('secpulse.findingDetail.saveChanges')}

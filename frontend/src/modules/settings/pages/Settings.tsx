@@ -1095,6 +1095,7 @@ function SIEMSection() {
 interface OrgAISettings {
   model_override: string
   base_url_override: string
+  weekly_digest_enabled: boolean
 }
 
 function useOrgAISettings() {
@@ -1132,18 +1133,20 @@ function AISettingsSection() {
 
   const [model, setModel] = useState('')
   const [baseURL, setBaseURL] = useState('')
+  const [weeklyDigest, setWeeklyDigest] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     if (settings) {
       setModel(settings.model_override)
       setBaseURL(settings.base_url_override)
+      setWeeklyDigest(settings.weekly_digest_enabled)
     }
   }, [settings])
 
   const handleSave = () => {
     update.mutate(
-      { model_override: model, base_url_override: baseURL },
+      { model_override: model, base_url_override: baseURL, weekly_digest_enabled: weeklyDigest },
       { onSuccess: () => { setSaved(true); setTimeout(() => { setSaved(false); }, 2000) } },
     )
   }
@@ -1199,6 +1202,22 @@ function AISettingsSection() {
               </p>
             </div>
           )}
+
+          {/* S52-4: AI Weekly Digest */}
+          <div className="border-t border-border pt-4 flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-primary">KI-Wochendigest</p>
+              <p className="text-[11px] text-secondary leading-relaxed">
+                Montags per E-Mail: KI-generierte Zusammenfassung von offenen Risiken, veralteten Evidenzen
+                und Compliance-Lücken. Erfordert SMTP-Konfiguration.
+              </p>
+            </div>
+            <Switch
+              checked={weeklyDigest}
+              onCheckedChange={setWeeklyDigest}
+              aria-label="KI-Wochendigest aktivieren"
+            />
+          </div>
 
           <Button
             size="sm"

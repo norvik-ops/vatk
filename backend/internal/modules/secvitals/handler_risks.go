@@ -3,6 +3,7 @@ package secvitals
 import (
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 
@@ -110,6 +111,26 @@ func (h *Handler) CreateRisk(c echo.Context) error {
 		IPAddress:    c.RealIP(),
 	})
 	return c.JSON(http.StatusCreated, risk)
+}
+
+// DeleteRisk handles DELETE /api/v1/secvitals/risks/:id.
+func (h *Handler) DeleteRisk(c echo.Context) error {
+	id := c.Param("id")
+	if _, err := uuid.Parse(id); err != nil {
+		return errResp(c, http.StatusBadRequest, "invalid risk id", "CK_BAD_REQUEST")
+	}
+	if err := h.service.DeleteRisk(c.Request().Context(), orgID(c), id); err != nil {
+		return errResp(c, http.StatusNotFound, "risk not found", "CK_RISK_NOT_FOUND")
+	}
+	audit.Write(c.Request().Context(), h.db, audit.WriteEntry{
+		OrgID:        orgID(c),
+		UserID:       userID(c),
+		Action:       "delete",
+		ResourceType: "vakt-comply/risk",
+		ResourceID:   id,
+		IPAddress:    c.RealIP(),
+	})
+	return c.NoContent(http.StatusNoContent)
 }
 
 // ListRiskControls handles GET /api/v1/secvitals/risks/:id/controls.

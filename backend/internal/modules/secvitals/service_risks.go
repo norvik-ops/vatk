@@ -64,6 +64,14 @@ func (s *Service) UpdateRiskTreatment(ctx context.Context, orgID, id string, in 
 	return s.repo.UpdateRiskTreatment(ctx, orgID, id, in)
 }
 
+func (s *Service) DeleteRisk(ctx context.Context, orgID, id string) error {
+	if err := s.repo.DeleteRisk(ctx, orgID, id); err != nil {
+		return err
+	}
+	s.invalidateDashboardCache(ctx, orgID)
+	return nil
+}
+
 // --- Risk ↔ Control Links ---
 
 func (s *Service) LinkRiskControl(ctx context.Context, orgID, riskID, controlID string) error {

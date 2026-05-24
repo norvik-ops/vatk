@@ -6,10 +6,11 @@ export interface AutoEvidence {
   org_id: string
   title: string
   description?: string
-  auto_source_type: 'github' | 'secreflex' | 'secpulse'
+  auto_source_type: 'github' | 'secreflex' | 'secpulse' | 'ci_pipeline' | 'ci_webhook' | 'hr'
   auto_source_ref?: string
   auto_collected_at?: string
   created_at: string
+  suggested_control_hint?: string
 }
 
 // useAutoEvidence — lists all unassigned auto-collected evidence

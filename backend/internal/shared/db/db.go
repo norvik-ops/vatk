@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -20,6 +21,8 @@ func Connect(ctx context.Context, connStr string) (*pgxpool.Pool, error) {
 	cfg.MaxConnLifetime = 30 * time.Minute
 	cfg.MaxConnIdleTime = 5 * time.Minute
 	cfg.HealthCheckPeriod = 1 * time.Minute
+	// CacheDescribe avoids prepared statements — required for pgBouncer transaction mode.
+	cfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeCacheDescribe
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {

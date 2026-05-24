@@ -81,7 +81,7 @@ Die vollständige Referenz aller Variablen findest du in der [Konfigurationsrefe
 | `VAKT_FRONTEND_URL` | `http://localhost:5173` | Öffentliche URL des Frontends (für E-Mail-Links) |
 | `VAKT_AI_PROVIDER` | `openai` | KI-Provider (`openai` oder `disabled`) |
 | `VAKT_AI_BASE_URL` | `http://ollama:11434/v1` | API-Endpunkt des KI-Providers |
-| `VAKT_AI_MODEL` | `llama3.2:3b` | Modellname |
+| `VAKT_AI_MODEL` | `qwen2.5:3b` | Modellname (Default; Apache 2.0; ~1.9 GB RAM) |
 
 ### SMTP (für Vakt Aware und Benachrichtigungen)
 
@@ -102,7 +102,7 @@ Die vollständige Referenz aller Variablen findest du in der [Konfigurationsrefe
 Der Ollama-Container ist bereits in `docker-compose.yml` enthalten. Nach dem ersten Start das Modell einmalig laden:
 
 ```bash
-docker compose exec ollama ollama pull llama3.2:3b
+docker compose exec ollama ollama pull qwen2.5:3b
 ```
 
 Das Modell (~2 GB) wird lokal gespeichert und steht danach offline zur Verfügung.
@@ -255,7 +255,7 @@ helm install vakt ./helm/vakt \
 3. **Benutzer einladen** — Über Einstellungen → Benutzerverwaltung weitere Teammitglieder einladen.
 4. **2FA aktivieren** — Für Admin-Accounts TOTP einrichten (Einstellungen → Sicherheit).
 5. **SMTP konfigurieren** — Für Benachrichtigungen und Vakt-Aware-Kampagnen einen SMTP-Server eintragen.
-6. **KI-Modell laden** — Falls Ollama genutzt wird: `docker compose exec ollama ollama pull llama3.2:3b`.
+6. **KI-Modell laden** — Falls Ollama genutzt wird: `docker compose exec ollama ollama pull qwen2.5:3b`.
 7. **Ersten Scan starten** — In Vakt Scan ein Asset anlegen und einen Trivy-Scan auslösen.
 
 ---

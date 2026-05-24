@@ -1,7 +1,55 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { apiFetch } from '../../../api/client'
 import type { Risk, CreateRiskInput, UpdateRiskInput, UpdateRiskTreatmentInput, Control } from '../types'
 import type { PaginatedResponse } from '../../../shared/types/pagination'
+
+export function useDeleteRisk() {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, string>({
+    mutationFn: (id) => apiFetch<void>(`/secvitals/risks/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['secvitals', 'risks'] })
+    },
+  })
+}
+
+export function useUpdateRiskStatus() {
+  const queryClient = useQueryClient()
+  return useMutation<Risk, Error, { risk: Risk; status: Risk['status'] }, { prevQueries: [QueryKey, PaginatedResponse<Risk> | undefined][] }>({
+    mutationFn: ({ risk, status }) =>
+      apiFetch<Risk>(`/secvitals/risks/${risk.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          title: risk.title,
+          description: risk.description ?? '',
+          category: risk.category ?? '',
+          likelihood: risk.likelihood,
+          impact: risk.impact,
+          owner: risk.owner ?? '',
+          status,
+          treatment: risk.treatment,
+          treatment_notes: risk.treatment_notes ?? '',
+        }),
+      }),
+    onMutate: async ({ risk, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['secvitals', 'risks'] })
+      const prevQueries = queryClient.getQueriesData<PaginatedResponse<Risk>>({ queryKey: ['secvitals', 'risks'] })
+      queryClient.setQueriesData<PaginatedResponse<Risk>>(
+        { queryKey: ['secvitals', 'risks'] },
+        (old) => old ? { ...old, data: old.data.map((r) => r.id === risk.id ? { ...r, status } : r) } : old,
+      )
+      return { prevQueries }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prevQueries) {
+        for (const [key, data] of ctx.prevQueries) queryClient.setQueryData(key, data)
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['secvitals', 'risks'] })
+    },
+  })
+}
 
 export function useRisks(page = 1, limit = 25) {
   const query = useQuery<PaginatedResponse<Risk>>({

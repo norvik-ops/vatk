@@ -215,7 +215,7 @@ export default function IncidentDetailPage() {
   return (
     <div className="flex flex-col h-full">
       <Breadcrumbs items={[
-        { label: 'SecVitals', href: '/secvitals' },
+        { label: 'Vakt Comply', href: '/secvitals' },
         { label: 'Incidents', href: '/secvitals/incidents' },
         { label: incident.title },
       ]} />

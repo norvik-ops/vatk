@@ -369,10 +369,12 @@ func handleAPIKey(c echo.Context, next echo.HandlerFunc, db *pgxpool.Pool, rawKe
 	safego.Run(context.WithoutCancel(c.Request().Context()), "auth.api_key.update_last_used", func(ctx context.Context) error {
 		updateCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
-		_, _ = db.Exec(updateCtx,
+		if _, err := db.Exec(updateCtx,
 			`UPDATE api_keys SET last_used_at = NOW(), last_used_ip = NULLIF($2, '') WHERE id = $1::uuid`,
 			keyID, clientIP,
-		)
+		); err != nil {
+			log.Warn().Err(err).Str("key_id", keyID).Msg("auth: could not update api key last_used_at")
+		}
 		return nil
 	})
 

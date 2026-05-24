@@ -15,6 +15,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // vaktVersion is set at build time; falls back to "dev".
@@ -35,7 +36,9 @@ func ExportHandler(db *pgxpool.Pool) echo.HandlerFunc {
 
 		// Resolve org name for the filename.
 		var orgName string
-		_ = db.QueryRow(ctx, `SELECT name FROM organizations WHERE id = $1::uuid`, orgID).Scan(&orgName)
+		if err := db.QueryRow(ctx, `SELECT name FROM organizations WHERE id = $1::uuid`, orgID).Scan(&orgName); err != nil {
+			log.Warn().Err(err).Str("org_id", orgID).Msg("dataexport: could not resolve org name")
+		}
 		if orgName == "" {
 			orgName = orgID
 		}

@@ -153,6 +153,9 @@ func (h *Handler) ChatStream(c echo.Context) error {
 			h.svc.usage.Record(c.Request().Context(), UsageRecord{
 				OrgID: orgID, Model: h.svc.model, Status: "rate_limited", RequestID: "chat.stream",
 			})
+			// Retry-After: Sekunden bis zum nächsten 60-Sekunden-Fenster.
+			retryAfter := 60 - (time.Now().UTC().Unix() % 60)
+			c.Response().Header().Set("Retry-After", fmt.Sprintf("%d", retryAfter))
 			return c.JSON(http.StatusTooManyRequests, map[string]string{"error": err.Error(), "code": "AI_RATE_LIMITED"})
 		}
 		if err := h.svc.usage.CheckDailyQuota(c.Request().Context(), orgID); err != nil {
@@ -216,6 +219,246 @@ func (h *Handler) ChatStream(c echo.Context) error {
 		})
 	}
 	return nil
+}
+
+// GapExplain handles POST /api/v1/secvitals/ai/controls/:id/explain.
+// It streams an explanation of why a control is still open and suggests 3 next steps.
+// S52-2.
+func (h *Handler) GapExplain(c echo.Context) error {
+	orgID, _ := c.Get("org_id").(string)
+	if orgID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+	controlID := c.Param("id")
+	if controlID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "control id required"})
+	}
+
+	// Fetch control details.
+	type controlRow struct {
+		title         string
+		description   string
+		framework     string
+		evidenceCount int
+	}
+	var ctrl controlRow
+	err := h.svc.db.QueryRow(c.Request().Context(), `
+		SELECT c.title, COALESCE(c.description::text, ''), COALESCE(f.name, ''),
+		       (SELECT COUNT(*) FROM ck_evidence e WHERE e.control_id = c.id)::int
+		FROM ck_controls c
+		LEFT JOIN ck_frameworks f ON f.id = c.framework_id
+		WHERE c.id = $1::uuid AND c.org_id = $2::uuid
+	`, controlID, orgID).Scan(&ctrl.title, &ctrl.description, &ctrl.framework, &ctrl.evidenceCount)
+	if err != nil {
+		log.Error().Err(err).Str("control_id", controlID).Msg("gap_explain: fetch control failed")
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "control not found"})
+	}
+
+	systemPrompt := addInjectionGuard("Du bist ein ISO-27001/NIS2/BSI-Compliance-Experte. Antworte auf Deutsch, konkret und handlungsorientiert.")
+	userPrompt := fmt.Sprintf(
+		"Control: %s. Beschreibung: %s. Framework: %s. Offener Status: gap. Evidence vorhanden: %d. Erkläre in 3–5 Sätzen warum dieser Control offen ist und nenne 3 konkrete nächste Schritte.",
+		sanitizeUserInput(ctrl.title),
+		sanitizeUserInput(ctrl.description),
+		sanitizeUserInput(ctrl.framework),
+		ctrl.evidenceCount,
+	)
+
+	// Set SSE headers.
+	resp := c.Response()
+	resp.Header().Set(echo.HeaderContentType, "text/event-stream")
+	resp.Header().Set("Cache-Control", "no-cache")
+	resp.Header().Set("Connection", "keep-alive")
+	resp.Header().Set("X-Accel-Buffering", "no")
+	resp.WriteHeader(http.StatusOK)
+
+	stream, err := h.svc.client.StreamGenerate(c.Request().Context(), systemPrompt, userPrompt, 800)
+	if err != nil {
+		log.Error().Err(err).Str("control_id", controlID).Msg("gap_explain: stream error")
+		_, _ = fmt.Fprintf(resp.Writer, "event: error\ndata: %s\n\n", err.Error())
+		resp.Flush()
+		return nil
+	}
+
+	for chunk := range stream {
+		if chunk.Done {
+			break
+		}
+		payload, _ := json.Marshal(map[string]string{"content": chunk.Content})
+		if _, werr := fmt.Fprintf(resp.Writer, "data: %s\n\n", payload); werr != nil {
+			if !errors.Is(werr, http.ErrHandlerTimeout) {
+				log.Debug().Err(werr).Msg("gap_explain: client disconnect")
+			}
+			break
+		}
+		resp.Flush()
+	}
+	_, _ = fmt.Fprintf(resp.Writer, "data: [DONE]\n\n")
+	resp.Flush()
+	return nil
+}
+
+// RiskNarrative handles POST /api/v1/secvitals/ai/risks/:id/narrative.
+// It generates a 2–3 sentence audit narrative for the risk and persists it.
+// S52-3.
+func (h *Handler) RiskNarrative(c echo.Context) error {
+	orgID, _ := c.Get("org_id").(string)
+	if orgID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+	riskID := c.Param("id")
+	if riskID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "risk id required"})
+	}
+
+	// Fetch risk details.
+	type riskRow struct {
+		title       string
+		description string
+		category    string
+		likelihood  int
+		impact      int
+		riskScore   int
+		treatment   string
+		owner       string
+	}
+	var r riskRow
+	err := h.svc.db.QueryRow(c.Request().Context(), `
+		SELECT
+			title,
+			COALESCE(description, ''),
+			COALESCE(category, ''),
+			likelihood,
+			impact,
+			likelihood * impact,
+			COALESCE(treatment, ''),
+			COALESCE(owner, '')
+		FROM ck_risks
+		WHERE id = $1::uuid AND org_id = $2::uuid
+	`, riskID, orgID).Scan(
+		&r.title, &r.description, &r.category,
+		&r.likelihood, &r.impact, &r.riskScore,
+		&r.treatment, &r.owner,
+	)
+	if err != nil {
+		log.Error().Err(err).Str("risk_id", riskID).Msg("risk_narrative: fetch risk failed")
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "risk not found"})
+	}
+
+	systemPrompt := addInjectionGuard("Du bist ein ISO-27001/NIS2/BSI-Compliance-Experte und Auditor. Antworte auf Deutsch, präzise und professionell.")
+	userPrompt := fmt.Sprintf(
+		"Risiko: %s. Beschreibung: %s. Kategorie: %s. Eintrittswahrscheinlichkeit: %d, Auswirkung: %d, Risiko-Score: %d. Behandlung: %s. Verantwortlicher: %s. Schreibe ein Audit-Narrativ von 2–3 Sätzen für dieses Risiko.",
+		sanitizeUserInput(r.title),
+		sanitizeUserInput(r.description),
+		sanitizeUserInput(r.category),
+		r.likelihood, r.impact, r.riskScore,
+		sanitizeUserInput(r.treatment),
+		sanitizeUserInput(r.owner),
+	)
+
+	narrative, err := h.svc.client.GenerateWithSystem(c.Request().Context(), systemPrompt, userPrompt)
+	if err != nil {
+		log.Error().Err(err).Str("risk_id", riskID).Msg("risk_narrative: generate failed")
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{"error": "KI temporär nicht verfügbar"})
+	}
+
+	// Persist the narrative.
+	if _, dbErr := h.svc.db.Exec(c.Request().Context(),
+		`UPDATE ck_risks SET ai_narrative = $1 WHERE id = $2::uuid AND org_id = $3::uuid`,
+		narrative, riskID, orgID,
+	); dbErr != nil {
+		log.Warn().Err(dbErr).Str("risk_id", riskID).Msg("risk_narrative: persist failed")
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"narrative": narrative})
+}
+
+// aiInsightResponse is the JSON shape returned by ListInsights.
+type aiInsightResponse struct {
+	ID        string  `json:"id"`
+	Type      string  `json:"type"`
+	Title     string  `json:"title"`
+	Message   string  `json:"message"`
+	ControlID *string `json:"control_id,omitempty"`
+	RiskID    *string `json:"risk_id,omitempty"`
+	FindingID *string `json:"finding_id,omitempty"`
+	Urgency   int     `json:"urgency"`
+	CreatedAt string  `json:"created_at"`
+}
+
+// ListInsights handles GET /api/v1/secvitals/ai/insights.
+// Returns up to 5 active AI insights for the org. S52-6.
+func (h *Handler) ListInsights(c echo.Context) error {
+	orgID, _ := c.Get("org_id").(string)
+	if orgID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+
+	rows, err := h.svc.db.Query(c.Request().Context(), `
+		SELECT
+			id::text, type, title, message,
+			control_id::text, risk_id::text, finding_id::text,
+			urgency, created_at
+		FROM ck_ai_insights
+		WHERE org_id = $1::uuid AND dismissed_at IS NULL
+		ORDER BY urgency ASC, created_at DESC
+		LIMIT 5
+	`, orgID)
+	if err != nil {
+		log.Error().Err(err).Str("org_id", orgID).Msg("list_insights: query failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
+	}
+	defer rows.Close()
+
+	var results []aiInsightResponse
+	for rows.Next() {
+		var ins aiInsightResponse
+		var createdAt time.Time
+		var controlID, riskID, findingID *string
+		if err := rows.Scan(
+			&ins.ID, &ins.Type, &ins.Title, &ins.Message,
+			&controlID, &riskID, &findingID,
+			&ins.Urgency, &createdAt,
+		); err != nil {
+			log.Warn().Err(err).Msg("list_insights: scan failed")
+			continue
+		}
+		ins.ControlID = controlID
+		ins.RiskID = riskID
+		ins.FindingID = findingID
+		ins.CreatedAt = createdAt.UTC().Format(time.RFC3339)
+		results = append(results, ins)
+	}
+	if results == nil {
+		results = []aiInsightResponse{}
+	}
+	return c.JSON(http.StatusOK, results)
+}
+
+// DismissInsight handles DELETE /api/v1/secvitals/ai/insights/:id.
+// Sets dismissed_at on the insight, scoped to the org. S52-6.
+func (h *Handler) DismissInsight(c echo.Context) error {
+	orgID, _ := c.Get("org_id").(string)
+	if orgID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+	insightID := c.Param("id")
+	if insightID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "insight id required"})
+	}
+
+	tag, err := h.svc.db.Exec(c.Request().Context(), `
+		UPDATE ck_ai_insights
+		SET dismissed_at = NOW()
+		WHERE id = $1::uuid AND org_id = $2::uuid AND dismissed_at IS NULL
+	`, insightID, orgID)
+	if err != nil {
+		log.Error().Err(err).Str("insight_id", insightID).Msg("dismiss_insight: update failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
+	}
+	if tag.RowsAffected() == 0 {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "insight not found"})
+	}
+	return c.NoContent(http.StatusNoContent)
 }
 
 // ListOllamaModels handles GET /api/v1/secvitals/ai/models.

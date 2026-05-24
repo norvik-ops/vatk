@@ -38,6 +38,7 @@ Diese ADRs dokumentieren wichtige Architekturentscheidungen der Vakt-Plattform. 
 | [0020](0020-ai-agent-tool-permissions.md) | AI-Agent darf nur Tools nutzen die der User darf | Accepted | Kein Privilege-Escalation via AI — Agent-Tool-Calls werden gegen RBAC des initiierenden Users geprüft. |
 | [0022](0022-auth-tier-cut.md) | Auth-Tier-Cut — SAML CE, SCIM/SIEM/IP-Allowlist Pro | Accepted | SAML 2.0 ist Community-Feature; SCIM, SIEM-Forwarder und IP-Allowlist sind Pro-Features. |
 | [0028](0028-nis2-embedded-mode-security.md) | NIS2 Embedded-Mode Security — `frame-ancestors *` bewusst gewählt | Accepted | Clickjacking-Risiko-Analyse für den öffentlichen NIS2-Wizard im Embedded-Modus; Entscheidung dokumentiert. |
+| [0032](0032-ai-integrity-richtlinien.md) | AI-Integrity-Richtlinien — Prompt-Injection-Schutz und AI-Sicherheitsgrenzen | Accepted | Prompt-Separator-Standard, Input-Sanitierung, Rate-Limiting per Org, Streaming-Pflicht und Source-Attribution für alle AI-Calls. |
 
 ### Kategorie: Produkt & Features
 

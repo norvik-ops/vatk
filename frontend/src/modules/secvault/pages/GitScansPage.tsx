@@ -157,7 +157,7 @@ export default function GitScansPage() {
       />
 
       <InfoBanner icon={KeyRound} title="Git-Repos auf Secrets scannen">
-        <p>Gib die URL eines öffentlichen oder privaten Repositories ein (HTTPS oder SSH). SecVault sucht mit <strong>Gitleaks</strong> nach versehentlich eingecheckten Passwörtern, Tokens und API-Keys.</p>
+        <p>Gib die URL eines öffentlichen oder privaten Repositories ein (HTTPS oder SSH). Vakt Vault sucht mit <strong>Gitleaks</strong> nach versehentlich eingecheckten Passwörtern, Tokens und API-Keys.</p>
         <p className="mt-1">Für <strong>private Repositories</strong>: trage zuerst ein Personal Access Token (GitHub/GitLab/Bitbucket) unter <strong>Settings → Integrationen</strong> ein.</p>
       </InfoBanner>
 

@@ -42,8 +42,6 @@ import (
 	"github.com/matharnica/vakt/internal/shared/apidocs"
 	"github.com/matharnica/vakt/internal/shared/apikeys"
 	"github.com/matharnica/vakt/internal/shared/audit"
-	"github.com/matharnica/vakt/internal/shared/auditexport"
-	"github.com/matharnica/vakt/internal/shared/auditreport"
 	"github.com/matharnica/vakt/internal/shared/comments"
 	"github.com/matharnica/vakt/internal/shared/dashboard"
 	"github.com/matharnica/vakt/internal/shared/dataexport"
@@ -80,7 +78,7 @@ var version = "dev"
 
 // componentStatus is the per-subsystem health entry.
 type componentStatus struct {
-	Status    string `json:"status"`              // "ok" | "error" | "disabled"
+	Status    string `json:"status"` // "ok" | "error" | "disabled"
 	LatencyMs int64  `json:"latency_ms,omitempty"`
 }
 
@@ -94,7 +92,7 @@ type healthComponents struct {
 // healthResponse is the canonical /health response.
 // CRITICAL fields (demo, sso_enabled, version) must always be present.
 type healthResponse struct {
-	Status     string           `json:"status"`      // "ok" | "degraded" | "down"
+	Status     string           `json:"status"` // "ok" | "degraded" | "down"
 	Version    string           `json:"version"`
 	Demo       bool             `json:"demo"`
 	SSOEnabled bool             `json:"sso_enabled"`
@@ -552,9 +550,9 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 		// Policy acceptance — public token routes (no Bearer auth), rate-limited
 		secvitals.RegisterPolicyAcceptPublic(api.Group("", portalRateLimiter), ckHandler)
 		// Audit package export
-		auditexport.Register(protected.Group("/secvitals"), pool)
+		audit.RegisterExport(protected.Group("/secvitals"), pool)
 		// One-click audit report PDF
-		auditreport.RegisterRoutes(protected.Group("/secvitals"), pool)
+		audit.RegisterReport(protected.Group("/secvitals"), pool)
 		// AI-generated reports via OpenAI-compatible provider.
 		// Sprint 15 (S15-1/2/3/5): Rate-Limit + Daily-Quota + Response-Cache
 		// + Streaming-SSE-Endpoint laufen über RegisterWithOptions, sofern

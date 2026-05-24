@@ -1,4 +1,4 @@
-package auditreport
+package audit
 
 import (
 	"context"
@@ -93,7 +93,9 @@ func Collect(ctx context.Context, db *pgxpool.Pool, orgID string) (*ReportData, 
 	d := &ReportData{GeneratedAt: time.Now()}
 
 	// Resolve org name (soft-fail).
-	_ = db.QueryRow(ctx, `SELECT name FROM organizations WHERE id=$1::uuid`, orgID).Scan(&d.OrgName)
+	if err := db.QueryRow(ctx, `SELECT name FROM organizations WHERE id=$1::uuid`, orgID).Scan(&d.OrgName); err != nil {
+		log.Warn().Err(err).Str("org_id", orgID).Msg("audit: could not resolve org name")
+	}
 	if d.OrgName == "" {
 		d.OrgName = orgID
 	}

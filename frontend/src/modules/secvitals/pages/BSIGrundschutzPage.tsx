@@ -128,11 +128,11 @@ function moduleToPath(module: ModuleKey): string {
 
 function moduleLabel(module: ModuleKey): string {
   const labels: Record<ModuleKey, string> = {
-    secpulse: 'SecPulse',
-    secvault: 'SecVault',
-    secvitals: 'SecVitals',
-    secprivacy: 'SecPrivacy',
-    secreflex: 'SecReflex',
+    secpulse: 'Vakt Scan',
+    secvault: 'Vakt Vault',
+    secvitals: 'Vakt Comply',
+    secprivacy: 'Vakt Privacy',
+    secreflex: 'Vakt Aware',
   }
   return labels[module]
 }

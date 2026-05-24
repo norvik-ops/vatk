@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -521,6 +522,59 @@ func runSeed(ctx context.Context, db *pgxpool.Pool, masterKeyHex, orgName, orgSl
 		RETURNING id::text`, orgID, adminID).Scan(&templateID); err != nil {
 		return "", "", fmt.Errorf("demoseed: reflex template: %w", err)
 	}
+	// Additional phishing template library (7 more presets)
+	extraTemplates := []struct{ name, subject, fromName, fromEmail, body string }{
+		{
+			"CEO-Fraud: Dringende IT-Bestätigung",
+			"Vertraulich: Sofortige Bestätigung erforderlich",
+			"Max Mustermann (CEO)", "ceo@mustermann-ceo.de",
+			`<h2>Wichtige Anweisung</h2><p>Ich befinde mich gerade in einem Meeting und benötige Ihre sofortige Hilfe. Bitte bestätigen Sie über den untenstehenden Link Ihre IT-Zugangsberechtigungen für das neue System.</p><p><a href="{{.TrackingURL}}">Zugang jetzt bestätigen</a></p>`,
+		},
+		{
+			"Paketlieferung: DHL Sendungsbestätigung",
+			"Ihre DHL-Sendung wartet auf Bestätigung",
+			"DHL Paketservice", "noreply@dhl-pakete-service.de",
+			`<h2>&#128230; Ihre Sendung</h2><p>Ihre Sendung konnte nicht zugestellt werden. Bitte bestätigen Sie Ihre Lieferadresse innerhalb von 24 Stunden.</p><p><a href="{{.TrackingURL}}">Jetzt Lieferung bestätigen</a></p>`,
+		},
+		{
+			"MFA: Unbekanntes Gerät erkannt",
+			"Microsoft: Neues Gerät an Ihrem Konto erkannt",
+			"Microsoft Sicherheit", "security@microsoft-konto-de.com",
+			`<h2>&#128274; Sicherheitswarnung</h2><p>Ein unbekanntes Gerät hat versucht, sich mit Ihrem Microsoft-Konto anzumelden. Falls Sie das nicht waren, bestätigen Sie jetzt Ihre Identität.</p><p><a href="{{.TrackingURL}}">Jetzt verifizieren</a></p>`,
+		},
+		{
+			"Software-Update: Adobe Sicherheitspatch",
+			"Kritisches Sicherheits-Update für Adobe Acrobat",
+			"Adobe Update Service", "updates@adobe-sicherheit.net",
+			`<h2>&#128297; Kritisches Update verfügbar</h2><p>Eine kritische Sicherheitslücke in Adobe Acrobat wurde entdeckt. Bitte installieren Sie das Update sofort, um Ihr System zu schützen.</p><p><a href="{{.TrackingURL}}">Update jetzt installieren</a></p>`,
+		},
+		{
+			"HR-Onboarding: Profil vervollständigen",
+			"Willkommen bei Musterfirma GmbH — Ihr Profil wartet",
+			"HR Team Musterfirma", "hr@musterfirma-onboarding.de",
+			`<h2>Herzlich Willkommen!</h2><p>Ihr Mitarbeiterprofil ist noch nicht vollständig. Bitte füllen Sie Ihre Daten bis Ende der Woche aus, um Ihren IT-Zugang zu erhalten.</p><p><a href="{{.TrackingURL}}">Profil jetzt vervollständigen</a></p>`,
+		},
+		{
+			"IT-Support: Ticket-Update",
+			"Ihr Support-Ticket #4821 wurde bearbeitet",
+			"IT-Helpdesk Support", "tickets@it-support-system.de",
+			`<h2>&#128203; Ticket Update</h2><p>Ihr Support-Ticket #4821 wurde von unserem Team bearbeitet. Bitte bestätigen Sie die vorgeschlagene Lösung oder kommentieren Sie den Status.</p><p><a href="{{.TrackingURL}}">Ticket jetzt ansehen</a></p>`,
+		},
+		{
+			"Bewerbungsbestätigung",
+			"Ihre Bewerbung ist eingegangen — nächste Schritte",
+			"Karriere Team", "karriere@bewerbungsportal-de.com",
+			`<h2>Bewerbung erhalten</h2><p>Vielen Dank für Ihre Bewerbung. Für den nächsten Schritt im Auswahlverfahren bitten wir Sie, Ihre Identität zu bestätigen.</p><p><a href="{{.TrackingURL}}">Bewerbung jetzt abschließen</a></p>`,
+		},
+	}
+	for _, et := range extraTemplates {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO sr_templates (org_id, name, subject, from_name, from_email, html_body, attack_type, is_preset, created_by)
+			VALUES ($1::uuid, $2, $3, $4, $5, $6, 'phishing', true, $7::uuid)`,
+			orgID, et.name, et.subject, et.fromName, et.fromEmail, et.body, adminID); err != nil {
+			return "", "", fmt.Errorf("demoseed: reflex template %q: %w", et.name, err)
+		}
+	}
 	if err := tx.QueryRow(ctx, `
 		INSERT INTO sr_landing_pages (org_id, name, html_content)
 		VALUES ($1::uuid, 'Awareness-Seite: Gut gemacht!',
@@ -541,13 +595,16 @@ func runSeed(ctx context.Context, db *pgxpool.Pool, masterKeyHex, orgName, orgSl
 		{"s.weber@musterfirma.de", "Sandra", "Weber", "Buchhaltung"},
 		{"k.meyer@musterfirma.de", "Klaus", "Meyer", "Geschäftsführung"},
 	}
+	var targetIDs []string
 	for _, t := range targets {
-		if _, err := tx.Exec(ctx, `
+		var tID string
+		if err := tx.QueryRow(ctx, `
 			INSERT INTO sr_targets (org_id, group_id, email, first_name, last_name, department)
-			VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6)`,
-			orgID, groupID, t.email, t.first, t.last, t.dept); err != nil {
+			VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6)
+			RETURNING id::text`, orgID, groupID, t.email, t.first, t.last, t.dept).Scan(&tID); err != nil {
 			return "", "", fmt.Errorf("demoseed: reflex target %s: %w", t.email, err)
 		}
+		targetIDs = append(targetIDs, tID)
 	}
 	campaigns := []struct {
 		name, status string
@@ -557,31 +614,140 @@ func runSeed(ctx context.Context, db *pgxpool.Pool, masterKeyHex, orgName, orgSl
 		{"Awareness-Kampagne: CEO-Fraud", "completed", 150},
 		{"Quartalstest Q2 2026", "scheduled", -14},
 	}
+	var completedCampIDs []string
 	for _, camp := range campaigns {
 		startedAt := time.Now().AddDate(0, 0, -camp.daysAgo)
 		completedAt := startedAt.Add(7 * 24 * time.Hour)
+		var campID string
 		if camp.status == "scheduled" {
-			if _, err := tx.Exec(ctx, `
+			if err := tx.QueryRow(ctx, `
 				INSERT INTO sr_campaigns (org_id, name, status, template_id, group_id, landing_page_id,
 					from_name, from_email, subject, scheduled_at, recurrence, betriebsrat_mode, created_by)
 				VALUES ($1::uuid, $2, $3, $4::uuid, $5::uuid, $6::uuid,
 					'IT-Helpdesk', 'helpdesk@it-support-intern.de', '[DRINGEND] Ihr Account wird in 24h gesperrt',
-					$7, 'none', true, $8::uuid)`,
+					$7, 'none', true, $8::uuid)
+				RETURNING id::text`,
 				orgID, camp.name, camp.status, templateID, groupID, landingPageID,
-				completedAt, adminID); err != nil {
+				completedAt, adminID).Scan(&campID); err != nil {
 				return "", "", fmt.Errorf("demoseed: campaign %q: %w", camp.name, err)
 			}
 		} else {
-			if _, err := tx.Exec(ctx, `
+			if err := tx.QueryRow(ctx, `
 				INSERT INTO sr_campaigns (org_id, name, status, template_id, group_id, landing_page_id,
 					from_name, from_email, subject, started_at, completed_at, recurrence, betriebsrat_mode, created_by)
 				VALUES ($1::uuid, $2, $3, $4::uuid, $5::uuid, $6::uuid,
 					'IT-Helpdesk', 'helpdesk@it-support-intern.de', '[DRINGEND] Ihr Account wird in 24h gesperrt',
-					$7, $8, 'none', true, $9::uuid)`,
+					$7, $8, 'none', true, $9::uuid)
+				RETURNING id::text`,
 				orgID, camp.name, camp.status, templateID, groupID, landingPageID,
-				startedAt, completedAt, adminID); err != nil {
+				startedAt, completedAt, adminID).Scan(&campID); err != nil {
 				return "", "", fmt.Errorf("demoseed: campaign %q: %w", camp.name, err)
 			}
+			completedCampIDs = append(completedCampIDs, campID)
+		}
+	}
+	// Click events for completed campaigns: Q1 2026 → 3 clicks, CEO-Fraud → 2 clicks
+	clickCounts := []int{3, 2}
+	for i, cid := range completedCampIDs {
+		n := clickCounts[i]
+		for j := 0; j < n && j < len(targetIDs); j++ {
+			occurredAt := time.Now().AddDate(0, 0, -(i*10 + j + 2))
+			if _, err := tx.Exec(ctx, `
+				INSERT INTO sr_events (org_id, campaign_id, target_id, type, tracking_token, occurred_at)
+				VALUES ($1::uuid, $2::uuid, $3::uuid, 'click', $4, $5)`,
+				orgID, cid, targetIDs[j], fmt.Sprintf("demo-%s-%d", cid[:8], j), occurredAt); err != nil {
+				return "", "", fmt.Errorf("demoseed: event campaign %d target %d: %w", i, j, err)
+			}
+		}
+	}
+
+	// ── Training Modules ─────────────────────────────────────────────────────────
+	type tmQuestion struct {
+		Text    string   `json:"text"`
+		Options []string `json:"options"`
+		Answer  int      `json:"answer"`
+	}
+	type tmDef struct {
+		title      string
+		attackType string
+		contentURL string
+		duration   int
+		questions  []tmQuestion
+	}
+	trainingDefs := []tmDef{
+		{
+			"Phishing erkennen", "phishing",
+			"Lernziel: Phishing-Mails anhand Absender, Dringlichkeit und verdächtiger Links erkennen.",
+			600,
+			[]tmQuestion{
+				{"Was ist ein typisches Merkmal einer Phishing-Mail?",
+					[]string{"Bekannter Absender", "Unbekannte Domain im Absender", "Kein Link enthalten", "Korrekte Rechtschreibung"}, 1},
+				{"Sie erhalten: 'Ihr Konto wird gesperrt — sofort handeln!'. Was tun Sie?",
+					[]string{"Link sofort klicken", "IT-Abteilung informieren", "Passwort sofort ändern", "E-Mail weiterleiten"}, 1},
+				{"Woran erkennen Sie eine sichere URL?",
+					[]string{"Sie beginnt mit http://", "Sie enthält viele Sonderzeichen", "Sie beginnt mit https:// und zeigt die echte Domain", "Lange URLs sind immer sicher"}, 2},
+			},
+		},
+		{
+			"Passwort-Hygiene", "phishing",
+			"Lernziel: Starke Passwörter erstellen und einen Passwort-Manager sicher verwenden.",
+			480,
+			[]tmQuestion{
+				{"Welches Passwort ist am sichersten?",
+					[]string{"password123", "Max1990!", "xK#9mP!2vL@qR7", "qwerty"}, 2},
+				{"Wie oft sollten Sie dasselbe Passwort verwenden?",
+					[]string{"Für alle Dienste", "Für Arbeit und Privat getrennt", "Nie — jeder Dienst ein eigenes Passwort", "Monatlich wechseln und wiederverwenden"}, 2},
+				{"Was ist ein Passwort-Manager?",
+					[]string{"Ein Kollege, der Passwörter verwaltet", "Eine Software, die Passwörter sicher speichert", "Eine Excel-Tabelle", "Ein Post-it am Monitor"}, 1},
+			},
+		},
+		{
+			"Clean Desk Policy", "usb",
+			"Lernziel: Arbeitsbereiche absichern und physische Sicherheitsrisiken im Büro vermeiden.",
+			360,
+			[]tmQuestion{
+				{"Was tun Sie beim Verlassen des Arbeitsplatzes?",
+					[]string{"Passwörter auf Post-its sichtbar lassen", "Alle vertraulichen Unterlagen wegschließen", "USB-Sticks offen liegenlassen", "Monitor eingeschaltet lassen"}, 1},
+				{"Sie finden einen unbekannten USB-Stick. Was tun Sie?",
+					[]string{"Einstecken und Inhalt prüfen", "IT-Abteilung abgeben ohne einzustecken", "Mit nach Hause nehmen", "In einen Drucker stecken"}, 1},
+			},
+		},
+		{
+			"Multi-Faktor-Authentifizierung (MFA)", "phishing",
+			"Lernziel: MFA verstehen, korrekt einrichten und gegen Social Engineering absichern.",
+			420,
+			[]tmQuestion{
+				{"Was bietet MFA als zweiten Faktor?",
+					[]string{"Ein weiteres Passwort", "Einen Einmalcode (TOTP) oder Hardware-Token", "Eine Sicherheitsfrage", "Einen festen PIN"}, 1},
+				{"Sie erhalten einen MFA-Code, den Sie nicht angefordert haben. Was bedeutet das?",
+					[]string{"Das System testet Sie automatisch", "Jemand versucht sich in Ihr Konto einzuloggen", "Technischer Fehler — ignorieren", "Ihr Code läuft bald ab"}, 1},
+				{"Warum MFA-Codes niemals per Telefon weitergeben?",
+					[]string{"Weil Codes zu kurz sind", "Social Engineering — Angreifer nutzen Codes sofort aus", "Codes gelten dann nicht mehr", "DSGVO verbietet es"}, 1},
+			},
+		},
+		{
+			"Social Engineering erkennen", "vishing",
+			"Lernziel: Manipulationsversuche per Telefon, E-Mail und persönlich erkennen und abwehren.",
+			540,
+			[]tmQuestion{
+				{"Ein Anrufer gibt sich als IT aus und fragt nach Ihrem Passwort. Was tun Sie?",
+					[]string{"Passwort mitteilen — man muss der IT vertrauen", "Auflegen und IT über die bekannte interne Nummer zurückrufen", "Passwort buchstabieren", "E-Mail mit Passwort senden"}, 1},
+				{"Was ist 'Pretexting' im Kontext von Social Engineering?",
+					[]string{"Textvorlagen für Phishing-Mails", "Eine erfundene Geschichte, um Vertrauen zu erschleichen", "Zeitdruck als Manipulationsmittel", "Gefälschte E-Mail-Absender"}, 1},
+			},
+		},
+	}
+	for _, m := range trainingDefs {
+		qJSON, err := json.Marshal(m.questions)
+		if err != nil {
+			return "", "", fmt.Errorf("demoseed: training module marshal: %w", err)
+		}
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO sr_training_modules
+				(org_id, title, type, attack_type, content_url, duration_seconds, passing_score, questions, created_by)
+			VALUES ($1::uuid, $2, 'quiz', $3, $4, $5, 80, $6, $7::uuid)`,
+			orgID, m.title, m.attackType, m.contentURL, m.duration, qJSON, adminID); err != nil {
+			return "", "", fmt.Errorf("demoseed: training module %q: %w", m.title, err)
 		}
 	}
 

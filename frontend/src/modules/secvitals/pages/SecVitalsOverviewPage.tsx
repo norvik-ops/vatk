@@ -26,6 +26,7 @@ import { ProGate } from '../../../shared/components/ProGate'
 import { cn } from '../../../lib/utils'
 import { ExpiringEvidenceWidget } from '../components/ExpiringEvidenceWidget'
 import { AIAdvisor } from '../components/AIAdvisor'
+import { AIInsightsFeed } from '../components/AIInsightsFeed'
 import { useFormatDate } from '../../../shared/hooks/useFormatDate'
 
 // ── Item 59: Score Trend Chart ────────────────────────────────────────────────
@@ -112,11 +113,12 @@ function ScoreBenchmark({ currentScore }: { currentScore: number }) {
 }
 
 // ── Item 61: Dashboard Widget Ordering ───────────────────────────────────────
-const DEFAULT_ORDER = ['kpis', 'evidence', 'advisor', 'trend', 'benchmark', 'areas']
+const DEFAULT_ORDER = ['kpis', 'evidence', 'insights', 'advisor', 'trend', 'benchmark', 'areas']
 
 const WIDGET_LABELS: Record<string, string> = {
   kpis: 'KPI-Übersicht',
   evidence: 'Ablaufende Nachweise',
+  insights: 'KI-Insights',
   advisor: 'KI-Berater',
   trend: 'Score-Verlauf',
   benchmark: 'Score-Vergleich',
@@ -399,6 +401,7 @@ export default function SecVitalsOverviewPage() {
       </div>
     ),
     evidence: <ExpiringEvidenceWidget key="evidence" />,
+    insights: <AIInsightsFeed key="insights" />,
     advisor: <AIAdvisor key="advisor" aiAvailable={aiStatus?.available ?? false} />,
     trend: <ScoreTrendChart key="trend" data={scoreHistory ?? []} />,
     benchmark: currentScore > 0 ? <ScoreBenchmark key="benchmark" currentScore={currentScore} /> : null,
