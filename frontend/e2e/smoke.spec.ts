@@ -24,8 +24,7 @@ for (const mod of MODULES) {
     const jsErrors: string[] = []
     page.on('pageerror', (err) => jsErrors.push(err.message))
 
-    await page.goto(mod.path, { waitUntil: 'domcontentloaded' })
-    await page.waitForLoadState('networkidle', { timeout: 20_000 })
+    await page.goto(mod.path, { waitUntil: 'load' })
 
     // Kein Error-Boundary
     await expect(
