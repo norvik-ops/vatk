@@ -1,16 +1,18 @@
 # Vakt
 
-**Self-hosted ISMS for SMEs — NIS2, ISO 27001, BSI-Grundschutz**
+**Self-hosted Security & Compliance Platform — NIS2, ISO 27001, BSI-Grundschutz, DORA, TISAX, EU AI Act. Deploy in 5 minutes.**
 
 ![License: ELv2](https://img.shields.io/badge/license-Elastic_License_2.0-blue)
 ![Go](https://img.shields.io/badge/go-1.22%2B-blue)
 ![Docker](https://img.shields.io/badge/docker-compose%20v2-blue)
 
+**[Live Demo](https://secdemo.norvikops.de)** — ephemeral credentials, auto-generated, expires after 4 hours.
+
 ---
 
 ## What is Vakt?
 
-Vakt is a self-hosted, source-available security and compliance platform built for SMEs in the DACH region. It helps IT teams implement and document NIS2, ISO 27001, and BSI-Grundschutz requirements — without sending any data outside your own infrastructure.
+Vakt is a self-hosted, source-available security and compliance platform built for SMEs in the DACH region. It helps IT teams implement and document NIS2, ISO 27001, BSI-Grundschutz, DORA, TISAX, and EU AI Act requirements — without sending any data outside your own infrastructure.
 
 It is a free-to-self-host alternative to commercial tools like Vanta or Drata (~€10,000/year), licensed under the Elastic License 2.0. Deploy it with a single `docker compose up` command — the platform is **ready in under 5 minutes**. The bundled local AI advisor takes a bit longer on first start because it downloads the ~1.9 GB `qwen2.5:3b` model — depending on your bandwidth, expect an extra **3–30 minutes** until AI features are available. The platform itself works without waiting for the model.
 
@@ -89,7 +91,7 @@ Vakt Community is free for self-hosting and includes the **AI advisor** out-of-t
 - Advanced phishing simulation campaigns
 - Supplier portal and granular module permissions
 
-Purchase at [sec.norvikops.de/pricing](https://sec.norvikops.de/pricing). After purchase, enter your
+Purchase at [vakt.io/pricing](https://vakt.io/pricing). After purchase, enter your
 license key in **Settings → License**.
 
 ---
@@ -156,6 +158,24 @@ To disable entirely: `VAKT_AI_PROVIDER=disabled`
 
 ---
 
+## Architecture
+
+```mermaid
+graph TD
+    Browser["User Browser"] -->|HTTPS| Nginx["Nginx\n(TLS · Static files)"]
+    Nginx -->|/api/*| API["API Service\n(Go / Echo v4)"]
+    Nginx -->|/*| SPA["Frontend SPA\n(React / Vite)"]
+    API --> DB["PostgreSQL 16"]
+    API --> Redis["Redis 7\n(Queue · Sessions)"]
+    Redis --> Worker["Worker\n(Go / Asynq)"]
+    Worker --> Ollama["Ollama\n(Local LLM — optional)"]
+    Worker --> DB
+```
+
+All services run in Docker containers. No external dependencies. No phone-home.
+
+---
+
 ## Development
 
 ```bash
@@ -188,6 +208,16 @@ See [`docs/wiki/installation.md`](docs/wiki/installation.md) for:
 - Upgrade procedure between versions
 
 For MSPs deploying Vakt per customer, see [`docs/wiki/msp-onboarding.md`](docs/wiki/msp-onboarding.md).
+
+### Key Links
+
+| | |
+|---|---|
+| Live Demo | [secdemo.norvikops.de](https://secdemo.norvikops.de) |
+| Product Site | [sec.norvikops.de](https://sec.norvikops.de) |
+| CHANGELOG | [CHANGELOG.md](CHANGELOG.md) |
+| Security | [SECURITY.md](SECURITY.md) |
+| Getting Started | [docs/guides/getting-started.md](docs/guides/getting-started.md) |
 
 ---
 

@@ -105,7 +105,7 @@ export default function AdminHealthPage() {
         {isError && (
           <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
             Fehler beim Laden der Systemdaten:{' '}
-            {error instanceof Error ? error.message : 'Unbekannter Fehler'}
+            {error instanceof Error ? error.message : 'Systemdaten konnten nicht geladen werden — bitte Seite neu laden'}
           </div>
         )}
 

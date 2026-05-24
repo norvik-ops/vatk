@@ -5,6 +5,7 @@ package secvault
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -296,7 +297,7 @@ func TestValidateRepoURL_BlocksPrivateAndLoopbackAddresses(t *testing.T) {
 	for _, tc := range blocked {
 		tc := tc
 		t.Run(tc.reason, func(t *testing.T) {
-			err := ValidateRepoURL(tc.url)
+			err := ValidateRepoURL(context.Background(), tc.url)
 			assert.Error(t, err,
 				"URL %q (%s) should be blocked by SSRF guard", tc.url, tc.reason)
 		})
@@ -307,7 +308,7 @@ func TestValidateRepoURL_BlocksPrivateAndLoopbackAddresses(t *testing.T) {
 // rejected regardless of case.
 func TestValidateRepoURL_BlocksLocalhost(t *testing.T) {
 	for _, host := range []string{"localhost", "LOCALHOST", "LocalHost"} {
-		err := ValidateRepoURL("https://" + host + "/repo")
+		err := ValidateRepoURL(context.Background(), "https://"+host+"/repo")
 		assert.Error(t, err, "https://%s/repo should be rejected", host)
 	}
 }
@@ -315,6 +316,6 @@ func TestValidateRepoURL_BlocksLocalhost(t *testing.T) {
 // TestValidateRepoURL_BlocksLinkLocal ensures link-local addresses are
 // rejected (169.254.x.x is a common SSRF target via AWS IMDS).
 func TestValidateRepoURL_BlocksLinkLocal(t *testing.T) {
-	err := ValidateRepoURL("https://169.254.169.254/latest/meta-data/")
+	err := ValidateRepoURL(context.Background(), "https://169.254.169.254/latest/meta-data/")
 	assert.Error(t, err, "AWS IMDS link-local address must be blocked")
 }

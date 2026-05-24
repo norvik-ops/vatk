@@ -38,7 +38,10 @@ var privateRanges = func() []*net.IPNet {
 //
 // It also resolves the hostname via DNS and applies the same checks to all
 // returned IPs to mitigate DNS-rebinding attacks.
-func ValidateRepoURL(raw string) error {
+//
+// ctx is used for the DNS lookup timeout; pass the request or job context so
+// that cancellation propagates correctly (ADR-0018).
+func ValidateRepoURL(ctx context.Context, raw string) error {
 	if raw == "" {
 		return fmt.Errorf("repo_url is required")
 	}
@@ -90,7 +93,8 @@ func ValidateRepoURL(raw string) error {
 	}
 
 	// DNS rebinding mitigation: resolve the hostname and check every returned IP.
-	resolverCtx, resolverCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Use caller-supplied ctx with a 5s cap to propagate cancellation (ADR-0018).
+	resolverCtx, resolverCancel := context.WithTimeout(ctx, 5*time.Second)
 	defer resolverCancel()
 	resolvedIPs, err := net.DefaultResolver.LookupHost(resolverCtx, host)
 	if err != nil {

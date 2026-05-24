@@ -12,6 +12,24 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// metricsTokenAuth enforces Bearer token auth when VAKT_METRICS_TOKEN is set.
+// Falls through to the IP allowlist if no token is configured.
+func metricsTokenAuth(token string, next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if token == "" {
+			return next(c)
+		}
+		auth := c.Request().Header.Get("Authorization")
+		if strings.HasPrefix(auth, "Bearer ") && strings.TrimPrefix(auth, "Bearer ") == token {
+			return next(c)
+		}
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "unauthorized",
+			"code":  "METRICS_TOKEN_REQUIRED",
+		})
+	}
+}
+
 // cidr172bridge is the Docker bridge range 172.16.0.0/12, parsed once at init.
 var cidr172bridge = func() *net.IPNet {
 	_, n, _ := net.ParseCIDR("172.16.0.0/12")
@@ -62,10 +80,32 @@ func isAllowedMetricsIP(raw string) bool {
 	return false
 }
 
+// RegisterOptions carries optional configuration for the metrics endpoint.
+type RegisterOptions struct {
+	// RedisAddr is the host:port of the Redis server used for queue-depth metrics.
+	// Leave empty to skip queue-depth metrics.
+	RedisAddr string
+	// MetricsToken is the Bearer token required to access /metrics.
+	// When empty, only the IP allowlist applies.
+	MetricsToken string
+}
+
 // Register mounts the /metrics endpoint on the root Echo instance.
 // Access is restricted to loopback and Docker-internal network ranges so that
 // Prometheus can scrape the endpoint while external traffic is denied.
+// Deprecated: use RegisterWithOptions for queue-depth and token-auth support.
 func Register(e *echo.Echo, db *pgxpool.Pool) {
+	RegisterWithOptions(e, db, RegisterOptions{})
+}
+
+// RegisterWithOptions mounts the /metrics endpoint with extended options.
+func RegisterWithOptions(e *echo.Echo, db *pgxpool.Pool, opts RegisterOptions) {
 	h := NewHandler(db)
-	e.GET("/metrics", h.ServeMetrics, metricsIPAllowlist)
+	if opts.RedisAddr != "" {
+		h.WithRedisAddr(opts.RedisAddr)
+	}
+	tokenMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
+		return metricsTokenAuth(opts.MetricsToken, next)
+	}
+	e.GET("/metrics", h.ServeMetrics, metricsIPAllowlist, tokenMiddleware)
 }

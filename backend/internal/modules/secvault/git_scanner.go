@@ -203,7 +203,7 @@ func scanLineForEntropy(line string) []entropyFinding {
 func RunGitScan(ctx context.Context, input TriggerGitScanInput) ([]ScanResult, error) {
 	// Re-validate URL here as defense-in-depth: the Asynq payload could be crafted
 	// by a malicious operator with Redis access, bypassing the handler-layer check.
-	if err := ValidateRepoURL(input.RepoURL); err != nil {
+	if err := ValidateRepoURL(ctx, input.RepoURL); err != nil {
 		return nil, fmt.Errorf("repo url validation failed in worker: %w", err)
 	}
 

@@ -89,6 +89,32 @@ type Config struct {
 	EPSSEnabled bool
 }
 
+// Validate checks that all required environment variables are present and
+// well-formed. Call this immediately after Load() in cmd/* entrypoints.
+// Returns a descriptive error so operators know exactly which variable to fix.
+func (c *Config) Validate() error {
+	if c.DBUrl == "" {
+		return fmt.Errorf("VAKT_DB_URL is required but not set — see .env.example")
+	}
+	if c.RedisUrl == "" {
+		return fmt.Errorf("VAKT_REDIS_URL is required but not set — see .env.example")
+	}
+	if c.SecretKey == "" {
+		return fmt.Errorf("VAKT_SECRET_KEY is required but not set — generate with: openssl rand -hex 32")
+	}
+	// Minimum length: 32 bytes = 64 hex characters.
+	// hex.DecodeString already validated this in Load() if the key is set,
+	// but we defend-in-depth here in case Validate() is called independently.
+	keyBytes, err := hex.DecodeString(c.SecretKey)
+	if err != nil {
+		return fmt.Errorf("VAKT_SECRET_KEY is not valid hex: %w", err)
+	}
+	if len(keyBytes) < 32 {
+		return fmt.Errorf("VAKT_SECRET_KEY must be at least 32 bytes (64 hex chars), got %d bytes — regenerate with: openssl rand -hex 32", len(keyBytes))
+	}
+	return nil
+}
+
 // IsModuleEnabled reports whether the named module (e.g. "secpulse") appears in
 // the ModulesEnabled CSV list.  Comparison is case-insensitive.
 func (c *Config) IsModuleEnabled(name string) bool {

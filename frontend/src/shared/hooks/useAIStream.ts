@@ -157,7 +157,7 @@ export function useAIStream() {
         // explizit per stop() oder unmount abgebrochen — kein Fehler.
         return
       }
-      setError(e instanceof Error ? e : new Error('Unbekannter Fehler'))
+      setError(e instanceof Error ? e : new Error('KI-Stream fehlgeschlagen — bitte erneut versuchen'))
       setIsStreaming(false)
       setDurationMs(Date.now() - startTimeRef.current)
     }

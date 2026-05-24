@@ -213,7 +213,23 @@ func EnqueueScanTask(client *asynq.Client, taskType string, payload []byte) erro
 func main() {
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 
-	cfg, _ := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		logger.Fatal().Err(err).Msg("config load failed")
+	}
+
+	if err := cfg.Validate(); err != nil {
+		logger.Fatal().Err(err).Msg("configuration error — check .env file")
+	}
+
+	// S46-2: Worker startup diagnostics — mirror of api/main.go summary log.
+	// NEVER log SecretKey, passwords, or tokens.
+	logger.Info().
+		Str("version", cfg.Version).
+		Bool("demo_mode", cfg.DemoSeed).
+		Bool("epss_enabled", cfg.EPSSEnabled).
+		Int("worker_concurrency", workerConcurrency()).
+		Msg("vakt worker startup complete")
 
 	// Open a single shared DB pool for the entire worker process lifetime.
 	// All handler closures receive this pool — no per-job reconnects.
@@ -225,7 +241,7 @@ func main() {
 	defer pool.Close()
 
 	// Log EPSS opt-in status so operators know whether external enrichment is active.
-	if cfg == nil || !cfg.EPSSEnabled {
+	if !cfg.EPSSEnabled {
 		log.Info().Msg("EPSS enrichment disabled — set VAKT_EPSS_ENABLED=true to enable (sends CVE IDs to api.first.org)")
 	}
 

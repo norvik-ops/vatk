@@ -128,7 +128,7 @@ export default function PolicyAcceptPage() {
                 </button>
                 {acceptMutation.isError && (
                   <p className="text-sm text-destructive text-center">
-                    Fehler: {acceptMutation.error?.message ?? 'Unbekannter Fehler'}
+                    Fehler: {acceptMutation.error?.message ?? 'Richtlinie konnte nicht akzeptiert werden — bitte erneut versuchen'}
                   </p>
                 )}
               </div>

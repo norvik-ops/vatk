@@ -219,7 +219,7 @@ SHIELDSTACK_AI_MODEL=mistral-small-latest`}</pre>
             {error && !(error instanceof FeatureLockedError) && (
               <div className="flex items-center gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                {error instanceof Error ? error.message : 'Unbekannter Fehler'}
+                {error instanceof Error ? error.message : 'KI-Bericht konnte nicht generiert werden — bitte erneut versuchen'}
               </div>
             )}
 

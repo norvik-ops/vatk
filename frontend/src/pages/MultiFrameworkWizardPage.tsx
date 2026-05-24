@@ -148,7 +148,7 @@ export default function MultiFrameworkWizardPage() {
         if (err instanceof FeatureLockedError) {
           setProGateError(true)
         } else {
-          setError(err instanceof Error ? err.message : 'Unbekannter Fehler')
+          setError(err instanceof Error ? err.message : 'Assessment konnte nicht gestartet werden — bitte Seite neu laden')
         }
       } finally {
         setLoading(false)

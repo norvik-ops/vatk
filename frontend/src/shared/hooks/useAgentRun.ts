@@ -162,7 +162,7 @@ export function useAgentRun() {
       setDurationMs(Date.now() - startTimeRef.current)
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') return
-      setError(e instanceof Error ? e : new Error('Unbekannter Fehler'))
+      setError(e instanceof Error ? e : new Error('Agent-Ausführung fehlgeschlagen — bitte erneut versuchen'))
       setIsRunning(false)
       setDurationMs(Date.now() - startTimeRef.current)
     }

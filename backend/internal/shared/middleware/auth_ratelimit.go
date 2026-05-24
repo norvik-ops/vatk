@@ -15,13 +15,14 @@ import (
 
 const (
 	// authRLLimit is the maximum number of auth attempts allowed per IP per window.
-	authRLLimit = 10
+	// S45-5: reduced to 5 req/min per IP for all credential-submission endpoints.
+	authRLLimit = 5
 	// authRLWindow is the rolling window over which the limit is applied.
 	authRLWindow = time.Minute
 )
 
 // AuthRateLimit returns an Echo middleware that enforces an IP-based token-bucket
-// rate limit of 10 requests per minute using Redis as the backing store.
+// rate limit of 5 requests per minute using Redis as the backing store.
 //
 // On every call the middleware:
 //  1. Increments a Redis counter keyed by "auth_rl:<ip>".

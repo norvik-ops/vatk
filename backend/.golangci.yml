@@ -37,6 +37,10 @@ linters:
       # - rohes `go func()` ohne safego.Run ist verboten — Pflicht-Pattern aus
       #   ADR-0018. Goroutinen werden über internal/shared/safego.Run gestartet,
       #   damit Panic-Eskalation + Parent-Context-Propagation enforced sind.
+      # - S45-4 + ADR-0018: context.Background() ist in internal/** verboten.
+      #   Alle Goroutinen und Service-Calls müssen den Request-/Job-Context
+      #   propagieren. Ausnahmen: cmd/* (Startup-Owner), safego-Paket selbst,
+      #   sqlc-generierter Code, und _test.go Dateien.
       forbid:
         - pattern: '\binterface\{\}'
           msg: "use `any` (Go 1.18+) instead of `interface{}`"
@@ -44,6 +48,8 @@ linters:
           msg: "raw `go func()` is forbidden — use safego.Run(ctx, name, fn) per ADR-0018"
         - pattern: 'strings\.Contains\(.*\.Error\(\)'
           msg: "use errors.Is/errors.As with sentinel errors instead of string matching on err.Error()"
+        - pattern: 'context\.Background\(\)'
+          msg: "context.Background() is forbidden in internal/ — propagate the request or job context (ADR-0018); annotate intentional startup uses with // TODO: ADR-0018 — startup context, intentional"
       analyze-types: false
 
     staticcheck:
@@ -93,8 +99,9 @@ linters:
       - linters:
           - forbidigo
         path: "_test\\.go"
-      # forbidigo: cmd/* Startup-Wiring darf rohe Goroutinen verwenden
-      # (Server-Lifecycle-Owner, kein Parent-Context vorhanden).
+      # forbidigo: cmd/* Startup-Wiring darf rohe Goroutinen und
+      # context.Background() verwenden (Server-Lifecycle-Owner, kein
+      # Parent-Context vorhanden).
       - linters:
           - forbidigo
         path: "^cmd/"

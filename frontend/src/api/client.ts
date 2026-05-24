@@ -174,11 +174,12 @@ export async function apiFetch<T>(
     }
 
     if (res.status === 403) {
-      const body = (await res.json().catch(() => ({}))) as { code?: string }
+      const body = (await res.json().catch(() => ({}))) as { code?: string; error?: string }
       if (body.code === 'MFA_REQUIRED') {
         window.location.href = '/account'
         throw new MFARequiredError()
       }
+      throw new Error(body.error ?? 'Keine Berechtigung für diese Aktion')
     }
 
     if (res.status === 429) {
@@ -198,7 +199,12 @@ export async function apiFetch<T>(
 
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { error?: string }
-      throw new Error(body.error ?? `HTTP ${res.status.toString()}`)
+      // Map common HTTP status codes to user-friendly German messages
+      const fallback =
+        res.status >= 500
+          ? 'Interner Fehler — bitte erneut versuchen'
+          : `HTTP ${res.status.toString()}`
+      throw new Error(body.error ?? fallback)
     }
 
     if (res.status === 204) return undefined as T

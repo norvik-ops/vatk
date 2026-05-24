@@ -26,8 +26,9 @@ import (
 // For full integration testing with a real Redis, see the build-tag block below.
 func TestAuthRateLimitConstants(t *testing.T) {
 	// Verify the rate limit parameters are sane and match the documented values.
-	assert.Equal(t, int64(10), int64(authRLLimit),
-		"auth rate limit should be 10 requests")
+	// S45-5: limit is 5 req/min per IP for all credential-submission endpoints.
+	assert.Equal(t, int64(5), int64(authRLLimit),
+		"auth rate limit should be 5 requests per minute (S45-5)")
 	assert.Equal(t, time.Minute, authRLWindow,
 		"auth rate limit window should be 1 minute")
 }
@@ -65,8 +66,8 @@ func TestAuthRateLimitThresholdLogic(t *testing.T) {
 	}{
 		{"count=0 — pass", 0, http.StatusOK},
 		{"count=1 — pass", 1, http.StatusOK},
-		{"count=10 — at limit, pass", 10, http.StatusOK}, // > not >=, so 10 passes
-		{"count=11 — over limit, block", 11, http.StatusTooManyRequests},
+		{"count=5 — at limit, pass", 5, http.StatusOK}, // > not >=, so 5 passes
+		{"count=6 — over limit, block", 6, http.StatusTooManyRequests},
 		{"count=100 — way over limit, block", 100, http.StatusTooManyRequests},
 	}
 
@@ -152,8 +153,8 @@ func TestAuthRateLimit_RateLimitedResponseBody(t *testing.T) {
 //  1. A running Redis instance (e.g. via testcontainers-go).
 //  2. Construct: rdb := redis.NewClient(&redis.Options{Addr: redisAddr})
 //  3. Build the middleware: mw := AuthRateLimit(rdb)
-//  4. Send 11 requests from the same IP in rapid succession.
-//  5. Assert first 10 return 200, 11th returns 429.
+//  4. Send 6 requests from the same IP in rapid succession.
+//  5. Assert first 5 return 200, 6th returns 429 (S45-5: limit is 5 req/min).
 //  6. Wait for authRLWindow (1 minute) or flush the key; assert next request returns 200 again.
 //
 // This is excluded from unit tests to keep the suite fast and dependency-free.

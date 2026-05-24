@@ -40,20 +40,36 @@ export function useToastStore() {
     const id = ++_counter
     let variant: ToastVariant = 'info'
     let action: ToastAction | undefined
-    let duration = 4000
+    // Error toasts are persistent (no auto-dismiss) — user must explicitly close them
+    // so they have time to read the error message.
+    // Success and info toasts auto-dismiss after 4 seconds.
+    let duration: number | null = 4000
 
     if (typeof variantOrOptions === 'string') {
       variant = variantOrOptions
+      if (variant === 'error') duration = null
     } else if (variantOrOptions) {
       variant = variantOrOptions.variant ?? 'info'
       action = variantOrOptions.action
-      duration = variantOrOptions.duration ?? 4000
+      // Explicit duration overrides the default; null means persistent
+      if (variantOrOptions.duration !== undefined) {
+        duration = variantOrOptions.duration
+      } else if (variant === 'error') {
+        duration = null
+      }
     }
 
-    setToasts((prev) => [...prev, { id, message, variant, action }])
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, duration)
+    setToasts((prev) => {
+      // Cap at 3 simultaneous toasts — drop the oldest when limit is exceeded
+      const next = [...prev, { id, message, variant, action }]
+      return next.length > 3 ? next.slice(next.length - 3) : next
+    })
+
+    if (duration !== null) {
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id))
+      }, duration)
+    }
 
     return id
   }, [])

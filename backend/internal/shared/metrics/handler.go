@@ -6,9 +6,11 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -17,12 +19,20 @@ import (
 
 // Handler serves Prometheus-format metrics.
 type Handler struct {
-	db *pgxpool.Pool
+	db        *pgxpool.Pool
+	redisAddr string // optional — used for queue-depth metrics
 }
 
 // NewHandler constructs a Handler.
 func NewHandler(db *pgxpool.Pool) *Handler {
 	return &Handler{db: db}
+}
+
+// WithRedisAddr sets the Redis address for queue-depth metrics.
+// When not set, queue-depth metrics are omitted.
+func (h *Handler) WithRedisAddr(addr string) *Handler {
+	h.redisAddr = addr
+	return h
 }
 
 // ServeMetrics writes Prometheus-format metrics (text/plain; version=0.0.4).
@@ -176,6 +186,39 @@ func (h *Handler) ServeMetrics(c echo.Context) error {
 	fmt.Fprintln(w, "# TYPE vakt_controls_implemented gauge")
 	for k, v := range bm.controlsImplemented {
 		fmt.Fprintf(w, "vakt_controls_implemented{org_id=%q,framework_id=%q} %d\n", k.orgID, k.frameworkID, v)
+	}
+
+	// ── S46-1: runtime + session + pool metrics ───────────────────────────────
+
+	// vakt_active_sessions_total — active (non-expired) sessions from auth table
+	fmt.Fprintln(w, "# HELP vakt_active_sessions_total Number of currently active user sessions")
+	fmt.Fprintln(w, "# TYPE vakt_active_sessions_total gauge")
+	var activeSessions int64
+	err = h.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM user_sessions
+		WHERE expires_at > NOW()`).Scan(&activeSessions)
+	if err != nil {
+		log.Error().Err(err).Msg("metrics: query active_sessions")
+		activeSessions = 0
+	}
+	fmt.Fprintf(w, "vakt_active_sessions_total %d\n", activeSessions)
+
+	// vakt_db_pool_in_use — pgxpool connections currently checked out
+	fmt.Fprintln(w, "# HELP vakt_db_pool_in_use Database connections currently in use")
+	fmt.Fprintln(w, "# TYPE vakt_db_pool_in_use gauge")
+	poolStats := h.db.Stat()
+	fmt.Fprintf(w, "vakt_db_pool_in_use %d\n", poolStats.AcquiredConns())
+
+	// vakt_db_pool_idle — pgxpool idle connections
+	fmt.Fprintln(w, "# HELP vakt_db_pool_idle Database connections idle in pool")
+	fmt.Fprintln(w, "# TYPE vakt_db_pool_idle gauge")
+	fmt.Fprintf(w, "vakt_db_pool_idle %d\n", poolStats.IdleConns())
+
+	// vakt_queue_depth — Asynq queue depths (only when Redis is configured)
+	fmt.Fprintln(w, "# HELP vakt_queue_depth Asynq queue depth by queue name")
+	fmt.Fprintln(w, "# TYPE vakt_queue_depth gauge")
+	if h.redisAddr != "" {
+		h.writeQueueDepth(ctx, w)
 	}
 
 	return nil
@@ -372,4 +415,25 @@ func (h *Handler) collectBusinessMetrics(ctx context.Context, orgIDs []string) (
 		return nil, err
 	}
 	return bm, nil
+}
+
+// writeQueueDepth queries Asynq queue depths and writes them to w.
+// One gauge line per known queue; errors are logged but don't abort the output.
+func (h *Handler) writeQueueDepth(_ context.Context, w io.Writer) {
+	inspector := asynq.NewInspector(asynq.RedisClientOpt{Addr: h.redisAddr})
+	defer func() { _ = inspector.Close() }()
+
+	queues, err := inspector.Queues()
+	if err != nil {
+		log.Error().Err(err).Msg("metrics: list asynq queues")
+		return
+	}
+	for _, name := range queues {
+		info, err := inspector.GetQueueInfo(name)
+		if err != nil {
+			log.Error().Err(err).Str("queue", name).Msg("metrics: get queue info")
+			continue
+		}
+		fmt.Fprintf(w, "vakt_queue_depth{queue=%q} %d\n", name, info.Pending+info.Active)
+	}
 }

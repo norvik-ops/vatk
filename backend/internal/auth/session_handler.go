@@ -4,7 +4,6 @@
 package auth
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -100,7 +99,7 @@ func (h *SessionHandler) RevokeSession(c echo.Context) error {
 
 	// Best-effort Redis removal; the 30-day TTL is a fallback.
 	if h.redis != nil {
-		_ = h.redis.Del(context.Background(), "refresh:"+tokenHash)
+		_ = h.redis.Del(c.Request().Context(), "refresh:"+tokenHash)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -145,7 +144,7 @@ func (h *SessionHandler) RevokeAllOtherSessions(c echo.Context) error {
 
 	// Remove from Redis in bulk.
 	if h.redis != nil && len(rows) > 0 {
-		_ = h.redis.Del(context.Background(), rows...)
+		_ = h.redis.Del(c.Request().Context(), rows...)
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "other sessions revoked"})

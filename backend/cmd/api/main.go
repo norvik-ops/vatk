@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/hibiken/asynq"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/redis/go-redis/v9"
@@ -74,6 +75,96 @@ import (
 
 // version is injected at build time via -ldflags "-X main.version=..."
 var version = "dev"
+
+// ── S46-3: /health response types ────────────────────────────────────────────
+
+// componentStatus is the per-subsystem health entry.
+type componentStatus struct {
+	Status    string `json:"status"`              // "ok" | "error" | "disabled"
+	LatencyMs int64  `json:"latency_ms,omitempty"`
+}
+
+// healthComponents groups all subsystem statuses.
+type healthComponents struct {
+	DB    componentStatus `json:"db"`
+	Redis componentStatus `json:"redis"`
+	AI    componentStatus `json:"ai"`
+}
+
+// healthResponse is the canonical /health response.
+// CRITICAL fields (demo, sso_enabled, version) must always be present.
+type healthResponse struct {
+	Status     string           `json:"status"`      // "ok" | "degraded" | "down"
+	Version    string           `json:"version"`
+	Demo       bool             `json:"demo"`
+	SSOEnabled bool             `json:"sso_enabled"`
+	Components healthComponents `json:"components"`
+}
+
+// healthHandler builds the /health response. db and rdb may be nil when called
+// before the DB/Redis connections are established (early startup).
+func healthHandler(c echo.Context, cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) error {
+	resp := healthResponse{
+		Status:     "ok",
+		Version:    cfg.Version,
+		Demo:       cfg.DemoSeed,
+		SSOEnabled: cfg.CasdoorURL != "" && cfg.CasdoorClientID != "",
+	}
+
+	// DB component check
+	if db != nil {
+		ctx, cancel := context.WithTimeout(c.Request().Context(), 2*time.Second)
+		defer cancel()
+		start := time.Now()
+		err := db.Ping(ctx)
+		resp.Components.DB = componentStatus{
+			Status:    "ok",
+			LatencyMs: time.Since(start).Milliseconds(),
+		}
+		if err != nil {
+			resp.Components.DB.Status = "error"
+			resp.Status = "down"
+		}
+	} else {
+		resp.Components.DB = componentStatus{Status: "disabled"}
+	}
+
+	// Redis component check
+	if rdb != nil {
+		ctx, cancel := context.WithTimeout(c.Request().Context(), 1*time.Second)
+		defer cancel()
+		start := time.Now()
+		err := rdb.Ping(ctx).Err()
+		resp.Components.Redis = componentStatus{
+			Status:    "ok",
+			LatencyMs: time.Since(start).Milliseconds(),
+		}
+		if err != nil {
+			resp.Components.Redis.Status = "error"
+			if resp.Status != "down" {
+				resp.Status = "degraded"
+			}
+		}
+	} else {
+		resp.Components.Redis = componentStatus{Status: "disabled"}
+	}
+
+	// AI component check
+	if cfg.AIProvider == "" || cfg.AIProvider == "disabled" {
+		resp.Components.AI = componentStatus{Status: "disabled"}
+	} else {
+		resp.Components.AI = componentStatus{Status: "ok"}
+	}
+
+	// Determine HTTP status code
+	httpStatus := http.StatusOK
+	if resp.Status == "degraded" || resp.Status == "down" {
+		httpStatus = http.StatusServiceUnavailable
+	}
+	return c.JSON(httpStatus, resp)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 	log := zerolog.New(os.Stdout).With().Timestamp().Logger()
@@ -172,13 +263,12 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 	//   demo         — schaltet die Login-Page in den Ephemeral-Demo-Flow
 	//   sso_enabled  — blendet den SSO-Button ein/aus
 	//   version      — wird im Footer angezeigt
+	//
+	// S46-3: response extended with `components` for operational visibility.
+	// CRITICAL: demo, sso_enabled, version must never be removed — they are
+	// used by the frontend and the release smoke-test (api-contract-checklist.md).
 	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]any{
-			"status":      "ok",
-			"version":     cfg.Version,
-			"demo":        cfg.DemoSeed,
-			"sso_enabled": cfg.CasdoorURL != "" && cfg.CasdoorClientID != "",
-		})
+		return healthHandler(c, cfg, nil, nil)
 	})
 
 	// security.txt — public, no auth, RFC 9116.
@@ -268,8 +358,15 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 		return e
 	}
 
-	// Auth routes — rate-limited (10 req/min per IP), no token middleware (they issue tokens).
+	// Auth routes — rate-limited (5 req/min per IP, S45-5), no token middleware (they issue tokens).
 	rdb := redis.NewClient(redisOpt)
+
+	// S46-3: Now that we have pool + rdb, re-register /health with full component checks.
+	// The initial registration (before DB/Redis were available) returns a minimal response.
+	// Overriding here gives us DB + Redis + AI component statuses.
+	e.GET("/health", func(c echo.Context) error {
+		return healthHandler(c, cfg, pool, rdb)
+	})
 
 	// Extend readiness check to include Redis now that rdb is available.
 	e.GET("/health/ready", func(c echo.Context) error {
@@ -298,11 +395,11 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 		})
 	})
 
-	// Auth routes — Redis-backed IP rate limit (10 req/min) on the four
+	// Auth routes — Redis-backed IP rate limit (5 req/min) on the four
 	// credential-submission endpoints, plus a broader in-memory limiter on the
-	// full auth group for burst protection on other endpoints.
+	// full auth group for burst protection on other endpoints (S45-5).
 	authRateLimiter := middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(
-		middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(10.0 / 60.0), Burst: 10, ExpiresIn: 5 * time.Minute},
+		middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(5.0 / 60.0), Burst: 5, ExpiresIn: 5 * time.Minute},
 	))
 	redisAuthRL := sharedmw.AuthRateLimit(rdb)
 	authSvc := auth.NewService(pool, rdb, pasetoKey)
@@ -678,9 +775,11 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 		feedback.Register(api, pool, auth.AuthMiddleware(pasetoKey, pool, rdb))
 		log.Info().Msg("demo feedback routes registered")
 
-		// Rate-limit POST /demo/start to 5 req/min per IP to prevent DB flood.
+		// Rate-limit POST /demo/start to 10 req/min per IP to prevent DB flood.
+		// 10/min is generous enough for a public demo (multiple browser tabs, refreshes)
+		// while still protecting against automated abuse.
 		demoStartRateLimiter := middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(
-			middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(5.0 / 60.0), Burst: 5, ExpiresIn: 5 * time.Minute},
+			middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(10.0 / 60.0), Burst: 10, ExpiresIn: 5 * time.Minute},
 		))
 		demoStartHandler := demo.NewStartHandler(pool, cfg.SecretKey)
 		demo.RegisterStart(api.Group("/demo", demoStartRateLimiter), demoStartHandler)
@@ -697,9 +796,14 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 		log.Info().Msg("lemonsqueezy webhook registered")
 	}
 
-	// Prometheus metrics — IP-allowlisted (loopback + Docker-internal only), gated by config flag.
+	// S46-1: Prometheus metrics — IP-allowlisted (loopback + Docker-internal only).
+	// Optionally also token-gated via VAKT_METRICS_TOKEN.
 	if cfg.MetricsEnabled {
-		metrics.Register(e, pool)
+		metricsToken := os.Getenv("VAKT_METRICS_TOKEN")
+		metrics.RegisterWithOptions(e, pool, metrics.RegisterOptions{
+			RedisAddr:    redisOpt.Addr,
+			MetricsToken: metricsToken,
+		})
 		log.Info().Msg("metrics endpoint registered")
 	}
 
@@ -837,6 +941,18 @@ func sanitizeLogField(s string, maxLen int) string {
 	return string(out)
 }
 
+// enabledModuleList returns the list of active modules by parsing the
+// VAKT_MODULES_ENABLED config value. Used for startup-diagnostic logging.
+func enabledModuleList(cfg *config.Config) []string {
+	var out []string
+	for _, mod := range strings.Split(cfg.ModulesEnabled, ",") {
+		if m := strings.TrimSpace(mod); m != "" {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
 func migrationsDir() string {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
@@ -865,8 +981,8 @@ func main() {
 		cfg.Version = version
 	}
 
-	if cfg.SecretKey == "" {
-		log.Fatal().Msg("VAKT_SECRET_KEY is required. Generate one with: openssl rand -hex 32")
+	if err := cfg.Validate(); err != nil {
+		log.Fatal().Err(err).Msg("configuration error — check .env file")
 	}
 
 	if cfg.AutoMigrate && cfg.DBUrl != "" {
@@ -891,6 +1007,18 @@ func main() {
 
 	serverCtx, serverCancel := context.WithCancel(context.Background())
 	e := setupEcho(serverCtx, cfg)
+
+	// S46-2: Startup diagnostics — one structured log entry summarising the
+	// effective configuration. NEVER log SecretKey, passwords, or tokens.
+	log.Info().
+		Str("version", cfg.Version).
+		Str("ai_provider", cfg.AIProvider).
+		Bool("demo_mode", cfg.DemoSeed).
+		Bool("smtp_configured", cfg.SMTPHost != "" && cfg.SMTPHost != "localhost").
+		Bool("metrics_enabled", cfg.MetricsEnabled).
+		Bool("sso_configured", cfg.CasdoorURL != "" && cfg.CasdoorClientID != "").
+		Strs("modules", enabledModuleList(cfg)).
+		Msg("vakt startup complete")
 
 	if cfg.DemoSeed {
 		log.Warn().Msg("demo mode active — ephemeral sessions are open to the public, do NOT use in production")

@@ -7,7 +7,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### v0.23.0 — Security Hardening Wave 2 + Release Readiness Phase 1 (2026-05-23)
+---
+
+## [0.23.0] — 2026-05-23
+
+Security Hardening Wave 2 + Release Readiness Phase 1
 
 #### Phase 1 — Release Readiness
 

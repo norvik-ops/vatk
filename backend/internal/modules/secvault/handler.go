@@ -543,7 +543,7 @@ func (h *Handler) TriggerGitScan(c echo.Context) error {
 		return validationError(c, err)
 	}
 	// SSRF guard: enforce HTTPS-only and block private/loopback addresses.
-	if err := ValidateRepoURL(input.RepoURL); err != nil {
+	if err := ValidateRepoURL(c.Request().Context(), input.RepoURL); err != nil {
 		return badRequest(c, err.Error())
 	}
 	scan, err := h.service.TriggerGitScan(c.Request().Context(), orgID, input)
