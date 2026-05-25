@@ -111,10 +111,28 @@ func NewService(db *pgxpool.Pool, redisClient *redis.Client, key paseto.V4Symmet
 	}
 }
 
+// ErrRegistrationDisabled is returned when a registration attempt is made
+// after the initial setup org has already been created.
+var ErrRegistrationDisabled = errors.New("registration is disabled — this instance is already set up")
+
 // Register creates a new user account and personal organisation, then issues tokens.
 // deviceHint is the caller's User-Agent header (truncated to 120 chars) used for
 // per-device session tracking; pass "" when not available.
+//
+// Registration is only allowed when no organisation exists yet (bootstrap).
+// Once the first org is created, this endpoint returns ErrRegistrationDisabled
+// so that publicly reachable instances cannot be used to create arbitrary tenants.
 func (s *Service) Register(ctx context.Context, input RegisterInput, deviceHint string) (*AuthResponse, error) {
+	// Guard: allow only the very first registration (bootstrap).
+	// Demo orgs created via RunEphemeral() bypass this path entirely.
+	var orgCount int
+	if err := s.db.QueryRow(ctx, `SELECT COUNT(*) FROM organizations`).Scan(&orgCount); err != nil {
+		return nil, fmt.Errorf("registration check: %w", err)
+	}
+	if orgCount > 0 {
+		return nil, ErrRegistrationDisabled
+	}
+
 	// Enforce password complexity before doing any DB work.
 	if err := validatePasswordStrength(input.Password); err != nil {
 		return nil, err

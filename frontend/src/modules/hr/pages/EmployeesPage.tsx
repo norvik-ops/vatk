@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { UserPlus, Pencil, Trash2, Users, Play } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent } from '../../../components/ui/card'
@@ -11,16 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../../../components/ui/dialog'
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from '../../../components/ui/alert-dialog'
+import { useDeferredDelete } from '../../../shared/hooks/useDeferredDelete'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { Textarea } from '../../../components/ui/textarea'
@@ -178,6 +170,7 @@ function formFromEmployee(e: Employee): FormState {
 }
 
 export default function EmployeesPage() {
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const { data: employees = [], isLoading, pagination } = useEmployees(page)
   const createEmployee = useCreateEmployee()
@@ -191,12 +184,18 @@ export default function EmployeesPage() {
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set())
   const [editTarget, setEditTarget] = useState<Employee | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm())
 
+  const { scheduleDelete } = useDeferredDelete<Employee>({
+    onDelete: (emp) => deleteEmployee.mutateAsync(emp.id),
+    onUndo: () => void queryClient.invalidateQueries({ queryKey: ['hr', 'employees'] }),
+    getLabel: (emp) => `${emp.first_name} ${emp.last_name}`,
+  })
+
   const filtered = employees.filter(
-    (e) => statusFilter === 'all' || e.status === statusFilter,
+    (e) => (statusFilter === 'all' || e.status === statusFilter) && !hiddenIds.has(e.id),
   )
 
   function openCreate() {
@@ -248,14 +247,8 @@ export default function EmployeesPage() {
     }
   }
 
-  function handleDelete(id: string) {
-    setDeleteTarget(id)
-  }
-
-  async function confirmDelete() {
-    if (!deleteTarget) return
-    await deleteEmployee.mutateAsync(deleteTarget)
-    setDeleteTarget(null)
+  function handleDelete(employee: Employee) {
+    scheduleDelete(employee, () => setHiddenIds((prev) => new Set(prev).add(employee.id)))
   }
 
   const isPending = createEmployee.isPending || updateEmployee.isPending
@@ -339,7 +332,7 @@ export default function EmployeesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => { handleDelete(e.id); }}
+                          onClick={() => { handleDelete(e); }}
                           className="text-red-500 hover:text-red-600"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -487,22 +480,6 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mitarbeiter löschen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Der Mitarbeiter wird unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void confirmDelete()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Löschen
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

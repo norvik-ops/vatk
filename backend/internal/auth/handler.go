@@ -120,6 +120,12 @@ func (h *Handler) Register(c echo.Context) error {
 	}
 	resp, err := h.service.Register(c.Request().Context(), input, deviceHint)
 	if err != nil {
+		if errors.Is(err, ErrRegistrationDisabled) {
+			return c.JSON(http.StatusForbidden, map[string]string{
+				"error": "registration is disabled",
+				"code":  "AUTH_REGISTRATION_DISABLED",
+			})
+		}
 		if errors.Is(err, ErrWeakPassword) {
 			return c.JSON(http.StatusUnprocessableEntity, map[string]string{
 				"error": err.Error(),

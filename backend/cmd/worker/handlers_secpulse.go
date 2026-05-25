@@ -30,9 +30,7 @@ func handleScanJob(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 		// Build alertSvc once — nil when alerting is not configured.
 		var alertSvc *alerting.Service
 		if cfg != nil && cfg.SecretKey != "" {
-			if masterKey, keyErr := hexDecodeKey(cfg.SecretKey); keyErr == nil {
-				alertSvc = alerting.NewService(pool, masterKey, alerting.SMTPConfig{Host: cfg.SMTPHost, Port: cfg.SMTPPort, User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom})
-			}
+			alertSvc = alerting.NewService(pool, workerKey(cfg, "vakt-alert-v1"), alerting.SMTPConfig{Host: cfg.SMTPHost, Port: cfg.SMTPPort, User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom})
 		}
 
 		// Sprint 17 S17-2: Live-Progress via Redis Pub/Sub. rdb darf nil sein
@@ -214,6 +212,60 @@ func handleSBOMGenerate(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFun
 				Msg("syft SBOM scan failed")
 			return err
 		}
+		return nil
+	}
+}
+
+// handleRiskTrendSnapshot computes the daily risk snapshot for every active org
+// and upserts one row per org into vb_risk_trend_snapshots. The dashboard reads
+// from this table instead of running generate_series × vb_findings at request time.
+func handleRiskTrendSnapshot(pool *pgxpool.Pool) asynq.HandlerFunc {
+	return func(ctx context.Context, _ *asynq.Task) error {
+		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations WHERE is_deleted = false`)
+		if err != nil {
+			return fmt.Errorf("risk_trend_snapshot: list orgs: %w", err)
+		}
+		defer rows.Close()
+
+		var orgIDs []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				continue
+			}
+			orgIDs = append(orgIDs, id)
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("risk_trend_snapshot: scan orgs: %w", err)
+		}
+
+		const upsertSQL = `
+			INSERT INTO vb_risk_trend_snapshots
+				(org_id, snapshot_date, open_count, critical_count, total_risk_score, computed_at)
+			SELECT
+				$1::uuid,
+				CURRENT_DATE,
+				COUNT(id)::int,
+				COUNT(id) FILTER (WHERE severity = 'critical')::int,
+				COALESCE(SUM(risk_score), 0)::float8,
+				NOW()
+			FROM vb_findings
+			WHERE org_id = $1 AND status = 'open'
+			ON CONFLICT (org_id, snapshot_date) DO UPDATE
+				SET open_count       = EXCLUDED.open_count,
+				    critical_count   = EXCLUDED.critical_count,
+				    total_risk_score = EXCLUDED.total_risk_score,
+				    computed_at      = EXCLUDED.computed_at`
+
+		var failed int
+		for _, orgID := range orgIDs {
+			if _, execErr := pool.Exec(ctx, upsertSQL, orgID); execErr != nil {
+				log.Error().Err(execErr).Str("org_id", orgID).Msg("risk_trend_snapshot: upsert failed")
+				failed++
+			}
+		}
+
+		log.Info().Int("orgs", len(orgIDs)).Int("failed", failed).Msg("risk_trend_snapshot: completed")
 		return nil
 	}
 }

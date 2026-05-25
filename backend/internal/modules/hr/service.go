@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/matharnica/vakt/internal/shared/audit"
+	"github.com/matharnica/vakt/internal/shared/platform/events"
 )
 
 // Actor identifies who is performing a state-changing operation and from where.
@@ -349,7 +350,7 @@ func (s *Service) fireCompletionEvidence(ctx context.Context, run *ChecklistRun)
 	if run.CompletedAt != nil {
 		completedAt = *run.CompletedAt
 	}
-	err = s.evidence.WriteChecklistCompletion(ctx, ChecklistCompletionEvidence{
+	err = s.evidence.WriteChecklistCompletion(ctx, events.ChecklistCompletionEvidence{
 		OrgID:         run.OrgID,
 		EmployeeName:  emp.FirstName + " " + emp.LastName,
 		EmployeeEmail: emp.Email,

@@ -36,12 +36,6 @@ func handleAVVExpiryCheck(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerF
 		if cfg == nil || cfg.SecretKey == "" {
 			return nil
 		}
-		masterKey, keyErr := hexDecodeKey(cfg.SecretKey)
-		if keyErr != nil {
-			log.Error().Err(keyErr).Msg("avv_expiry_check: invalid master key")
-			return nil
-		}
-
 		rows, queryErr := pool.Query(ctx, `
 			SELECT DISTINCT a.org_id::text
 			FROM po_avvs a
@@ -68,7 +62,7 @@ func handleAVVExpiryCheck(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerF
 			orgIDs = append(orgIDs, orgID)
 		}
 
-		alertSvc := alerting.NewService(pool, masterKey, alerting.SMTPConfig{Host: cfg.SMTPHost, Port: cfg.SMTPPort, User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom})
+		alertSvc := alerting.NewService(pool, workerKey(cfg, "vakt-alert-v1"), alerting.SMTPConfig{Host: cfg.SMTPHost, Port: cfg.SMTPPort, User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom})
 
 		g, gCtx := errgroup.WithContext(ctx)
 		sem := make(chan struct{}, 5)
@@ -136,12 +130,6 @@ func handleDSROverdueCheck(cfg *config.Config, pool *pgxpool.Pool) asynq.Handler
 			return nil
 		}
 
-		masterKey, err := hexDecodeKey(cfg.SecretKey)
-		if err != nil {
-			log.Error().Err(err).Msg("dsr_overdue_check: invalid master key")
-			return nil
-		}
-
 		rows, err := pool.Query(ctx, `
 			SELECT DISTINCT d.org_id::text
 			FROM po_dsr d
@@ -169,7 +157,7 @@ func handleDSROverdueCheck(cfg *config.Config, pool *pgxpool.Pool) asynq.Handler
 			orgIDs = append(orgIDs, orgID)
 		}
 
-		alertSvc := alerting.NewService(pool, masterKey, alerting.SMTPConfig{Host: cfg.SMTPHost, Port: cfg.SMTPPort, User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom})
+		alertSvc := alerting.NewService(pool, workerKey(cfg, "vakt-alert-v1"), alerting.SMTPConfig{Host: cfg.SMTPHost, Port: cfg.SMTPPort, User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom})
 
 		g, gCtx := errgroup.WithContext(ctx)
 		sem := make(chan struct{}, 5)

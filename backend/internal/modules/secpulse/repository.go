@@ -1049,16 +1049,57 @@ func (r *Repository) DeleteScanSchedule(ctx context.Context, orgID, scheduleID s
 // ---------------------------------------------------------------------------
 
 // GetRiskTrend returns daily aggregated risk data over the last N days.
+// It reads from vb_risk_trend_snapshots when pre-computed data is available,
+// falling back to the live generate_series query for orgs without snapshots yet.
 func (r *Repository) GetRiskTrend(ctx context.Context, orgID string, days int) ([]RiskTrendPoint, error) {
 	if days <= 0 {
 		days = 30
 	}
-	rows, err := r.q.GetSPRiskTrend(ctx, db.GetSPRiskTrendParams{OrgID: orgID, Column2: int32(days)})
+
+	// Prefer snapshot table — O(days) index scan instead of cartesian join.
+	const snapshotSQL = `
+		SELECT
+			TO_CHAR(d::date, 'YYYY-MM-DD')         AS date,
+			COALESCE(s.total_risk_score, 0)::float8 AS total_risk_score,
+			COALESCE(s.open_count, 0)::int          AS open_count,
+			COALESCE(s.critical_count, 0)::int      AS critical_count
+		FROM generate_series(
+			(CURRENT_DATE - make_interval(days => $2::int))::date,
+			CURRENT_DATE,
+			'1 day'::interval
+		) AS d
+		LEFT JOIN vb_risk_trend_snapshots s
+			ON s.org_id = $1::uuid
+		   AND s.snapshot_date = d::date
+		ORDER BY d`
+
+	snapRows, err := r.db.Query(ctx, snapshotSQL, orgID, days)
+	if err == nil {
+		defer snapRows.Close()
+		var out []RiskTrendPoint
+		for snapRows.Next() {
+			var p RiskTrendPoint
+			var openC, critC int32
+			if scanErr := snapRows.Scan(&p.Date, &p.TotalRiskScore, &openC, &critC); scanErr != nil {
+				continue
+			}
+			p.OpenCount = int(openC)
+			p.CriticalCount = int(critC)
+			out = append(out, p)
+		}
+		if snapRows.Err() == nil && len(out) > 0 {
+			// At least one snapshot row exists — return snapshot data.
+			return out, nil
+		}
+	}
+
+	// No snapshots yet (fresh install, job hasn't run). Fall back to live query.
+	liveRows, err := r.q.GetSPRiskTrend(ctx, db.GetSPRiskTrendParams{OrgID: orgID, Column2: int32(days)})
 	if err != nil {
 		return nil, fmt.Errorf("get risk trend: %w", err)
 	}
-	out := make([]RiskTrendPoint, 0, len(rows))
-	for _, row := range rows {
+	out := make([]RiskTrendPoint, 0, len(liveRows))
+	for _, row := range liveRows {
 		out = append(out, RiskTrendPoint{
 			Date:           row.Date,
 			TotalRiskScore: row.TotalRiskScore,

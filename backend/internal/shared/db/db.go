@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	pgx "github.com/jackc/pgx/v5"
@@ -10,13 +12,20 @@ import (
 )
 
 // Connect creates and validates a pgx connection pool.
+// Pool size is controlled by VAKT_DB_MAX_CONNS (default 25).
 func Connect(ctx context.Context, connStr string) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("parse db config: %w", err)
 	}
 
-	cfg.MaxConns = 25
+	maxConns := int32(25)
+	if v := os.Getenv("VAKT_DB_MAX_CONNS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			maxConns = int32(n)
+		}
+	}
+	cfg.MaxConns = maxConns
 	cfg.MinConns = 2
 	cfg.MaxConnLifetime = 30 * time.Minute
 	cfg.MaxConnIdleTime = 5 * time.Minute

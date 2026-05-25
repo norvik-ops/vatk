@@ -23,11 +23,19 @@ type Claims struct {
 }
 
 // GenerateSymmetricKey creates a Paseto v4 symmetric key from a 32-byte hex-encoded secret.
+// Prefer GenerateSymmetricKeyFromBytes when a pre-derived key is already available.
 func GenerateSymmetricKey(hexSecret string) (paseto.V4SymmetricKey, error) {
 	raw, err := hex.DecodeString(hexSecret)
 	if err != nil {
 		return paseto.NewV4SymmetricKey(), fmt.Errorf("decode hex secret: %w", err)
 	}
+	return GenerateSymmetricKeyFromBytes(raw)
+}
+
+// GenerateSymmetricKeyFromBytes creates a Paseto v4 symmetric key from 32 raw bytes.
+// Use this together with crypto.DeriveServiceKey("vakt-paseto-v1") so the PASETO
+// signing key is domain-separated from the AES-256-GCM encryption keys.
+func GenerateSymmetricKeyFromBytes(raw []byte) (paseto.V4SymmetricKey, error) {
 	key, err := paseto.V4SymmetricKeyFromBytes(raw)
 	if err != nil {
 		return paseto.NewV4SymmetricKey(), fmt.Errorf("create symmetric key: %w", err)

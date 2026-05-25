@@ -61,6 +61,7 @@ import (
 	ghintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/github"
 	"github.com/matharnica/vakt/internal/shared/platform/ldap"
 	"github.com/matharnica/vakt/internal/shared/platform/trustcenter"
+	sharedcrypto "github.com/matharnica/vakt/internal/shared/crypto"
 	sharedwebhooks "github.com/matharnica/vakt/internal/shared/platform/webhooks"
 	"github.com/matharnica/vakt/internal/shared/retention"
 	"github.com/matharnica/vakt/internal/shared/scheduledreports"
@@ -354,9 +355,37 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 		return e
 	}
 
-	pasetoKey, err := auth.GenerateSymmetricKey(cfg.SecretKey)
+	// Decode the raw master key once and derive purpose-specific sub-keys via HKDF.
+	// This ensures a compromise of one derived key cannot be extended to others.
+	// NOTE: Rotating to derived keys for vault/TOTP/alert/GitHub/cloud requires a
+	// re-encryption migration (planned for v0.30.0). Only PASETO is switched here
+	// because PASETO tokens are stateless — a key change merely invalidates sessions.
+	rawMasterKey, err := hex.DecodeString(cfg.SecretKey)
 	if err != nil {
-		log.Warn().Err(err).Msg("invalid secret key — auth/module routes disabled")
+		log.Warn().Err(err).Msg("invalid secret key (hex decode) — auth/module routes disabled")
+		return e
+	}
+
+	// Derive per-service keys via HKDF-SHA256.  Each service gets a unique 32-byte
+	// sub-key so a compromise of one cannot be extended to others.
+	deriveKey := func(purpose string) []byte {
+		k, kErr := sharedcrypto.DeriveServiceKey(rawMasterKey, purpose)
+		if kErr != nil {
+			log.Fatal().Err(kErr).Str("purpose", purpose).Msg("HKDF key derivation failed")
+		}
+		return k
+	}
+	vaultKey   := deriveKey("vakt-vault-v1")
+	totpKey    := deriveKey("vakt-totp-v1")
+	alertKey   := deriveKey("vakt-alert-v1")
+	ghKey      := deriveKey("vakt-github-v1")
+	cloudKey   := deriveKey("vakt-cloud-v1")
+	webhookKey := deriveKey("vakt-webhook-v1")
+
+	pasetoKeyBytes := deriveKey("vakt-paseto-v1")
+	pasetoKey, err := auth.GenerateSymmetricKeyFromBytes(pasetoKeyBytes)
+	if err != nil {
+		log.Warn().Err(err).Msg("invalid derived PASETO key — auth/module routes disabled")
 		return e
 	}
 
@@ -483,7 +512,7 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 
 	// Outgoing webhooks — created before modules so event triggers can be wired in.
 	// The webhookSvc is also registered as routes below (after module routes).
-	webhookSvc := sharedwebhooks.NewWebhookService(pool)
+	webhookSvc := sharedwebhooks.NewWebhookService(pool, webhookKey)
 
 	// Module routes — all behind auth middleware, sharing the same DB pool
 	if cfg.IsModuleEnabled("secpulse") {
@@ -577,14 +606,9 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 	}
 
 	if cfg.IsModuleEnabled("secvault") && cfg.SecretKey != "" {
-		masterKeyBytes, err := hex.DecodeString(cfg.SecretKey)
-		if err != nil {
-			log.Warn().Err(err).Msg("invalid secret key (hex decode) — secvault routes disabled")
-		} else {
-			soSvc := secvault.NewService(pool, masterKeyBytes, asynqClient)
-			secvault.Register(protected.Group("/secvault"), secvault.NewHandler(soSvc))
-			log.Info().Msg("secvault routes registered")
-		}
+		soSvc := secvault.NewService(pool, vaultKey, asynqClient)
+		secvault.Register(protected.Group("/secvault"), secvault.NewHandler(soSvc))
+		log.Info().Msg("secvault routes registered")
 	}
 
 	if cfg.IsModuleEnabled("secreflex") {
@@ -599,23 +623,18 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 	// External alerting & webhooks (cross-module) — created before modules that fire events.
 	var alertSvc *alerting.Service
 	if cfg.SecretKey != "" {
-		alertMasterKey, err := hex.DecodeString(cfg.SecretKey)
-		if err != nil {
-			log.Warn().Err(err).Msg("invalid secret key (hex decode) — alerting routes disabled")
-		} else {
-			alertSvc = alerting.NewService(pool, alertMasterKey, alerting.SMTPConfig{
-				Host: cfg.SMTPHost,
-				Port: cfg.SMTPPort,
-				User: cfg.SMTPUser,
-				Pass: cfg.SMTPPass,
-				From: cfg.SMTPFrom,
-			})
-			alerting.Register(api, pool, alertMasterKey, alerting.SMTPConfig{
-				Host: cfg.SMTPHost, Port: cfg.SMTPPort,
-				User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom,
-			}, auth.AuthMiddleware(pasetoKey, pool, rdb))
-			log.Info().Msg("alerting routes registered")
-		}
+		alertSvc = alerting.NewService(pool, alertKey, alerting.SMTPConfig{
+			Host: cfg.SMTPHost,
+			Port: cfg.SMTPPort,
+			User: cfg.SMTPUser,
+			Pass: cfg.SMTPPass,
+			From: cfg.SMTPFrom,
+		})
+		alerting.Register(api, pool, alertKey, alerting.SMTPConfig{
+			Host: cfg.SMTPHost, Port: cfg.SMTPPort,
+			User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom,
+		}, auth.AuthMiddleware(pasetoKey, pool, rdb))
+		log.Info().Msg("alerting routes registered")
 	}
 
 	if cfg.IsModuleEnabled("secprivacy") {
@@ -648,24 +667,14 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 
 	// GitHub integration — branch protection, PR review, dependency alert compliance checks
 	if cfg.SecretKey != "" {
-		ghMasterKey, err := hex.DecodeString(cfg.SecretKey)
-		if err != nil {
-			log.Warn().Err(err).Msg("invalid secret key (hex decode) — github integration routes disabled")
-		} else {
-			ghintegration.RegisterRoutes(protected.Group("/integrations/github"), pool, ghMasterKey)
-			log.Info().Msg("github integration routes registered")
-		}
+		ghintegration.RegisterRoutes(protected.Group("/integrations/github"), pool, ghKey)
+		log.Info().Msg("github integration routes registered")
 	}
 
 	// Cloud integrations — AWS + Azure automated evidence collection
 	if cfg.SecretKey != "" {
-		cloudMasterKey, err := hex.DecodeString(cfg.SecretKey)
-		if err != nil {
-			log.Warn().Err(err).Msg("invalid secret key (hex decode) — cloud integration routes disabled")
-		} else {
-			cloudintegration.RegisterRoutes(protected.Group("/integrations/cloud"), pool, cloudMasterKey, cloudEvidence)
-			log.Info().Msg("cloud integration routes registered")
-		}
+		cloudintegration.RegisterRoutes(protected.Group("/integrations/cloud"), pool, cloudKey, cloudEvidence)
+		log.Info().Msg("cloud integration routes registered")
 	}
 
 	// Outgoing webhooks — org-scoped event delivery (cross-module).
@@ -746,13 +755,11 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 
 	// 2FA/TOTP — local account second factor
 	if cfg.SecretKey != "" {
-		if totpKey, err := hex.DecodeString(cfg.SecretKey); err == nil {
-			totpRateLimiter := middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(
-				middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(5.0 / 60.0), Burst: 5, ExpiresIn: 5 * time.Minute},
-			))
-			auth.RegisterTOTP(api.Group("/auth"), pool, totpKey, auth.AuthMiddleware(pasetoKey, pool, rdb), authSvc, totpRateLimiter)
-			log.Info().Msg("2FA/TOTP routes registered")
-		}
+		totpRateLimiter := middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(
+			middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(5.0 / 60.0), Burst: 5, ExpiresIn: 5 * time.Minute},
+		))
+		auth.RegisterTOTP(api.Group("/auth"), pool, totpKey, auth.AuthMiddleware(pasetoKey, pool, rdb), authSvc, totpRateLimiter)
+		log.Info().Msg("2FA/TOTP routes registered")
 	}
 
 	// Session management — list and revoke active sessions

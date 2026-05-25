@@ -5,32 +5,20 @@ package hr
 
 import (
 	"context"
-	"time"
-)
 
-// ChecklistCompletionEvidence is the payload written to the compliance evidence
-// store when a checklist run reaches the "completed" state.
-type ChecklistCompletionEvidence struct {
-	OrgID         string
-	EmployeeName  string
-	EmployeeEmail string
-	ChecklistName string
-	ChecklistType string // "onboarding" | "offboarding"
-	RunID         string
-	CompletedAt   time.Time
-	StepCount     int
-}
+	"github.com/matharnica/vakt/internal/shared/platform/events"
+)
 
 // EvidenceWriter abstracts writing compliance evidence so the HR module does not
 // depend directly on the secvitals module. When secvitals is disabled, a noop
 // writer is used.
 type EvidenceWriter interface {
-	WriteChecklistCompletion(ctx context.Context, in ChecklistCompletionEvidence) error
+	WriteChecklistCompletion(ctx context.Context, in events.ChecklistCompletionEvidence) error
 }
 
 type noopEvidenceWriter struct{}
 
-func (noopEvidenceWriter) WriteChecklistCompletion(_ context.Context, _ ChecklistCompletionEvidence) error {
+func (noopEvidenceWriter) WriteChecklistCompletion(_ context.Context, _ events.ChecklistCompletionEvidence) error {
 	return nil
 }
 

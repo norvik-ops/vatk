@@ -10,7 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/matharnica/vakt/internal/modules/hr"
+	"github.com/matharnica/vakt/internal/shared/platform/events"
 )
 
 // HREvidenceWriter persists HR checklist completions as compliance evidence in ck_evidence.
@@ -26,7 +26,7 @@ func NewHREvidenceWriter(pool *pgxpool.Pool) *HREvidenceWriter {
 }
 
 // WriteChecklistCompletion inserts a row into ck_evidence describing the completed run.
-func (w *HREvidenceWriter) WriteChecklistCompletion(ctx context.Context, in hr.ChecklistCompletionEvidence) error {
+func (w *HREvidenceWriter) WriteChecklistCompletion(ctx context.Context, in events.ChecklistCompletionEvidence) error {
 	title := fmt.Sprintf("%s: %s", titleForType(in.ChecklistType), in.EmployeeName)
 	description := fmt.Sprintf(
 		"Checkliste %q für Mitarbeiter %s (%s) abgeschlossen am %s — %d Schritte erledigt.",

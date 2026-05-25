@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, Trash2, ClipboardList, ChevronDown, ChevronRight } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Spinner } from '../../../components/Spinner'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
@@ -11,16 +12,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../../../components/ui/dialog'
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from '../../../components/ui/alert-dialog'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import {
@@ -32,6 +23,7 @@ import {
 } from '../../../components/ui/select'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { useDeferredDelete } from '../../../shared/hooks/useDeferredDelete'
 import { useChecklists, useCreateChecklist, useDeleteChecklist } from '../hooks/useHR'
 import type { Checklist, ChecklistItem, CreateChecklistInput } from '../types'
 
@@ -118,15 +110,22 @@ function ChecklistCard({ checklist, onDelete }: { checklist: Checklist; onDelete
 }
 
 export default function ChecklistsPage() {
+  const queryClient = useQueryClient()
   const { data: checklists = [], isLoading } = useChecklists()
   const createChecklist = useCreateChecklist()
   const deleteChecklist = useDeleteChecklist()
 
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set())
   const [form, setForm] = useState<FormState>(emptyForm())
   const [newItemLabel, setNewItemLabel] = useState('')
   const [newItemRequired, setNewItemRequired] = useState(false)
+
+  const { scheduleDelete } = useDeferredDelete<Checklist>({
+    onDelete: (cl) => deleteChecklist.mutateAsync(cl.id),
+    onUndo: () => void queryClient.invalidateQueries({ queryKey: ['hr', 'checklists'] }),
+    getLabel: (cl) => cl.name,
+  })
 
   function openCreate() {
     setForm(emptyForm())
@@ -160,14 +159,8 @@ export default function ChecklistsPage() {
     setDialogOpen(false)
   }
 
-  function handleDelete(id: string) {
-    setDeleteTarget(id)
-  }
-
-  async function confirmDelete() {
-    if (!deleteTarget) return
-    await deleteChecklist.mutateAsync(deleteTarget)
-    setDeleteTarget(null)
+  function handleDelete(checklist: Checklist) {
+    scheduleDelete(checklist, () => setHiddenIds((prev) => new Set(prev).add(checklist.id)))
   }
 
   return (
@@ -205,11 +198,11 @@ export default function ChecklistsPage() {
 
       {!isLoading && checklists.length > 0 && (
         <div className="space-y-3">
-          {checklists.map((c) => (
+          {checklists.filter((c) => !hiddenIds.has(c.id)).map((c) => (
             <ChecklistCard
               key={c.id}
               checklist={c}
-              onDelete={() => { handleDelete(c.id); }}
+              onDelete={() => { handleDelete(c); }}
             />
           ))}
         </div>
@@ -314,22 +307,6 @@ export default function ChecklistsPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Checkliste löschen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Die Checkliste und alle zugehörigen Läufe werden unwiderruflich gelöscht.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void confirmDelete()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Löschen
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

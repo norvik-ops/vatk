@@ -30,6 +30,21 @@ func DeriveProjectKey(masterKey []byte, projectID string) ([]byte, error) {
 	return derived, nil
 }
 
+// DeriveServiceKey derives a 32-byte key for a specific internal service using
+// HKDF-SHA256. The purpose string must be unique per service (e.g.
+// "vakt-paseto-v1", "vakt-vault-v1") to guarantee domain separation — a
+// compromise of one derived key cannot be extended to other services.
+// Uses a distinct salt from DeriveProjectKey to prevent cross-context reuse.
+func DeriveServiceKey(masterKey []byte, purpose string) ([]byte, error) {
+	salt := []byte("vakt-service-key-v1")
+	r := hkdf.New(sha256.New, masterKey, salt, []byte(purpose))
+	derived := make([]byte, 32)
+	if _, err := io.ReadFull(r, derived); err != nil {
+		return nil, fmt.Errorf("hkdf derive service key (%s): %w", purpose, err)
+	}
+	return derived, nil
+}
+
 // Encrypt encrypts plaintext with AES-256-GCM. Returns ciphertext with the
 // 12-byte nonce prepended: [nonce (12 bytes) | ciphertext+tag].
 func Encrypt(key []byte, plaintext []byte) ([]byte, error) {

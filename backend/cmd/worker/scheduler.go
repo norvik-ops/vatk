@@ -6,8 +6,10 @@ package main
 
 import (
 	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 
+	"github.com/matharnica/vakt/internal/admin"
 	"github.com/matharnica/vakt/internal/auth"
 	"github.com/matharnica/vakt/internal/config"
 	"github.com/matharnica/vakt/internal/modules/secprivacy"
@@ -26,13 +28,22 @@ import (
 )
 
 func buildScheduler(cfg *config.Config) *asynq.Scheduler {
-	redisAddr := "localhost:6379"
+	// Parse the full Redis URL into individual fields — asynq expects "host:port".
+	redisOpt := asynq.RedisClientOpt{Addr: "localhost:6379"}
 	if cfg != nil && cfg.RedisUrl != "" {
-		redisAddr = cfg.RedisUrl
+		if parsed, err := redis.ParseURL(cfg.RedisUrl); err == nil {
+			redisOpt = asynq.RedisClientOpt{
+				Addr:     parsed.Addr,
+				Password: parsed.Password,
+				DB:       parsed.DB,
+			}
+		} else {
+			log.Warn().Err(err).Str("url", cfg.RedisUrl).Msg("scheduler: invalid Redis URL, falling back to localhost:6379")
+		}
 	}
 
 	scheduler := asynq.NewScheduler(
-		asynq.RedisClientOpt{Addr: redisAddr},
+		redisOpt,
 		&asynq.SchedulerOpts{},
 	)
 
@@ -91,6 +102,15 @@ func buildScheduler(cfg *config.Config) *asynq.Scheduler {
 		asynq.NewTask(secpulse.TaskEPSSEnrich, nil),
 	); err != nil {
 		log.Error().Err(err).Msg("failed to register EPSS enrich cron")
+	}
+
+	// Daily at 02:30 UTC: pre-compute risk trend snapshots per org.
+	// The dashboard reads from vb_risk_trend_snapshots instead of running
+	// generate_series × vb_findings at request time.
+	if _, err := scheduler.Register("30 2 * * *",
+		asynq.NewTask(secpulse.TaskRiskTrendSnapshot, nil),
+	); err != nil {
+		log.Error().Err(err).Msg("failed to register risk trend snapshot cron")
 	}
 
 	// Daily at 09:00 UTC: send control-owner due-date reminders (7-day advance notice).
@@ -168,6 +188,13 @@ func buildScheduler(cfg *config.Config) *asynq.Scheduler {
 		auth.NewCleanupPasswordResetTokensTask(),
 	); err != nil {
 		log.Error().Err(err).Msg("failed to register password reset token cleanup cron")
+	}
+
+	// Daily at 03:45 UTC: revoke SCIM tokens that have passed their expires_at.
+	if _, err := scheduler.Register("45 3 * * *",
+		admin.NewSCIMTokenExpiryTask(),
+	); err != nil {
+		log.Error().Err(err).Msg("failed to register SCIM token expiry cron")
 	}
 
 	// Daily at 03:05 UTC: delete expired rows from token_deny_list_fallback (S31-4).

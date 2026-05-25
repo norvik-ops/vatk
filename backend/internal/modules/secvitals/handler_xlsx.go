@@ -24,7 +24,7 @@ func (h *Handler) ExportRisksXLSX(c echo.Context) error {
 	ctx := c.Request().Context()
 	org := orgID(c)
 
-	risks, err := h.service.ListRisks(ctx, org)
+	risks, _, err := h.service.ListRisksPaged(ctx, org, 0, 10_000)
 	if err != nil {
 		log.Error().Err(err).Str("org_id", org).Msg("export risks xlsx")
 		return errResp(c, http.StatusInternalServerError, "export failed", "CK_EXPORT_ERROR")

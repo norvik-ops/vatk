@@ -289,7 +289,8 @@ SELECT id, org_id, title, description, category,
        created_at, updated_at
 FROM ck_risks
 WHERE org_id = $1
-ORDER BY risk_score DESC, created_at DESC;
+ORDER BY risk_score DESC, created_at DESC
+LIMIT 10000;
 
 -- name: ListCKRisksPaged :many
 SELECT id, org_id, title, description, category,
@@ -368,7 +369,8 @@ ORDER BY r.created_at DESC;
 SELECT id, control_id, org_id, text, completed, created_at, updated_at
 FROM ck_control_tasks
 WHERE control_id = $1 AND org_id = $2
-ORDER BY created_at ASC;
+ORDER BY created_at ASC
+LIMIT 500;
 
 -- name: CreateCKControlTask :one
 INSERT INTO ck_control_tasks (control_id, org_id, text)
@@ -402,7 +404,8 @@ SELECT id, org_id, title, description, category, status, version,
        reviewed_at, next_review_due
 FROM ck_policies
 WHERE org_id = $1
-ORDER BY created_at DESC;
+ORDER BY created_at DESC
+LIMIT 10000;
 
 -- name: GetCKPolicy :one
 SELECT id, org_id, title, description, category, status, version,
@@ -868,7 +871,8 @@ LIMIT 50;
 SELECT id, org_id, entity_type, entity_id, author_email, body, created_at
 FROM ck_comments
 WHERE org_id = $1 AND entity_type = $2 AND entity_id = $3
-ORDER BY created_at ASC;
+ORDER BY created_at ASC
+LIMIT 200;
 
 -- name: CreateCKComment :one
 INSERT INTO ck_comments (org_id, entity_type, entity_id, author_email, body)

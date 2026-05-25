@@ -117,3 +117,17 @@ func IncidentCreated(orgID, incidentID, title string) CrossModuleEvent {
 		OccurredAt:   time.Now().UTC(),
 	}
 }
+
+// ChecklistCompletionEvidence is the payload written to the compliance evidence
+// store when an HR checklist run reaches the "completed" state.
+// Defined here (shared) so neither secvitals nor hr imports the other. See ADR-0004.
+type ChecklistCompletionEvidence struct {
+	OrgID         string
+	EmployeeName  string
+	EmployeeEmail string
+	ChecklistName string
+	ChecklistType string // "onboarding" | "offboarding"
+	RunID         string
+	CompletedAt   time.Time
+	StepCount     int
+}

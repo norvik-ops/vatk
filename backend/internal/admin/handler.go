@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -551,7 +552,8 @@ func (h *Handler) ListSCIMTokens(c echo.Context) error {
 
 // createSCIMTokenInput is the request body for POST /api/v1/admin/scim/tokens.
 type createSCIMTokenInput struct {
-	Name string `json:"name" validate:"required,min=1,max=128"`
+	Name          string `json:"name"            validate:"required,min=1,max=128"`
+	ExpiresInDays int    `json:"expires_in_days" validate:"min=0,max=3650"` // 0 = never expire
 }
 
 // CreateSCIMToken handles POST /api/v1/admin/scim/tokens.
@@ -588,7 +590,13 @@ func (h *Handler) CreateSCIMToken(c echo.Context) error {
 	sum := sha256.Sum256([]byte(rawToken))
 	tokenHash := hex.EncodeToString(sum[:])
 
-	tok, err := h.service.repo.CreateSCIMToken(c.Request().Context(), orgID, input.Name, tokenHash)
+	var expiresAt *time.Time
+	if input.ExpiresInDays > 0 {
+		t := time.Now().UTC().AddDate(0, 0, input.ExpiresInDays)
+		expiresAt = &t
+	}
+
+	tok, err := h.service.repo.CreateSCIMToken(c.Request().Context(), orgID, input.Name, tokenHash, expiresAt)
 	if err != nil {
 		log.Error().Err(err).Str("org_id", orgID).Msg("create scim token failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{
@@ -603,6 +611,7 @@ func (h *Handler) CreateSCIMToken(c echo.Context) error {
 		"name":       tok.Name,
 		"token":      rawToken, // shown only once
 		"created_at": tok.CreatedAt,
+		"expires_at": tok.ExpiresAt,
 	})
 }
 

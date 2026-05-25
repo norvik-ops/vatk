@@ -11,6 +11,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/matharnica/vakt/internal/shared/errorbudget"
 	"github.com/matharnica/vakt/internal/shared/nis2wizard"
 	"github.com/matharnica/vakt/internal/shared/notifications"
+	"github.com/matharnica/vakt/internal/admin"
 	"github.com/matharnica/vakt/internal/shared/notify"
 	"github.com/matharnica/vakt/internal/shared/retention"
 	"github.com/matharnica/vakt/internal/shared/scheduledreports"
@@ -37,12 +39,6 @@ import (
 func handleSLAOverdueCheck(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 	return func(ctx context.Context, _ *asynq.Task) error {
 		if cfg == nil || cfg.SecretKey == "" {
-			return nil
-		}
-
-		masterKey, err := hexDecodeKey(cfg.SecretKey)
-		if err != nil {
-			log.Error().Err(err).Msg("sla_overdue_check: invalid master key")
 			return nil
 		}
 
@@ -76,7 +72,7 @@ func handleSLAOverdueCheck(cfg *config.Config, pool *pgxpool.Pool) asynq.Handler
 			orgIDs = append(orgIDs, orgID)
 		}
 
-		alertSvc := alerting.NewService(pool, masterKey, alerting.SMTPConfig{Host: cfg.SMTPHost, Port: cfg.SMTPPort, User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom})
+		alertSvc := alerting.NewService(pool, workerKey(cfg, "vakt-alert-v1"), alerting.SMTPConfig{Host: cfg.SMTPHost, Port: cfg.SMTPPort, User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom})
 
 		g, gCtx := errgroup.WithContext(ctx)
 		sem := make(chan struct{}, 5)
@@ -223,12 +219,18 @@ func handleErrorBudgetReport(pool *pgxpool.Pool) asynq.HandlerFunc {
 // archived job counts exceed thresholds. No DB required — reads directly from Redis.
 func handleQueueHealthCheck(cfg *config.Config) asynq.HandlerFunc {
 	return func(ctx context.Context, _ *asynq.Task) error {
-		redisAddr := "localhost:6379"
+		redisOpt := asynq.RedisClientOpt{Addr: "localhost:6379"}
 		if cfg != nil && cfg.RedisUrl != "" {
-			redisAddr = cfg.RedisUrl
+			if parsed, err := redis.ParseURL(cfg.RedisUrl); err == nil {
+				redisOpt = asynq.RedisClientOpt{
+					Addr:     parsed.Addr,
+					Password: parsed.Password,
+					DB:       parsed.DB,
+				}
+			}
 		}
 
-		inspector := asynq.NewInspector(asynq.RedisClientOpt{Addr: redisAddr})
+		inspector := asynq.NewInspector(redisOpt)
 		defer inspector.Close()
 
 		queues, err := inspector.Queues()
@@ -444,4 +446,19 @@ func generateAndSendAIDigest(
 
 	log.Info().Str("org_id", orgID).Msg("ai_weekly_digest: sent")
 	return nil
+}
+
+// handleSCIMTokenExpiry revokes SCIM tokens that have passed their expires_at timestamp.
+func handleSCIMTokenExpiry(pool *pgxpool.Pool) asynq.HandlerFunc {
+	return func(ctx context.Context, _ *asynq.Task) error {
+		repo := admin.NewRepository(pool)
+		count, err := repo.RevokeExpiredSCIMTokens(ctx)
+		if err != nil {
+			return fmt.Errorf("scim token expiry: %w", err)
+		}
+		if count > 0 {
+			log.Info().Int64("revoked", count).Msg("scim token expiry: revoked expired tokens")
+		}
+		return nil
+	}
 }

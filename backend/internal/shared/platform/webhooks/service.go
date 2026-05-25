@@ -9,16 +9,20 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
+
+	"github.com/matharnica/vakt/internal/shared/crypto"
 )
 
 // Event type constants — callers use these when firing events.
@@ -31,12 +35,15 @@ const (
 )
 
 // Webhook is the stored configuration for a single outgoing webhook endpoint.
+// Secret is intentionally omitted from JSON responses (write-once; used only
+// internally for HMAC signing). HasSecret indicates whether a secret is configured.
 type Webhook struct {
 	ID              string     `json:"id"`
 	OrgID           string     `json:"org_id"`
 	Name            string     `json:"name"`
 	URL             string     `json:"url"`
-	Secret          *string    `json:"secret,omitempty"`
+	HasSecret       bool       `json:"has_secret"`
+	secret          *string    // internal only — never serialised
 	Events          []string   `json:"events"`
 	Active          bool       `json:"active"`
 	CreatedAt       time.Time  `json:"created_at"`
@@ -62,20 +69,58 @@ type UpdateWebhookInput struct {
 	Active *bool    `json:"active"`
 }
 
+const encSecretPrefix = "enc:v1:"
+
 // WebhookService manages webhook delivery and CRUD operations.
 type WebhookService struct {
 	db         *pgxpool.Pool
 	httpClient *http.Client
+	masterKey  []byte // nil → no encryption (dev environments)
 }
 
 // NewWebhookService constructs a WebhookService with sensible HTTP timeouts.
-func NewWebhookService(db *pgxpool.Pool) *WebhookService {
+// masterKey is optional; when non-nil, webhook secrets are encrypted at rest.
+func NewWebhookService(db *pgxpool.Pool, masterKey []byte) *WebhookService {
 	return &WebhookService{
-		db: db,
+		db:        db,
+		masterKey: masterKey,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 	}
+}
+
+// encryptSecret encrypts a plaintext secret for storage. Returns the value
+// unchanged when no master key is set (dev mode).
+func (s *WebhookService) encryptSecret(plain string) (string, error) {
+	if len(s.masterKey) == 0 {
+		return plain, nil
+	}
+	ct, err := crypto.Encrypt(s.masterKey, []byte(plain))
+	if err != nil {
+		return "", fmt.Errorf("encrypt webhook secret: %w", err)
+	}
+	return encSecretPrefix + base64.URLEncoding.EncodeToString(ct), nil
+}
+
+// decryptSecret decodes a secret stored in the DB. Supports both legacy
+// plaintext values and encrypted enc:v1: values.
+func (s *WebhookService) decryptSecret(stored string) (string, error) {
+	if !strings.HasPrefix(stored, encSecretPrefix) {
+		return stored, nil // legacy plaintext
+	}
+	ct, err := base64.URLEncoding.DecodeString(strings.TrimPrefix(stored, encSecretPrefix))
+	if err != nil {
+		return "", fmt.Errorf("base64 decode webhook secret: %w", err)
+	}
+	if len(s.masterKey) == 0 {
+		return "", fmt.Errorf("encrypted webhook secret but no master key configured")
+	}
+	plain, err := crypto.Decrypt(s.masterKey, ct)
+	if err != nil {
+		return "", fmt.Errorf("decrypt webhook secret: %w", err)
+	}
+	return string(plain), nil
 }
 
 // ListWebhooks returns all webhooks for the given org.
@@ -97,11 +142,13 @@ func (s *WebhookService) ListWebhooks(ctx context.Context, orgID string) ([]Webh
 	for rows.Next() {
 		var w Webhook
 		if err := rows.Scan(
-			&w.ID, &w.OrgID, &w.Name, &w.URL, &w.Secret, &w.Events,
+			&w.ID, &w.OrgID, &w.Name, &w.URL, &w.secret, &w.Events,
 			&w.Active, &w.CreatedAt, &w.LastTriggeredAt, &w.LastStatusCode,
 		); err != nil {
 			return nil, fmt.Errorf("scan webhook row: %w", err)
 		}
+		w.HasSecret = w.secret != nil && *w.secret != ""
+		w.secret = nil // never leak secrets in API responses
 		out = append(out, w)
 	}
 	if err := rows.Err(); err != nil {
@@ -162,7 +209,11 @@ func (s *WebhookService) CreateWebhook(ctx context.Context, orgID string, input 
 
 	var secretPtr *string
 	if input.Secret != "" {
-		secretPtr = &input.Secret
+		enc, err := s.encryptSecret(input.Secret)
+		if err != nil {
+			return nil, err
+		}
+		secretPtr = &enc
 	}
 
 	var w Webhook
@@ -173,12 +224,14 @@ func (s *WebhookService) CreateWebhook(ctx context.Context, orgID string, input 
 		          active, created_at, last_triggered_at, last_status_code`,
 		orgID, input.Name, input.URL, secretPtr, input.Events, input.Active,
 	).Scan(
-		&w.ID, &w.OrgID, &w.Name, &w.URL, &w.Secret, &w.Events,
+		&w.ID, &w.OrgID, &w.Name, &w.URL, &w.secret, &w.Events,
 		&w.Active, &w.CreatedAt, &w.LastTriggeredAt, &w.LastStatusCode,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create webhook: %w", err)
 	}
+	w.HasSecret = w.secret != nil && *w.secret != ""
+	w.secret = nil
 	return &w, nil
 }
 
@@ -188,6 +241,15 @@ func (s *WebhookService) UpdateWebhook(ctx context.Context, id, orgID string, in
 		if err := validateWebhookURL(*input.URL); err != nil {
 			return nil, err
 		}
+	}
+
+	var encSecret *string
+	if input.Secret != nil {
+		enc, err := s.encryptSecret(*input.Secret)
+		if err != nil {
+			return nil, err
+		}
+		encSecret = &enc
 	}
 
 	var w Webhook
@@ -204,16 +266,18 @@ func (s *WebhookService) UpdateWebhook(ctx context.Context, id, orgID string, in
 		          active, created_at, last_triggered_at, last_status_code`,
 		id, orgID,
 		input.Name, input.URL,
-		input.Secret != nil, input.Secret,
+		encSecret != nil, encSecret,
 		input.Events != nil, input.Events,
 		input.Active,
 	).Scan(
-		&w.ID, &w.OrgID, &w.Name, &w.URL, &w.Secret, &w.Events,
+		&w.ID, &w.OrgID, &w.Name, &w.URL, &w.secret, &w.Events,
 		&w.Active, &w.CreatedAt, &w.LastTriggeredAt, &w.LastStatusCode,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("update webhook: %w", err)
 	}
+	w.HasSecret = w.secret != nil && *w.secret != ""
+	w.secret = nil
 	return &w, nil
 }
 
@@ -271,11 +335,19 @@ func (s *WebhookService) TestWebhook(ctx context.Context, id, orgID string) (int
 		WHERE id = $1::uuid AND org_id = $2::uuid`,
 		id, orgID,
 	).Scan(
-		&wh.ID, &wh.OrgID, &wh.Name, &wh.URL, &wh.Secret, &wh.Events,
+		&wh.ID, &wh.OrgID, &wh.Name, &wh.URL, &wh.secret, &wh.Events,
 		&wh.Active, &wh.CreatedAt, &wh.LastTriggeredAt, &wh.LastStatusCode,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("webhook not found: %w", err)
+	}
+	if wh.secret != nil {
+		plain, err := s.decryptSecret(*wh.secret)
+		if err != nil {
+			log.Warn().Err(err).Str("webhook_id", wh.ID).Msg("webhooks: failed to decrypt secret for test")
+		} else {
+			wh.secret = &plain
+		}
 	}
 
 	body, _ := json.Marshal(map[string]string{
@@ -307,10 +379,18 @@ func (s *WebhookService) activeWebhooksForEvent(ctx context.Context, orgID, even
 	for rows.Next() {
 		var w Webhook
 		if err := rows.Scan(
-			&w.ID, &w.OrgID, &w.Name, &w.URL, &w.Secret, &w.Events,
+			&w.ID, &w.OrgID, &w.Name, &w.URL, &w.secret, &w.Events,
 			&w.Active, &w.CreatedAt, &w.LastTriggeredAt, &w.LastStatusCode,
 		); err != nil {
 			return nil, fmt.Errorf("scan webhook: %w", err)
+		}
+		if w.secret != nil {
+			plain, err := s.decryptSecret(*w.secret)
+			if err != nil {
+				log.Warn().Err(err).Str("webhook_id", w.ID).Msg("webhooks: failed to decrypt secret")
+			} else {
+				w.secret = &plain
+			}
 		}
 		out = append(out, w)
 	}
@@ -330,8 +410,8 @@ func (s *WebhookService) deliver(ctx context.Context, wh Webhook, eventType stri
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Vakt-Event", eventType)
 
-	if wh.Secret != nil && *wh.Secret != "" {
-		sig := computeHMAC(*wh.Secret, body)
+	if wh.secret != nil && *wh.secret != "" {
+		sig := computeHMAC(*wh.secret, body)
 		req.Header.Set("X-Vakt-Signature", "sha256="+sig)
 	}
 

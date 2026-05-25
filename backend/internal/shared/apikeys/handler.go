@@ -128,11 +128,19 @@ func (h *Handler) RevokeKey(c echo.Context) error {
 // RotateKey handles POST /api-keys/:id/rotate.
 // Sprint 20 S20-2: rotates the key with a 24h grace-period where both
 // old + new hash are valid. Returns the new raw key (one-shot).
+// userID is required so only the key owner can rotate their own keys.
 func (h *Handler) RotateKey(c echo.Context) error {
 	orgID, _ := c.Get("org_id").(string)
+	userID, _ := c.Get("user_id").(string)
 	keyID := c.Param("id")
-	res, err := h.service.RotateKey(c.Request().Context(), orgID, keyID)
+	res, err := h.service.RotateKey(c.Request().Context(), orgID, userID, keyID)
 	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": "API key not found",
+				"code":  "APIKEYS_NOT_FOUND",
+			})
+		}
 		log.Error().Err(err).Str("org_id", orgID).Str("key_id", keyID).Msg("rotate api key failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "failed to rotate API key",

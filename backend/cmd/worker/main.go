@@ -15,9 +15,11 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/matharnica/vakt/internal/admin"
 	"github.com/matharnica/vakt/internal/auth"
 	"github.com/matharnica/vakt/internal/config"
 	"github.com/matharnica/vakt/internal/modules/secprivacy"
@@ -51,13 +53,24 @@ func workerConcurrency() int {
 
 func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 	cfg, _ := config.Load()
-	redisAddr := "localhost:6379"
+
+	// Parse the full Redis URL (redis://:password@host:port) into individual
+	// fields — asynq.RedisClientOpt.Addr expects "host:port", not a URL.
+	redisOpt := asynq.RedisClientOpt{Addr: "localhost:6379"}
 	if cfg != nil && cfg.RedisUrl != "" {
-		redisAddr = cfg.RedisUrl
+		if parsed, err := redis.ParseURL(cfg.RedisUrl); err == nil {
+			redisOpt = asynq.RedisClientOpt{
+				Addr:     parsed.Addr,
+				Password: parsed.Password,
+				DB:       parsed.DB,
+			}
+		} else {
+			log.Warn().Err(err).Str("url", cfg.RedisUrl).Msg("worker: invalid Redis URL, falling back to localhost:6379")
+		}
 	}
 
 	srv := asynq.NewServer(
-		asynq.RedisClientOpt{Addr: redisAddr},
+		redisOpt,
 		asynq.Config{
 			Concurrency: workerConcurrency(),
 			Queues: map[string]int{
@@ -91,6 +104,7 @@ func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 
 	// ── SecPulse EPSS enrichment (daily) ─────────────────────────────────────
 	mux.HandleFunc(secpulse.TaskEPSSEnrich, handleEPSSEnrich(cfg, pool))
+	mux.HandleFunc(secpulse.TaskRiskTrendSnapshot, handleRiskTrendSnapshot(pool))
 
 	// ── SecPulse report generation ────────────────────────────────────────────
 	mux.HandleFunc(secpulse.TaskGenerateReport, handleGenerateReport(cfg, pool))
@@ -167,6 +181,9 @@ func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 
 	// Notifications: daily compliance deadline email alerts
 	mux.HandleFunc(notifications.TaskNotifyDeadlines, handleNotifyDeadlines(cfg, pool))
+
+	// Admin: daily revocation of expired SCIM tokens
+	mux.HandleFunc(admin.TaskSCIMTokenExpiry, handleSCIMTokenExpiry(pool))
 
 	// Auth: daily cleanup of expired and used password reset tokens
 	mux.HandleFunc(auth.TaskCleanupPasswordResetTokens, handleCleanupPasswordResetTokens(pool))

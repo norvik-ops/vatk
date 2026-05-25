@@ -125,19 +125,19 @@ func (h *Handler) AuditorExportZIP(c echo.Context) error {
 	ctx := c.Request().Context()
 	oid := orgID(c)
 
-	risks, err := h.service.ListRisks(ctx, oid)
+	risks, _, err := h.service.ListRisksPaged(ctx, oid, 0, 10_000)
 	if err != nil {
 		log.Error().Err(err).Str("org_id", oid).Msg("auditor export zip: list risks")
 		return errResp(c, http.StatusInternalServerError, "failed to build export", "CK_EXPORT_ERROR")
 	}
 
-	incidents, err := h.service.ListIncidents(ctx, oid)
+	incidents, _, err := h.service.ListIncidentsPaged(ctx, oid, 0, 10_000)
 	if err != nil {
 		log.Error().Err(err).Str("org_id", oid).Msg("auditor export zip: list incidents")
 		return errResp(c, http.StatusInternalServerError, "failed to build export", "CK_EXPORT_ERROR")
 	}
 
-	policies, err := h.service.ListPolicies(ctx, oid)
+	policies, _, err := h.service.ListPoliciesPaged(ctx, oid, 0, 10_000)
 	if err != nil {
 		log.Error().Err(err).Str("org_id", oid).Msg("auditor export zip: list policies")
 		return errResp(c, http.StatusInternalServerError, "failed to build export", "CK_EXPORT_ERROR")

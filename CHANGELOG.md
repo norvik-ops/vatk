@@ -9,6 +9,82 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.29.0] — 2026-05-25
+
+Pre-v1.0 Sprint D — HKDF-Schlüsseltrennung, SCIM-Token-Ablauf, Pentest-Dokumentation
+
+### Security
+
+- **HKDF domain-separated keys** — `VAKT_SECRET_KEY` leitet jetzt via HKDF-SHA256 separate Sub-Keys für jede Komponente ab (`vakt-paseto-v1`, `vakt-vault-v1`, `vakt-totp-v1`, `vakt-alert-v1`, `vakt-github-v1`, `vakt-cloud-v1`, `vakt-webhook-v1`). Algorithmus-Isolation: ein kompromittierter Token-Key gibt keinen Zugriff auf verschlüsselte Vault-Secrets und umgekehrt. **Breaking:** alle aktiven Sessions werden beim Rollout ungültig (Paseto-Signing-Key geändert).
+- **Pentest-Scope-Dokument** — `docs/security/pentest-scope.md`: vollständige Scope-Definition für externe Pentester (In-Scope-Klassen, Test-Accounts, Out-of-Scope, Timeline, erwartete Deliverables).
+- **Responsible-Disclosure-Policy** — `docs/security/responsible-disclosure.md`: öffentlich zugängliche Policy mit Timelines, sicheren Kommunikationskanälen, Safe-Harbour-Erklärung.
+
+### Added
+
+- **SCIM Token-Ablauf** — `POST /api/v1/admin/scim/tokens` akzeptiert jetzt `expires_in_days` (0 = unbegrenzt). Abgelaufene Tokens werden täglich automatisch durch einen Worker-Job revoked. Migration 147: `expires_at`-Spalte auf `scim_tokens`.
+
+---
+
+## [0.28.0] — 2026-05-25
+
+Pre-v1.0 Sprint C — Datenbankperformance, unbegrenzte Queries gecappt
+
+### Performance
+
+- **Audit-Log-Composite-Index** — neuer Index `idx_audit_log_org_time ON audit_log (org_id, created_at DESC)`. Audit-Trail-Queries im Compliance-Dashboard sind ab 10.000+ Einträgen deutlich schneller. Migration 145.
+- **Risk-Trend-Snapshots** — täglicher Worker-Job berechnet Risiko-Snapshot pro Organisation und schreibt in `vb_risk_trend_snapshots`. Dashboard-Queries laufen jetzt in O(Tage) statt O(Findings × Tage). Migration 146. Fallback auf Live-Berechnung für frische Instanzen ohne Snapshots.
+
+### Fixed
+
+- **Unbegrenzte Datenbankqueries** — 7 interne `:many`-Queries hatten kein `LIMIT` und konnten bei großen Datensätzen den DB-Pool blockieren. Alle gecappt: Risiken/Policies/Suppressions/SBOM-Komponenten (10.000), Scan-Schedules/Control-Tasks (500), Kommentare (200). Interne Aufrufer (PDF-Export, Audit, XLSX) nutzen explizit `limit=10_000`.
+
+---
+
+## [0.27.0] — 2026-05-25
+
+Pre-v1.0 Sprint B — Command Palette, HR Toast-Undo
+
+### Added
+
+- **Command Palette** (`GlobalSearch`) — `Cmd+K` / `Ctrl+K` öffnet eine globale Suchpalette. Schnellnavigation zu Dashboard, Controls, Risiken, Vorfälle, Richtlinien, Findings und Board-Bericht. Freitext-Suche über alle Entitäten (Controls, Risks, Policies, Incidents, Assets, Findings, DSR, Breaches). Recent-Items-Gedächtnis, Keyboard-Navigation (↑↓ + Enter), Focus-Trap.
+- **Toast-Undo für HR** — das Undo-Pattern (5-Sekunden-Countdown, Löschung erst nach Ablauf) ist jetzt auf HR-Checklisten-Items (`ChecklistsPage`) und Mitarbeiter-Verwaltung (`EmployeesPage`) ausgerollt. Bereits seit v0.24.0 aktiv für Risiken und Ausnahmen in Vakt Comply.
+
+---
+
+## [0.26.0] — 2026-05-25
+
+Pre-v1.0 Sprint A — Infrastruktur-Hygiene
+
+### Added
+
+- **Helm Migration-Job** — `helm/vakt/templates/migrate-job.yaml` führt Datenbankmigrationen als Helm Pre-Upgrade-Hook aus. Keine manuellen Schritte mehr vor `helm upgrade`.
+- **Konfigurierbare DB-Connection-Pool-Größe** — `VAKT_DB_MAX_CONNS` (Default: 25) ermöglicht Tuning für größere Deployments. Dokumentiert in `.env.example`.
+- **Webhook-Secrets verschlüsselt** — Webhook-Secrets werden jetzt mit AES-256-GCM at rest verschlüsselt. Secrets sind nach der Erstellung nicht mehr über List/Get-Endpoints abrufbar (write-once). Bestehende Plaintext-Secrets werden beim Lesen transparent entschlüsselt (lazy migration).
+
+### Changed
+
+- **Vakt Operator** — Kubernetes-Operator umbenannt: Go-Modul `github.com/matharnica/vakt-operator`, CRD-Group `secrets.vakt.io/v1alpha1`. **Breaking** für bestehende Operator-Deployments (als experimental markiert, kein Bestand).
+- **Modul-Isolation** — `secvitals` importiert `hr` nicht mehr direkt. HR-Onboarding/Offboarding-Evidence läuft über einen geteilten Interface-Typ in `internal/shared/platform/evidence`.
+
+---
+
+## [0.25.0] — 2026-05-25
+
+Pre-v1.0 Phase 1 — Kritische Sicherheits- und Zuverlässigkeitsfixes
+
+### Security
+
+- **Offene Registrierung geschlossen** — `POST /api/v1/auth/register` liefert 403, sobald eine Organisation existiert. Nur der Bootstrap-Fall (leere DB) erlaubt die erste Registrierung. Migration 144 (`open_registration`-Spalte, Default `false`).
+- **API-Key-Rotation IDOR** — `RotateKey` prüft jetzt `created_by = current_user`. SecurityAnalysts konnten bisher beliebige Keys der Organisation rotieren; das ist behoben.
+- **MFA-Bypass via API-Keys dokumentiert** — die MFA-Middleware exemptiert API-Key-Sessions explizit (Automation-Pfad, kein interaktives TOTP möglich). Kommentar im Code erklärt das bewusste Design.
+
+### Fixed
+
+- **Redis-URL-Bug im Worker** — `buildServer()` und `buildScheduler()` haben die Redis-URL bisher direkt als `host:port` interpretiert. Bei URLs mit Passwort (`redis://:pw@redis:6379`) lief der Worker ohne Authentifizierung. Behoben via `redis.ParseURL()` — identisch zum API-Container. Background-Jobs (Demo-Cleanup, Token-Cleanup, Scan-Fortschritt) funktionieren jetzt zuverlässig.
+- **BSI-Grundschutz-Controls stummes Abschneiden** — interne Aufrufer nutzten `ListCKControls` (LIMIT 1000). BSI-Grundschutz hat 800+ Controls; eigene Controls kommen hinzu. Alle internen Caller nutzen jetzt `ListCKControlsPaged` mit 10.000-Limit.
+
+---
+
 ## [0.24.0] — 2026-05-24
 
 Pre-v1.0 Consolidation Wave — Module Depth, AI-Native v2, Security Docs, UX Polish, Architecture Hygiene

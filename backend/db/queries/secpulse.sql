@@ -218,7 +218,8 @@ RETURNING id, org_id, cve_id, asset_tag, reason, created_by, match_count, create
 SELECT id, org_id, cve_id, asset_tag, reason, created_by, match_count, created_at
 FROM vb_finding_suppressions
 WHERE org_id = $1
-ORDER BY created_at DESC;
+ORDER BY created_at DESC
+LIMIT 10000;
 
 -- name: DeleteSPSuppression :execrows
 DELETE FROM vb_finding_suppressions
@@ -237,7 +238,8 @@ SELECT id, org_id, asset_id, scanner, cron_expr, is_active,
        last_run, next_run, created_at
 FROM vb_scan_schedules
 WHERE org_id = $1 AND asset_id = $2
-ORDER BY created_at DESC;
+ORDER BY created_at DESC
+LIMIT 500;
 
 -- name: DeleteSPScanSchedule :execrows
 DELETE FROM vb_scan_schedules
@@ -352,7 +354,8 @@ LIMIT 1;
 -- name: ListSPComponentsBySBOM :many
 SELECT id, name, version
 FROM vb_components
-WHERE sbom_id = $1;
+WHERE sbom_id = $1
+LIMIT 10000;
 
 -- name: ListSPComponentsAll :many
 SELECT c.id, c.name, c.version, c.purl, c.eol_status, c.eol_date, s.asset_id

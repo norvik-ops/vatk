@@ -212,12 +212,13 @@ type SCIMToken struct {
 	LastUsedAt *time.Time `json:"last_used_at"`
 	CreatedAt  time.Time  `json:"created_at"`
 	RevokedAt  *time.Time `json:"revoked_at"`
+	ExpiresAt  *time.Time `json:"expires_at"`
 }
 
 // ListSCIMTokens returns all non-revoked SCIM tokens for an org.
 func (r *Repository) ListSCIMTokens(ctx context.Context, orgID string) ([]SCIMToken, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id::text, org_id::text, name, last_used_at, created_at, revoked_at
+		SELECT id::text, org_id::text, name, last_used_at, created_at, revoked_at, expires_at
 		FROM scim_tokens
 		WHERE org_id = $1::uuid
 		ORDER BY created_at DESC`, orgID)
@@ -229,7 +230,7 @@ func (r *Repository) ListSCIMTokens(ctx context.Context, orgID string) ([]SCIMTo
 	var tokens []SCIMToken
 	for rows.Next() {
 		var t SCIMToken
-		if err := rows.Scan(&t.ID, &t.OrgID, &t.Name, &t.LastUsedAt, &t.CreatedAt, &t.RevokedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.OrgID, &t.Name, &t.LastUsedAt, &t.CreatedAt, &t.RevokedAt, &t.ExpiresAt); err != nil {
 			return nil, fmt.Errorf("scan scim token: %w", err)
 		}
 		tokens = append(tokens, t)
@@ -238,19 +239,35 @@ func (r *Repository) ListSCIMTokens(ctx context.Context, orgID string) ([]SCIMTo
 }
 
 // CreateSCIMToken inserts a new SCIM token record and returns the stored row.
-// tokenHash is the sha256 hex of the raw Bearer value.
-func (r *Repository) CreateSCIMToken(ctx context.Context, orgID, name, tokenHash string) (*SCIMToken, error) {
+// tokenHash is the sha256 hex of the raw Bearer value. expiresAt is optional;
+// pass nil for tokens that should never expire.
+func (r *Repository) CreateSCIMToken(ctx context.Context, orgID, name, tokenHash string, expiresAt *time.Time) (*SCIMToken, error) {
 	var t SCIMToken
 	err := r.db.QueryRow(ctx, `
-		INSERT INTO scim_tokens (org_id, name, token_hash)
-		VALUES ($1::uuid, $2, $3)
-		RETURNING id::text, org_id::text, name, last_used_at, created_at, revoked_at`,
-		orgID, name, tokenHash,
-	).Scan(&t.ID, &t.OrgID, &t.Name, &t.LastUsedAt, &t.CreatedAt, &t.RevokedAt)
+		INSERT INTO scim_tokens (org_id, name, token_hash, expires_at)
+		VALUES ($1::uuid, $2, $3, $4)
+		RETURNING id::text, org_id::text, name, last_used_at, created_at, revoked_at, expires_at`,
+		orgID, name, tokenHash, expiresAt,
+	).Scan(&t.ID, &t.OrgID, &t.Name, &t.LastUsedAt, &t.CreatedAt, &t.RevokedAt, &t.ExpiresAt)
 	if err != nil {
 		return nil, fmt.Errorf("insert scim token: %w", err)
 	}
 	return &t, nil
+}
+
+// RevokeExpiredSCIMTokens sets revoked_at = NOW() for all tokens that have
+// passed their expires_at timestamp. Returns the count of tokens revoked.
+func (r *Repository) RevokeExpiredSCIMTokens(ctx context.Context) (int64, error) {
+	tag, err := r.db.Exec(ctx, `
+		UPDATE scim_tokens
+		SET revoked_at = NOW()
+		WHERE expires_at IS NOT NULL
+		  AND expires_at < NOW()
+		  AND revoked_at IS NULL`)
+	if err != nil {
+		return 0, fmt.Errorf("revoke expired scim tokens: %w", err)
+	}
+	return tag.RowsAffected(), nil
 }
 
 // RevokeSCIMToken sets revoked_at = NOW() for the given token, scoped to the org.

@@ -973,6 +973,7 @@ const listSPComponentsBySBOM = `-- name: ListSPComponentsBySBOM :many
 SELECT id, name, version
 FROM vb_components
 WHERE sbom_id = $1
+LIMIT 10000
 `
 
 type ListSPComponentsBySBOMRow struct {
@@ -1266,6 +1267,7 @@ SELECT id, org_id, asset_id, scanner, cron_expr, is_active,
 FROM vb_scan_schedules
 WHERE org_id = $1 AND asset_id = $2
 ORDER BY created_at DESC
+LIMIT 500
 `
 
 type ListSPScanSchedulesParams struct {
@@ -1308,6 +1310,7 @@ SELECT id, org_id, cve_id, asset_tag, reason, created_by, match_count, created_a
 FROM vb_finding_suppressions
 WHERE org_id = $1
 ORDER BY created_at DESC
+LIMIT 10000
 `
 
 func (q *Queries) ListSPSuppressions(ctx context.Context, orgID string) ([]VbFindingSuppressions, error) {

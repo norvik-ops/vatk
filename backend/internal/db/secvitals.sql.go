@@ -4870,6 +4870,7 @@ SELECT id, org_id, entity_type, entity_id, author_email, body, created_at
 FROM ck_comments
 WHERE org_id = $1 AND entity_type = $2 AND entity_id = $3
 ORDER BY created_at ASC
+LIMIT 200
 `
 
 type ListCKCommentsParams struct {
@@ -5062,6 +5063,7 @@ SELECT id, control_id, org_id, text, completed, created_at, updated_at
 FROM ck_control_tasks
 WHERE control_id = $1 AND org_id = $2
 ORDER BY created_at ASC
+LIMIT 500
 `
 
 type ListCKControlTasksParams struct {
@@ -6565,6 +6567,7 @@ SELECT id, org_id, title, description, category, status, version,
 FROM ck_policies
 WHERE org_id = $1
 ORDER BY created_at DESC
+LIMIT 10000
 `
 
 type ListCKPoliciesRow struct {
@@ -6960,6 +6963,7 @@ SELECT id, org_id, title, description, category,
 FROM ck_risks
 WHERE org_id = $1
 ORDER BY risk_score DESC, created_at DESC
+LIMIT 10000
 `
 
 type ListCKRisksRow struct {

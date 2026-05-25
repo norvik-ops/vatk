@@ -62,8 +62,15 @@ func (r *Repository) UpdateControl(ctx context.Context, orgID, controlID string,
 }
 
 // ListControls returns all controls for a framework within an organisation.
+// Uses ListCKControlsPaged with an explicit ceiling of 10 000 rows to prevent
+// silent truncation on large BSI-Grundschutz or custom-control sets.
 func (r *Repository) ListControls(ctx context.Context, orgID, frameworkID string) ([]Control, error) {
-	rows, err := r.q.ListCKControls(ctx, db.ListCKControlsParams{FrameworkID: frameworkID, OrgID: orgID})
+	rows, err := r.q.ListCKControlsPaged(ctx, db.ListCKControlsPagedParams{
+		FrameworkID: frameworkID,
+		OrgID:       orgID,
+		Limit:       10_000,
+		Offset:      0,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list controls: %w", err)
 	}

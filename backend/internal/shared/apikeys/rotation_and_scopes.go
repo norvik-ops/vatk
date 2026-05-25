@@ -68,9 +68,12 @@ func ScopeAllows(scopes []string, required string) bool {
 // `previous_key_hash` mit `previous_key_grace_expires_at = NOW() + 24h`.
 // Beide Hashes werden für die Grace-Period akzeptiert.
 //
+// userID muss dem created_by-Wert in der DB entsprechen — Rotation fremder
+// Keys durch andere Nutzer der gleichen Org ist damit ausgeschlossen (IDOR).
+//
 // Sprint 20 S20-2. Returns the NEW raw key (one-shot disclosure, wie bei
 // CreateKey — nie erneut abrufbar).
-func (s *Service) RotateKey(ctx context.Context, orgID, keyID string) (*CreateResult, error) {
+func (s *Service) RotateKey(ctx context.Context, orgID, userID, keyID string) (*CreateResult, error) {
 	// 1. Neuen Raw-Key generieren (gleicher Algorithmus wie CreateKey).
 	rawBytes := make([]byte, 24)
 	if _, err := rand.Read(rawBytes); err != nil {
@@ -82,7 +85,7 @@ func (s *Service) RotateKey(ctx context.Context, orgID, keyID string) (*CreateRe
 	prefix := rawKey[:10]
 
 	// 2. UPDATE: alten Hash in previous_key_hash schieben, neuen Hash
-	//    aktivieren, Grace 24 h. Returnt das vollständige APIKey-Record.
+	//    aktivieren, Grace 24 h. AND created_by = $6 verhindert IDOR.
 	grace := time.Now().UTC().Add(24 * time.Hour)
 	var key APIKey
 	if err := s.db.QueryRow(ctx, `
@@ -92,10 +95,13 @@ func (s *Service) RotateKey(ctx context.Context, orgID, keyID string) (*CreateRe
 		    key_hash                        = $2,
 		    key_prefix                      = $3,
 		    rotated_at                      = NOW()
-		WHERE id = $4::uuid AND org_id = $5::uuid
+		WHERE id = $4::uuid AND org_id = $5::uuid AND created_by = $6::uuid
 		RETURNING id::text, name, key_prefix, scopes, last_used_at, expires_at, created_at`,
-		grace, newHash, prefix, keyID, orgID,
+		grace, newHash, prefix, keyID, orgID, userID,
 	).Scan(&key.ID, &key.Name, &key.KeyPrefix, &key.Scopes, &key.LastUsedAt, &key.ExpiresAt, &key.CreatedAt); err != nil {
+		if err.Error() == "no rows in result set" {
+			return nil, ErrNotFound
+		}
 		return nil, fmt.Errorf("rotate: %w", err)
 	}
 

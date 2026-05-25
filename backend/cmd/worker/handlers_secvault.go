@@ -44,11 +44,7 @@ func handleGitScan(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 			if cfg == nil || cfg.SecretKey == "" {
 				return fmt.Errorf("git_scan: master key not configured, cannot decrypt credentials")
 			}
-			masterKey, keyErr := hexDecodeKey(cfg.SecretKey)
-			if keyErr != nil {
-				return fmt.Errorf("git_scan: invalid master key: %w", keyErr)
-			}
-			plainJSON, decErr := secvault.DecryptPayloadField(payload.EncryptedCredentials, masterKey)
+			plainJSON, decErr := secvault.DecryptPayloadField(payload.EncryptedCredentials, workerKey(cfg, "vakt-vault-v1"))
 			if decErr != nil {
 				return fmt.Errorf("git_scan: decrypt credentials: %w", decErr)
 			}
@@ -138,12 +134,7 @@ func handleCloudSync(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 			log.Warn().Msg("cloud_sync: master key not configured, skipping")
 			return nil
 		}
-		masterKey, err := hexDecodeKey(cfg.SecretKey)
-		if err != nil {
-			log.Error().Err(err).Msg("cloud_sync: invalid master key")
-			return err
-		}
-		svc := cloudintegration.NewService(pool, masterKey, cloudintegration.NoopEvidenceWriter())
+		svc := cloudintegration.NewService(pool, workerKey(cfg, "vakt-cloud-v1"), cloudintegration.NoopEvidenceWriter())
 		if err := svc.SyncAllEnabled(ctx); err != nil {
 			log.Error().Err(err).Msg("cloud_sync: failed")
 			return err

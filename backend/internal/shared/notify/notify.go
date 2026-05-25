@@ -19,6 +19,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 
 	"github.com/matharnica/vakt/internal/config"
@@ -75,7 +76,20 @@ type Service struct {
 // Redis address specified in cfg. The caller owns the db pool lifecycle;
 // the Service does not close it.
 func NewService(db *pgxpool.Pool, cfg *config.Config) *Service {
-	client := asynq.NewClient(asynq.RedisClientOpt{Addr: cfg.RedisUrl})
+	// Parse the full Redis URL (redis://:password@host:port) — asynq expects "host:port".
+	redisOpt := asynq.RedisClientOpt{Addr: "localhost:6379"}
+	if cfg != nil && cfg.RedisUrl != "" {
+		if parsed, err := redis.ParseURL(cfg.RedisUrl); err == nil {
+			redisOpt = asynq.RedisClientOpt{
+				Addr:     parsed.Addr,
+				Password: parsed.Password,
+				DB:       parsed.DB,
+			}
+		} else {
+			log.Warn().Err(err).Str("url", cfg.RedisUrl).Msg("notify: invalid Redis URL, falling back to localhost:6379")
+		}
+	}
+	client := asynq.NewClient(redisOpt)
 	return &Service{
 		db:    db,
 		cfg:   cfg,

@@ -10,8 +10,10 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 
 	"github.com/matharnica/vakt/internal/config"
+	"github.com/matharnica/vakt/internal/shared/crypto"
 	"github.com/matharnica/vakt/internal/shared/db"
 )
 
@@ -40,6 +42,24 @@ func hexDecodeKey(s string) ([]byte, error) {
 		b[i/2] = hi<<4 | lo
 	}
 	return b, nil
+}
+
+// workerKey decodes cfg.SecretKey and derives a domain-separated sub-key for
+// the given service purpose (e.g. "vakt-alert-v1", "vakt-vault-v1").
+// Logs fatal and returns nil if the master key is invalid — callers must guard
+// with cfg.SecretKey != "" before calling.
+func workerKey(cfg *config.Config, purpose string) []byte {
+	raw, err := hexDecodeKey(cfg.SecretKey)
+	if err != nil {
+		log.Fatal().Err(err).Str("purpose", purpose).Msg("worker: invalid VAKT_SECRET_KEY")
+		return nil
+	}
+	k, err := crypto.DeriveServiceKey(raw, purpose)
+	if err != nil {
+		log.Fatal().Err(err).Str("purpose", purpose).Msg("worker: HKDF derivation failed")
+		return nil
+	}
+	return k
 }
 
 func connectDB(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {

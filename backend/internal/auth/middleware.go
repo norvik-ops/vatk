@@ -240,6 +240,12 @@ func mfaEnforceMiddleware(db mfaDB) echo.MiddlewareFunc {
 				}
 			}
 
+			// API keys are automation credentials — TOTP is not applicable.
+			// RequirePermission / scope middleware handles their authorization.
+			if authMethod, _ := c.Get("auth_method").(string); authMethod == "api_key" {
+				return next(c)
+			}
+
 			orgID, _ := c.Get("org_id").(string)
 			userID, _ := c.Get("user_id").(string)
 			if orgID == "" || userID == "" {
