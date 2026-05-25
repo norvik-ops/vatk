@@ -105,6 +105,12 @@ Alle Aussagen im TOM-Dokument (`docs/security/tom.md`) wurden gegen die Go-Imple
 - NIS2-Token in `localStorage` statt `sessionStorage` → **behoben** (`NIS2WizardPage.tsx`)
 - `golang.org/x/net` + `x/crypto` veraltete Versionen → **behoben** (`go.mod` bump)
 
+**Offene Findings (kein Produktionsrisiko):**
+- X-Frame-Options CF-Demo (SAMEORIGIN statt DENY) — App sendet DENY korrekt; Cloudflare-Proxy überschreibt (CF-Dashboard-Fix ausstehend, kein App-Bug)
+
+**Behobene Findings (nachträglich):**
+- esbuild ≤ 0.24.2 via Vite 5.x (GHSA-67mh-4wv8-2f99, Moderate) → **behoben 2026-05-25** — Vite 5 → 6 Upgrade (v6.4.2), vitest 2 → 3; `npm audit --audit-level=high`: 0 Vulnerabilities
+
 ## Bekannte Einschränkungen
 
 | Punkt | Status |
