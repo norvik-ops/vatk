@@ -44,6 +44,7 @@ import (
 	"github.com/matharnica/vakt/internal/shared/apikeys"
 	"github.com/matharnica/vakt/internal/shared/audit"
 	"github.com/matharnica/vakt/internal/shared/comments"
+	sharedcrypto "github.com/matharnica/vakt/internal/shared/crypto"
 	"github.com/matharnica/vakt/internal/shared/dashboard"
 	"github.com/matharnica/vakt/internal/shared/dataexport"
 	shareddb "github.com/matharnica/vakt/internal/shared/db"
@@ -61,7 +62,6 @@ import (
 	ghintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/github"
 	"github.com/matharnica/vakt/internal/shared/platform/ldap"
 	"github.com/matharnica/vakt/internal/shared/platform/trustcenter"
-	sharedcrypto "github.com/matharnica/vakt/internal/shared/crypto"
 	sharedwebhooks "github.com/matharnica/vakt/internal/shared/platform/webhooks"
 	"github.com/matharnica/vakt/internal/shared/retention"
 	"github.com/matharnica/vakt/internal/shared/scheduledreports"
@@ -375,11 +375,11 @@ func setupEcho(lifecycleCtx context.Context, cfg *config.Config) *echo.Echo {
 		}
 		return k
 	}
-	vaultKey   := deriveKey("vakt-vault-v1")
-	totpKey    := deriveKey("vakt-totp-v1")
-	alertKey   := deriveKey("vakt-alert-v1")
-	ghKey      := deriveKey("vakt-github-v1")
-	cloudKey   := deriveKey("vakt-cloud-v1")
+	vaultKey := deriveKey("vakt-vault-v1")
+	totpKey := deriveKey("vakt-totp-v1")
+	alertKey := deriveKey("vakt-alert-v1")
+	ghKey := deriveKey("vakt-github-v1")
+	cloudKey := deriveKey("vakt-cloud-v1")
 	webhookKey := deriveKey("vakt-webhook-v1")
 
 	pasetoKeyBytes := deriveKey("vakt-paseto-v1")

@@ -12,15 +12,15 @@ import (
 
 // Job type constants for SecPulse Asynq tasks.
 const (
-	TaskScanTrivy          = "secpulse:scan:trivy"
-	TaskScanNuclei         = "secpulse:scan:nuclei"
-	TaskScanOpenVAS        = "secpulse:scan:openvas"
-	TaskEPSSEnrich         = "secpulse:epss_enrich"
-	TaskGenerateReport     = "secpulse:generate_report"
-	TaskAutoEvidence       = "secpulse:auto_evidence"
-	TaskSBOMGenerate       = "secpulse:sbom:generate"
-	TaskEOLCheck           = "secpulse:eol:check"
-	TaskRiskTrendSnapshot  = "secpulse:risk_trend_snapshot"
+	TaskScanTrivy         = "secpulse:scan:trivy"
+	TaskScanNuclei        = "secpulse:scan:nuclei"
+	TaskScanOpenVAS       = "secpulse:scan:openvas"
+	TaskEPSSEnrich        = "secpulse:epss_enrich"
+	TaskGenerateReport    = "secpulse:generate_report"
+	TaskAutoEvidence      = "secpulse:auto_evidence"
+	TaskSBOMGenerate      = "secpulse:sbom:generate"
+	TaskEOLCheck          = "secpulse:eol:check"
+	TaskRiskTrendSnapshot = "secpulse:risk_trend_snapshot"
 
 	// QueueScans is the dedicated Asynq queue for scanner jobs.
 	// Higher concurrency than other module queues to avoid starving user-facing scans.

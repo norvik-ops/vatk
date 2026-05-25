@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/matharnica/vakt/internal/admin"
 	"github.com/matharnica/vakt/internal/auth"
 	"github.com/matharnica/vakt/internal/config"
 	"github.com/matharnica/vakt/internal/modules/secvitals"
@@ -27,7 +28,6 @@ import (
 	"github.com/matharnica/vakt/internal/shared/errorbudget"
 	"github.com/matharnica/vakt/internal/shared/nis2wizard"
 	"github.com/matharnica/vakt/internal/shared/notifications"
-	"github.com/matharnica/vakt/internal/admin"
 	"github.com/matharnica/vakt/internal/shared/notify"
 	"github.com/matharnica/vakt/internal/shared/retention"
 	"github.com/matharnica/vakt/internal/shared/scheduledreports"

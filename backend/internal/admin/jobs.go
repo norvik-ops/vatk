@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	TaskDeleteOrg        = "admin:org:delete"
-	TaskSCIMTokenExpiry  = "admin:scim:token_expiry"
+	TaskDeleteOrg       = "admin:org:delete"
+	TaskSCIMTokenExpiry = "admin:scim:token_expiry"
 )
 
 // NewSCIMTokenExpiryTask creates the daily SCIM token auto-revocation task.
