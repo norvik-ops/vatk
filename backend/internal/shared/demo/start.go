@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 
 	"github.com/matharnica/vakt/internal/shared/demoseed"
 )
@@ -34,6 +35,7 @@ func (h *StartHandler) Start(c echo.Context) error {
 
 	sess, err := demoseed.RunEphemeral(ctx, h.db, h.masterKeyHex)
 	if err != nil {
+		log.Error().Err(err).Msg("demo: RunEphemeral failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "demo session creation failed",
 			"code":  "DEMO_SEED_ERROR",
