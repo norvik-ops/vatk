@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters'
 import { Spinner } from '../../../components/Spinner'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Download, AlertTriangle, Upload, Trash2, RefreshCw, FileDown } from 'lucide-react'
+import { Download, AlertTriangle, Upload, Trash2, RefreshCw, FileDown, X } from 'lucide-react'
+import { useDeferredDelete } from '../../../shared/hooks/useDeferredDelete'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
@@ -193,6 +194,7 @@ export default function FindingsPage() {
   })
   const { severityFilter, statusFilter, searchQuery } = filters
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<Finding['status']>('resolved')
   const [importOpen, setImportOpen] = useState(false)
   const [csvImportOpen, setCsvImportOpen] = useState(false)
@@ -209,8 +211,25 @@ export default function FindingsPage() {
   }, page)
   const bulkUpdate = useBulkUpdateFindings()
   const deleteFinding = useDeleteFinding()
+  const queryClient = useQueryClient()
 
-  const rawFindings = data?.data ?? []
+  const { scheduleDelete } = useDeferredDelete<Finding>({
+    getLabel: (f) => f.title,
+    onDelete: useCallback(async (f: Finding) => {
+      await deleteFinding.mutateAsync(f.id)
+      setHiddenIds((prev) => { const n = new Set(prev); n.delete(f.id); return n })
+    }, [deleteFinding]),
+    onUndo: useCallback((f: Finding) => {
+      void queryClient.invalidateQueries({ queryKey: ['secpulse', 'findings'] })
+      setHiddenIds((prev) => { const n = new Set(prev); n.delete(f.id); return n })
+    }, [queryClient]),
+  })
+
+  function handleDeleteFinding(f: Finding) {
+    scheduleDelete(f, () => { setHiddenIds((prev) => new Set(prev).add(f.id)) })
+  }
+
+  const rawFindings = (data?.data ?? []).filter((f) => !hiddenIds.has(f.id))
   // Augment with numeric severity order for sorting
   const findingsWithOrder: SortableFinding[] = rawFindings.map((f) => ({
     ...f,
@@ -564,6 +583,7 @@ export default function FindingsPage() {
                     onSort={toggleSort}
                     className="px-4 py-3 text-left text-sm font-medium text-secondary"
                   />
+                  <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -627,6 +647,15 @@ export default function FindingsPage() {
                     </TableCell>
                     <TableCell className="text-sm text-secondary" onClick={() => { navigate(`/secpulse/findings/${f.id}`); }}>
                       {formatDate(f.created_at)}
+                    </TableCell>
+                    <TableCell onClick={(e) => { e.stopPropagation(); }}>
+                      <button
+                        onClick={() => { handleDeleteFinding(f); }}
+                        aria-label={`Befund "${f.title}" löschen`}
+                        className="p-1 rounded text-secondary hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </TableCell>
                   </TableRow>
                 ))}

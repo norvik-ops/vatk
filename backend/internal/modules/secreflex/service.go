@@ -518,7 +518,10 @@ func (s *Service) SendCampaignEmails(ctx context.Context, orgID, campaignID stri
 		return fmt.Errorf("parse template body: %w", err)
 	}
 
-	sent, failed := 0, 0
+	type pendingMsg struct{ from, to string; body []byte }
+	var msgs []pendingMsg
+	failed := 0
+
 	for _, target := range targets {
 		if target.IsBounced {
 			continue
@@ -548,14 +551,28 @@ func (s *Service) SendCampaignEmails(ctx context.Context, orgID, campaignID stri
 			fromEmail = s.smtpCfg.from()
 		}
 
-		msg := buildMIMEMessage(fromName, fromEmail, target.Email, subject, bodyBuf.String(), trackingToken, s.smtpCfg.AppURL, campaign.TrackOpens)
+		body := buildMIMEMessage(fromName, fromEmail, target.Email, subject, bodyBuf.String(), trackingToken, s.smtpCfg.AppURL, campaign.TrackOpens)
+		msgs = append(msgs, pendingMsg{from: fromEmail, to: target.Email, body: body})
+	}
 
-		if err := s.sendSMTP(fromEmail, target.Email, msg); err != nil {
-			log.Warn().Err(err).Str("target", target.Email).Msg("smtp send failed")
-			failed++
-			continue
+	// Send all messages over a single SMTP connection.
+	sent := 0
+	if len(msgs) > 0 {
+		client, closeClient, err := s.openSMTPClient(msgs[0].from)
+		if err != nil {
+			log.Error().Err(err).Str("campaign_id", campaignID).Msg("smtp open failed")
+			failed += len(msgs)
+		} else {
+			for _, m := range msgs {
+				if err := sendViaClient(client, m.from, m.to, m.body); err != nil {
+					log.Warn().Err(err).Str("target", m.to).Msg("smtp send failed")
+					failed++
+				} else {
+					sent++
+				}
+			}
+			closeClient()
 		}
-		sent++
 	}
 
 	log.Info().
@@ -575,83 +592,98 @@ func (s *Service) SendCampaignEmails(ctx context.Context, orgID, campaignID stri
 	return nil
 }
 
-// sendSMTP connects to the configured SMTP server and delivers a single message.
-func (s *Service) sendSMTP(from, to string, msg []byte) error {
+// openSMTPClient opens an authenticated SMTP connection and returns the client
+// plus a close function. The caller must call close() when done.
+func (s *Service) openSMTPClient(from string) (*smtp.Client, func(), error) {
 	addr := net.JoinHostPort(s.smtpCfg.Host, s.smtpCfg.Port)
 
-	// Port 587 — STARTTLS
-	if s.smtpCfg.Port == "587" {
+	var client *smtp.Client
+
+	switch s.smtpCfg.Port {
+	case "587": // STARTTLS
 		conn, err := smtp.Dial(addr)
 		if err != nil {
-			return fmt.Errorf("smtp dial: %w", err)
+			return nil, nil, fmt.Errorf("smtp dial: %w", err)
 		}
-		defer conn.Close()
-
 		if err := conn.StartTLS(&tls.Config{ServerName: s.smtpCfg.Host}); err != nil {
-			return fmt.Errorf("starttls: %w", err)
+			conn.Close()
+			return nil, nil, fmt.Errorf("starttls: %w", err)
 		}
 		if s.smtpCfg.User != "" {
 			auth := smtp.PlainAuth("", s.smtpCfg.User, s.smtpCfg.Pass, s.smtpCfg.Host)
 			if err := conn.Auth(auth); err != nil {
-				return fmt.Errorf("smtp auth: %w", err)
+				conn.Close()
+				return nil, nil, fmt.Errorf("smtp auth: %w", err)
 			}
 		}
-		if err := conn.Mail(from); err != nil {
-			return fmt.Errorf("smtp MAIL: %w", err)
-		}
-		if err := conn.Rcpt(to); err != nil {
-			return fmt.Errorf("smtp RCPT: %w", err)
-		}
-		wc, err := conn.Data()
-		if err != nil {
-			return fmt.Errorf("smtp DATA: %w", err)
-		}
-		if _, err := wc.Write(msg); err != nil {
-			return fmt.Errorf("smtp write: %w", err)
-		}
-		return wc.Close()
-	}
+		client = conn
 
-	// Port 465 — implicit TLS
-	if s.smtpCfg.Port == "465" {
+	case "465": // implicit TLS
 		tlsConn, err := tls.Dial("tcp", addr, &tls.Config{ServerName: s.smtpCfg.Host})
 		if err != nil {
-			return fmt.Errorf("smtp tls dial: %w", err)
+			return nil, nil, fmt.Errorf("smtp tls dial: %w", err)
 		}
-		client, err := smtp.NewClient(tlsConn, s.smtpCfg.Host)
+		c, err := smtp.NewClient(tlsConn, s.smtpCfg.Host)
 		if err != nil {
-			return fmt.Errorf("smtp client: %w", err)
+			tlsConn.Close()
+			return nil, nil, fmt.Errorf("smtp client: %w", err)
 		}
-		defer client.Close()
-
 		if s.smtpCfg.User != "" {
 			auth := smtp.PlainAuth("", s.smtpCfg.User, s.smtpCfg.Pass, s.smtpCfg.Host)
-			if err := client.Auth(auth); err != nil {
-				return fmt.Errorf("smtp auth: %w", err)
+			if err := c.Auth(auth); err != nil {
+				c.Close()
+				return nil, nil, fmt.Errorf("smtp auth: %w", err)
 			}
 		}
-		if err := client.Mail(from); err != nil {
-			return err
-		}
-		if err := client.Rcpt(to); err != nil {
-			return err
-		}
-		wc, err := client.Data()
+		client = c
+
+	default: // plain / port 25 (Mailpit dev)
+		// smtp.SendMail handles the full lifecycle; wrap in a minimal client.
+		conn, err := smtp.Dial(addr)
 		if err != nil {
-			return err
+			return nil, nil, fmt.Errorf("smtp dial: %w", err)
 		}
-		if _, err := wc.Write(msg); err != nil {
-			return err
+		if s.smtpCfg.User != "" {
+			auth := smtp.PlainAuth("", s.smtpCfg.User, s.smtpCfg.Pass, s.smtpCfg.Host)
+			if err := conn.Auth(auth); err != nil {
+				conn.Close()
+				return nil, nil, fmt.Errorf("smtp auth: %w", err)
+			}
 		}
-		return wc.Close()
+		client = conn
 	}
 
-	// Default — plain (Mailpit dev / port 25)
-	var auth smtp.Auth
-	if s.smtpCfg.User != "" {
-		auth = smtp.PlainAuth("", s.smtpCfg.User, s.smtpCfg.Pass, s.smtpCfg.Host)
+	return client, func() { client.Quit() }, nil //nolint:errcheck
+}
+
+// sendViaClient delivers a single message through an already-open SMTP client.
+// Each call issues MAIL FROM / RCPT TO / DATA against the existing connection.
+func sendViaClient(client *smtp.Client, from, to string, msg []byte) error {
+	if err := client.Mail(from); err != nil {
+		return fmt.Errorf("smtp MAIL: %w", err)
 	}
-	return smtp.SendMail(addr, auth, from, []string{to}, msg)
+	if err := client.Rcpt(to); err != nil {
+		return fmt.Errorf("smtp RCPT: %w", err)
+	}
+	wc, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("smtp DATA: %w", err)
+	}
+	if _, err := wc.Write(msg); err != nil {
+		return fmt.Errorf("smtp write: %w", err)
+	}
+	return wc.Close()
+}
+
+// sendSMTP opens a connection, delivers one message, and closes. Used for
+// single-recipient sends (training reminders, test emails).
+func (s *Service) sendSMTP(from, to string, msg []byte) error {
+	client, close, err := s.openSMTPClient(from)
+	if err != nil {
+		return err
+	}
+	defer close()
+	return sendViaClient(client, from, to, msg)
 }
 
 // buildMIMEMessage constructs a minimal HTML email with optional open-tracking pixel.
