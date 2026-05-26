@@ -99,7 +99,7 @@ func handleGitScan(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 // completed runs, inserting a ck_evidence row for each successful run.
 func handleGitHubCISync(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc {
 	return func(ctx context.Context, _ *asynq.Task) error {
-		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations WHERE is_deleted = false`)
+		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations`)
 		if err != nil {
 			return fmt.Errorf("github_ci_sync: list orgs: %w", err)
 		}

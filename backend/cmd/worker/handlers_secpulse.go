@@ -168,7 +168,7 @@ func handleEPSSEnrich(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFunc 
 			return nil
 		}
 
-		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations WHERE is_deleted = false`)
+		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations`)
 		if err != nil {
 			return fmt.Errorf("epss_enrich: list orgs: %w", err)
 		}
@@ -221,7 +221,7 @@ func handleSBOMGenerate(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerFun
 // from this table instead of running generate_series × vb_findings at request time.
 func handleRiskTrendSnapshot(pool *pgxpool.Pool) asynq.HandlerFunc {
 	return func(ctx context.Context, _ *asynq.Task) error {
-		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations WHERE is_deleted = false`)
+		rows, err := pool.Query(ctx, `SELECT id::text FROM organizations`)
 		if err != nil {
 			return fmt.Errorf("risk_trend_snapshot: list orgs: %w", err)
 		}

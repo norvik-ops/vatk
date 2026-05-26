@@ -1968,7 +1968,7 @@ WHERE org_id = $1::uuid AND created_at >= $2;
 
 -- name: ListActiveOrgIDs :many
 -- Alle nicht gelöschten Organisationen (für den täglichen Score-Snapshot-Job).
-SELECT id::text FROM organizations WHERE is_deleted = false;
+SELECT id::text FROM organizations;
 
 -- name: GetExecutiveFrameworkScores :many
 -- Pro Framework: Name, Gesamtanzahl Controls, Anzahl implemented.

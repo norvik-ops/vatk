@@ -9771,7 +9771,7 @@ func (q *Queries) CountCKRecentIncidents(ctx context.Context, arg CountCKRecentI
 }
 
 const listActiveOrgIDs = `-- name: ListActiveOrgIDs :many
-SELECT id::text FROM organizations WHERE is_deleted = false
+SELECT id::text FROM organizations
 `
 
 func (q *Queries) ListActiveOrgIDs(ctx context.Context) ([]string, error) {
