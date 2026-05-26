@@ -290,7 +290,7 @@ func handleAIWeeklyDigest(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerF
 		rows, err := pool.Query(ctx, `
 			SELECT id::text, name
 			FROM organizations
-			WHERE is_deleted = false AND ai_weekly_digest_enabled = true
+			WHERE ai_weekly_digest_enabled = true
 		`)
 		if err != nil {
 			return fmt.Errorf("ai_weekly_digest: list orgs: %w", err)
@@ -362,8 +362,7 @@ func generateAndSendAIDigest(
 		SELECT title, manual_status
 		FROM ck_controls
 		WHERE org_id = $1::uuid
-		  AND (manual_status IN ('missing','in_progress') OR status IN ('missing','in_progress'))
-		  AND status != 'not_applicable'
+		  AND manual_status IN ('missing','in_progress')
 		ORDER BY weight DESC
 		LIMIT 3
 	`, orgID)

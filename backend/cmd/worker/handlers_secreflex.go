@@ -74,12 +74,12 @@ func handleTrainingReminder(cfg *config.Config, pool *pgxpool.Pool) asynq.Handle
 
 		rows, err := pool.Query(ctx, `
 			SELECT DISTINCT t.email, t.first_name
-			FROM pg_targets t
-			JOIN pg_assignments a ON a.target_id = t.id AND a.org_id = $1
+			FROM sr_targets t
+			JOIN sr_assignments a ON a.target_id = t.id AND a.org_id = $1
 			WHERE t.org_id = $1
 			  AND t.is_bounced = false
 			  AND NOT EXISTS (
-			    SELECT 1 FROM pg_completions c
+			    SELECT 1 FROM sr_completions c
 			    WHERE c.assignment_id = a.id
 			      AND c.completed_at >= NOW() - INTERVAL '14 days'
 			  )
