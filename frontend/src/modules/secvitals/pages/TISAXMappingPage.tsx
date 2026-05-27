@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Spinner } from '../../../components/Spinner'
@@ -59,6 +60,7 @@ function MappingRow({ result }: { result: MappingResult }) {
 }
 
 export default function TISAXMappingPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [gapsOnly, setGapsOnly] = useState(false)
 
@@ -92,13 +94,13 @@ export default function TISAXMappingPage() {
               <Badge variant="success" className="text-xs">
                 {coveredCount}
               </Badge>
-              <span className="text-xs text-secondary">Abgedeckt</span>
+              <span className="text-xs text-secondary">{t('secvitals.tisaxMapping.covered')}</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-md">
               <Badge variant="destructive" className="text-xs">
                 {gapCount}
               </Badge>
-              <span className="text-xs text-secondary">Lücken</span>
+              <span className="text-xs text-secondary">{t('secvitals.tisaxMapping.gaps')}</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-md">
               <span className="text-xs text-secondary">

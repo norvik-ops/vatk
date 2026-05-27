@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/matharnica/vakt/internal/shared/audit"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/matharnica/vakt/internal/shared/platform/events"
 )
 
@@ -120,13 +121,13 @@ func (s *Service) UpdateEmployee(ctx context.Context, actor Actor, id string, in
 // transient auth-DB issue.
 func (s *Service) revokeUserAccess(ctx context.Context, orgID, email string) {
 	if err := s.repo.RevokeUserSessions(ctx, orgID, email); err != nil {
-		log.Error().Err(err).Str("email", email).Msg("hr: revoke sessions on termination")
+		log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(email)).Msg("hr: revoke sessions on termination")
 	}
 	if err := s.repo.DisableUser(ctx, orgID, email); err != nil {
-		log.Error().Err(err).Str("email", email).Msg("hr: disable user on termination")
+		log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(email)).Msg("hr: disable user on termination")
 	}
 	if err := s.repo.RevokeUserAPIKeys(ctx, orgID, email); err != nil {
-		log.Error().Err(err).Str("email", email).Msg("hr: revoke api keys on termination")
+		log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(email)).Msg("hr: revoke api keys on termination")
 	}
 }
 

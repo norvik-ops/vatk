@@ -20,6 +20,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/matharnica/vakt/internal/config"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 )
 
 // weakPasswordCode is the error code returned to clients when a password does
@@ -164,6 +165,15 @@ func (h *Handler) Login(c echo.Context) error {
 
 	// IP-level lockout: reject if this IP has too many recent failures across any account.
 	ipLocked, ipLockErr := h.service.checkIPLocked(c.Request().Context(), clientIP)
+	if errors.Is(ipLockErr, ErrLockoutCheckUnavailable) {
+		// Fail-closed: Redis outage and the operator did not opt in to
+		// degrading. Surface 503 instead of letting attempts through —
+		// this closes the brute-force-during-outage window (ADR-0044).
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{
+			"error": "Authentication temporarily unavailable. Please retry shortly.",
+			"code":  "AUTH_LOCKOUT_UNAVAILABLE",
+		})
+	}
 	if ipLockErr != nil {
 		log.Warn().Err(ipLockErr).Str("ip", clientIP).Msg("login: IP lockout check error")
 	}
@@ -176,8 +186,14 @@ func (h *Handler) Login(c echo.Context) error {
 
 	// Account lockout: reject immediately if too many recent failures for this email.
 	locked, lockErr := h.service.checkAccountLocked(c.Request().Context(), body.Email)
+	if errors.Is(lockErr, ErrLockoutCheckUnavailable) {
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{
+			"error": "Authentication temporarily unavailable. Please retry shortly.",
+			"code":  "AUTH_LOCKOUT_UNAVAILABLE",
+		})
+	}
 	if lockErr != nil {
-		log.Warn().Err(lockErr).Str("email", body.Email).Msg("login: lockout check error")
+		log.Warn().Err(lockErr).Str("email_redacted", logsafe.RedactEmail(body.Email)).Msg("login: lockout check error")
 	}
 	if locked {
 		return c.JSON(http.StatusTooManyRequests, map[string]string{
@@ -192,7 +208,7 @@ func (h *Handler) Login(c echo.Context) error {
 	}
 	resp, err := h.service.Login(c.Request().Context(), body.Email, body.Password, loginDeviceHint)
 	if err != nil {
-		log.Debug().Err(err).Str("email", body.Email).Msg("login failed")
+		log.Debug().Err(err).Str("email_redacted", logsafe.RedactEmail(body.Email)).Msg("login failed")
 		// Record failure for both email lockout and IP lockout.
 		h.service.recordLoginFailure(c.Request().Context(), body.Email)
 		h.service.recordIPLoginFailure(c.Request().Context(), clientIP)
@@ -523,7 +539,7 @@ func (h *Handler) RequestPasswordReset(c echo.Context) error {
 		frontendURL,
 		smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom,
 	); err != nil {
-		log.Error().Err(err).Str("email", body.Email).Msg("password reset request failed")
+		log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(body.Email)).Msg("password reset request failed")
 	}
 	// Always 200.
 	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
@@ -547,7 +563,7 @@ func (h *Handler) AdminGeneratePasswordResetToken(c echo.Context) error {
 
 	resetLink, err := h.service.GeneratePasswordResetLink(c.Request().Context(), email, frontendURL)
 	if err != nil {
-		log.Error().Err(err).Str("email", email).Msg("admin: generate password reset link failed")
+		log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(email)).Msg("admin: generate password reset link failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "failed to generate reset link",
 			"code":  "AUTH_RESET_GENERATE_FAILED",

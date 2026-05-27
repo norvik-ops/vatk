@@ -22,6 +22,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/matharnica/vakt/internal/license"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/matharnica/vakt/internal/shared/platform/features"
 )
 
@@ -152,7 +153,7 @@ func (h *Handler) Handle(c echo.Context) error {
 		lsSubID := event.Data.ID
 		if err := h.issueKey(ctx, event.Data.Attributes.UserEmail, event.Data.Attributes.UserName, lsSubID); err != nil {
 			log.Error().Err(err).
-				Str("email", event.Data.Attributes.UserEmail).
+				Str("email_redacted", logsafe.RedactEmail(event.Data.Attributes.UserEmail)).
 				Msg("lemonsqueezy: issueKey failed — returning 500 so LemonSqueezy retries")
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "key issuance failed"})
 		}
@@ -249,7 +250,7 @@ func (h *Handler) issueKey(ctx context.Context, email, orgName, lsSubID string) 
 		return fmt.Errorf("send license email: %w", err)
 	}
 
-	log.Info().Str("email", email).Str("org", orgName).Msg("lemonsqueezy: Pro license issued and sent")
+	log.Info().Str("email_redacted", logsafe.RedactEmail(email)).Str("org", orgName).Msg("lemonsqueezy: Pro license issued and sent")
 	return nil
 }
 
@@ -289,7 +290,7 @@ func (h *Handler) handleCancellation(ctx context.Context, lsSubID, reason string
 	if err != nil {
 		log.Warn().Err(err).
 			Str("ls_subscription_id", lsSubID).
-			Str("email", customerEmail).
+			Str("email_redacted", logsafe.RedactEmail(customerEmail)).
 			Msg("lemonsqueezy: user not found for subscription email — will retry")
 		return fmt.Errorf("user not found for email %s: %w", customerEmail, err)
 	}

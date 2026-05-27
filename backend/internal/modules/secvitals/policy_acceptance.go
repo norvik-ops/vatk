@@ -19,6 +19,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	db "github.com/matharnica/vakt/internal/db"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/matharnica/vakt/internal/shared/safego"
 )
 
@@ -256,13 +257,13 @@ func (s *Service) CreateAcceptanceCampaign(
 	for _, recipient := range in.Emails {
 		token, tokenHash, err := generateAcceptanceToken()
 		if err != nil {
-			log.Error().Err(err).Str("email", recipient.Email).Msg("generate acceptance token failed")
+			log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(recipient.Email)).Msg("generate acceptance token failed")
 			continue
 		}
 
 		requestID, err := s.repo.CreateAcceptanceRequest(ctx, campaign.ID, orgID, recipient, tokenHash)
 		if err != nil {
-			log.Error().Err(err).Str("email", recipient.Email).Msg("create acceptance request failed")
+			log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(recipient.Email)).Msg("create acceptance request failed")
 			continue
 		}
 
@@ -287,15 +288,15 @@ func (s *Service) CreateAcceptanceCampaign(
 			DeadlineText: deadlineText,
 		})
 		if err != nil {
-			log.Error().Err(err).Str("email", recipient.Email).Msg("render acceptance email failed")
+			log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(recipient.Email)).Msg("render acceptance email failed")
 			continue
 		}
 
 		if smtpCfg.Host == "" {
-			log.Warn().Str("email", recipient.Email).Msg("SMTP not configured — skipping acceptance email")
+			log.Warn().Str("email_redacted", logsafe.RedactEmail(recipient.Email)).Msg("SMTP not configured — skipping acceptance email")
 		} else {
 			if err := sendAcceptanceEmail(smtpCfg, recipient.Email, subject, body); err != nil {
-				log.Warn().Err(err).Str("email", recipient.Email).Msg("send acceptance email failed")
+				log.Warn().Err(err).Str("email_redacted", logsafe.RedactEmail(recipient.Email)).Msg("send acceptance email failed")
 			}
 		}
 

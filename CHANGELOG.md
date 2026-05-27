@@ -9,6 +9,65 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.36.0] — 2026-05-27
+
+**Marktreife-Programm — Sprint 56–59 Sammel-Release.** Schließt die 11 Top-Findings aus dem Auditos-Singularity-9-Agent-Audit + alle daraus hervorgegangenen P1-Items und Content-Drifts. 15 neue ADRs (0033–0047), 3 Migrationen (149–151), Backend 33 Pakete + Frontend 482 Tests durchgehend grün.
+
+> **Operative Hinweise:** Migrationen 149 (`audit_log`-Hash-Chain), 150 (RLS-Theater zurückgenommen) und 151 (`audit_log` Range-Partitioning auf `created_at`) sind additiv bzw. data-preserving. Migration 151 ändert den `PRIMARY KEY` von `(id)` auf `(id, created_at)` — anwendungsseitig transparent. Operator: optional `VAKT_AUTH_FAIL_OPEN_ON_REDIS_OUTAGE=true` setzen, falls die strengere Default-Behandlung (503 bei Redis-Outage) für ein Deployment unpassend ist.
+
+### Security (Audit-Findings F1, F2, F4, F5, F6, F7, F8, F9, F10, F11 + XFF/Cross-Org)
+
+- **OIDC `email_verified`-Gate beim Account-Linking** (F4, ADR-0033) — fremde OIDC-Subjects werden nicht mehr blind an Lokal-Accounts mit gleicher Email gelinkt, solange der IdP die Email nicht als verifiziert ausweist.
+- **License-Activate Role-Case-Fix** (F10) — `license/routes.go` checkt jetzt `"Admin"` (PascalCase, DB-Seed-konform) statt des nirgendwo gesetzten `"admin"`. Pro-Aktivierung funktioniert wieder.
+- **LocalLLMBadge zeigt Provider ehrlich** (F2, ADR-0034) — Backend liefert `provider_host` in `/ai/status`, Frontend reicht es in den Badge durch. Kein "Lokal"-Badge mehr bei OpenAI-Cloud.
+- **XFF-Spoofing-Schutz** — `VAKT_TRUSTED_PROXIES` wird als CIDR-Liste in echo-`TrustOption`s übersetzt; XFF-Header von außerhalb des Trust-Sets werden ignoriert.
+- **SAML `InResponseTo`-Binding** (F5, ADR-0036) — HMAC-signiertes Single-Use-Cookie bindet AuthnRequest-ID an die Browser-Session; ACS akzeptiert nur Assertions mit passendem `InResponseTo`.
+- **Operator-Rebrand abgeschlossen** (F11, ADR-0035) — Helm/CRD/RBAC auf `secrets.vakt.io / VaktSecret` migriert; Group-Konsistenz per Unit-Test gepinnt.
+- **Cross-Org Approve-Hijack geschlossen** — `AgentRunManager.Decide` prüft Caller-Org und User-Owner; fremde `run_id`-Approvals geben 404.
+- **`cmd/rotate-key` repariert + erweitert** (F1, ADR-0038) — HKDF-Coverage auf alle 8 verschlüsselten Spalten (`so_secrets`, `totp_secrets`, `notification_channels` ×2, `integrations_github`, `org_saml_configs`, `webhooks.secret`, `cloud_integrations.config`). SAML-Legacy-Rows (raw-master-encrypted) werden im Lauf migriert.
+- **`audit_log` tamper-evident** (F8, ADR-0040, Migration 149) — Per-Org SHA-256 Hash-Chain mit `prev_hash` und `entry_hash`. Neues Tool `cmd/audit-verify` lokalisiert Tamper auf die exakte Row. ISO 27001 A.12.4.3 / NIS2 / DORA Art. 11 Audit-Trail-Anforderungen erfüllt.
+- **AI-Counter zentralisiert** (F3, ADR-0041) — Echo-Middleware `RequireAILimit` ersetzt inline-Gates; alle 8 LLM-erzeugenden Routes durch das Gate. Statischer Route-Coverage-Test verhindert künftige Drift.
+- **PII-Log-Redaktion** (F7, ADR-0039) — Helper `logsafe.RedactEmail` (Format `***@domain`) ersetzt Volltextexposures in 38 Call-Sites über 13 Dateien.
+- **Auth-Lockout fail closed** (ADR-0044) — `checkAccountLocked` / `checkIPLocked` geben 503 `AUTH_LOCKOUT_UNAVAILABLE` bei Redis-Outage statt fail-open. Opt-out via `VAKT_AUTH_FAIL_OPEN_ON_REDIS_OUTAGE=true`.
+- **RLS-Theater zurückgenommen** (F6, ADR-0042, Migration 150) — Migration 012 hatte `ENABLE ROW LEVEL SECURITY` aktiviert, ohne dass die App `app.current_org_id` setzte. Ehrlich-Rückbau auf reine App-Layer-Isolation.
+- **`shieldstack` Build-Artefakt aus Working-Tree entfernt** (F9, ADR-0037) — Datei war seit `b83890c` aus HEAD entfernt; lokal aufgeräumt, History-Rewrite-Plan dokumentiert.
+- **`webhooks.secret` Legacy-Migration** (ADR-0043) — Boot-Hook `MigrateLegacyPlaintextSecrets` konvertiert historische Plaintext-Secrets idempotent auf das `enc:v1:`-Format.
+
+### Operations & Releases (P1-1, P1-2, P1-5)
+
+- **Worker-Health/Readiness** (P1-5) — `/health` (Liveness), `/health/ready` (DB + Asynq-Queue-Probe), `/health/queue` (per-Queue Counts) statt einzelnem DB-Ping.
+- **`audit_log` Range-Partitioning** (P1-2, ADR-0045, Migration 151) — Yearly Partitions (2025–2028) + DEFAULT, `audit_logs`-Backcompat-View neu erstellt.
+- **SBOM + SLSA-Provenance pro Release** (P1-1, ADR-0046) — `release.yml` generiert SPDX-2.3 + CycloneDX SBOMs via syft, attestiert via `cosign attest --type spdxjson`. Release-Body enthält SBOMs als Assets. Compliance für EU CRA Art. 13(15).
+
+### Content
+
+- **BSI IT-Grundschutz von 7 Stub-Controls auf 34 Bausteine** (ADR-0047) — vollständige Abdeckung aller 10 Schichten (ISMS, ORP, CON, OPS, DER, APP, SYS, IND, NET, INF), jeder Control mit deutscher Description, Domain, Evidence-Type und Weight nach CRA/DORA-Pattern.
+- **i18n-Sweep P0+P1 (79 neue Keys × 4 Locales = 316 Strings)** — `AccessReviewsPage`, `AISystemsPage`, `ResilienceTestsPage`, `ExceptionsPage`, `EvidenceAutoPage`, `TISAXMappingPage`, `DSGVOTOMPage` von hardcoded-Deutsch auf `useTranslation`. 240 i18n-Contract-Tests pinnen alle 60 Keys × 4 Locales gegen Drift.
+
+### Migrations
+
+- **149** — `audit_log` Hash-Chain (`prev_hash`, `entry_hash` BYTEA-Spalten + Index).
+- **150** — RLS-Policies aus Migration 012 zurückgenommen.
+- **151** — `audit_log` zu `PARTITION BY RANGE (created_at)`, Yearly + DEFAULT.
+
+### Tools
+
+- **`cmd/audit-verify`** — neuer Verifier für die Audit-Log-Hash-Chain.
+- **`cmd/rotate-key`** — komplett umgebaut zu einer Pipeline aus 8 Stages mit unit-testbaren Stage-Funktionen.
+
+### Tests
+
+- Backend: **33 Pakete grün** (Unit + neue Integration-Tests via testcontainers-postgres in `internal/integration_test/`).
+- Frontend: **482 Tests grün** (vorher 242 + 240 neue i18n-Contract-Tests).
+
+---
+
+## [0.35.0] — 2026-05-25
+
+> Tag-Note: dieser Release-Eintrag wurde nachträglich im Zuge von v0.36.0 ergänzt. v0.34.0 + v0.35.0 enthielten zwei Commits zur Pro-Tier-UX (`feat(ux): ProGate "Demnächst" + DemoTierHint für Pro-Module`) und Billing-Korrektur (`fix(billing): Polar.sh Checkout-URL auf tatsächliche Product-ID aktualisiert`).
+
+---
+
 ## [0.33.0] — 2026-05-25
 
 Monetarisierung Phase 4 — Pricing-Dokumentation + Public README

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { GitBranch, Shield, Bug, CheckCircle2, Inbox, Users } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Card, CardContent } from '../../../components/ui/card'
@@ -54,6 +55,7 @@ interface AssignDialogProps {
 }
 
 function AssignDialog({ evidence, onClose }: AssignDialogProps) {
+  const { t } = useTranslation()
   const [frameworkId, setFrameworkId] = useState('')
   const [controlId, setControlId] = useState('')
 
@@ -83,12 +85,12 @@ function AssignDialog({ evidence, onClose }: AssignDialogProps) {
 
         <div className="space-y-4 pt-1">
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Nachweis</p>
+            <p className="text-xs text-muted-foreground mb-1">{t('secvitals.evidenceAuto.evidence')}</p>
             <p className="text-sm font-medium leading-snug">{evidence.title}</p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs text-muted-foreground">Framework</label>
+            <label className="text-xs text-muted-foreground">{t('secvitals.evidenceAuto.framework')}</label>
             <Select
               value={frameworkId}
               onValueChange={(v) => { setFrameworkId(v); setControlId('') }}
@@ -108,7 +110,7 @@ function AssignDialog({ evidence, onClose }: AssignDialogProps) {
 
           {frameworkId && (
             <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">Kontrolle</label>
+              <label className="text-xs text-muted-foreground">{t('secvitals.evidenceAuto.control')}</label>
               <Select value={controlId} onValueChange={setControlId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Kontrolle wählen…" />

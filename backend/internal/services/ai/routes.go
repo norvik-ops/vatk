@@ -54,30 +54,39 @@ func RegisterWithOptions(g *echo.Group, db *pgxpool.Pool, provider, baseURL, api
 		}))
 	}
 	h := NewHandler(svc)
+
+	// Every LLM-producing endpoint goes through the same CE-quota gate.
+	// Centralising in middleware closed audit finding F3 — GenerateReport
+	// and the agent endpoints were previously the unmonitored bypass.
+	aiLimit := RequireAILimit(svc)
+
 	g.GET("/ai/status", h.Status)
 	// CE monthly usage counter — used by frontend to show "18/25 Anfragen diesen Monat".
 	g.GET("/ai/usage", h.Usage)
 	// S32-3: Ollama model list for org settings model dropdown.
 	g.GET("/ai/models", h.ListOllamaModels)
-	g.POST("/ai/report", h.GenerateReport)
-	g.POST("/ai/advice", h.ComplianceAdvice)
+	g.POST("/ai/report", h.GenerateReport, aiLimit)
+	g.POST("/ai/advice", h.ComplianceAdvice, aiLimit)
 	// AI Copilot — Policy-Drafting + Incident-Response-Guide (Sprint 12)
-	g.POST("/ai/draft-policy", h.DraftPolicy)
-	g.POST("/ai/incident-guide", h.IncidentResponseGuide)
+	g.POST("/ai/draft-policy", h.DraftPolicy, aiLimit)
+	g.POST("/ai/incident-guide", h.IncidentResponseGuide, aiLimit)
 	// Sprint 15 / S15-5: SSE-Streaming-Endpoint fuer AI-Advisor + Documentation.
-	g.POST("/ai/chat/stream", h.ChatStream)
+	g.POST("/ai/chat/stream", h.ChatStream, aiLimit)
 	// Sprint 18 / S18-3: Agent-Run-Endpoint (Plan/Execute/Reflect, SSE).
 	// S32-2: runMgr für Write-Tool-Approval-Flow (ApproveCard im Frontend).
 	runMgr := &AgentRunManager{}
 	runner := NewAgentRunnerWithManager(svc.client, svc.model, db, svc.usage, DefaultAgentTools(db), runMgr)
 	agentH := NewAgentHandler(svc.client, svc.model, runner, runMgr, db)
-	g.POST("/ai/agent/run", agentH.AgentRun)
+	// Agent run is itself a (chain of) LLM call(s) — same CE gate applies.
+	// Approve/Reject are not LLM-generating, so they only run after the
+	// initial AgentRun was already accounted for.
+	g.POST("/ai/agent/run", agentH.AgentRun, aiLimit)
 	g.POST("/ai/agent/runs/:run_id/approve", agentH.ApproveRun)
 	g.POST("/ai/agent/runs/:run_id/reject", agentH.RejectRun)
 	// Sprint 52 (S52-2): Gap-Explain SSE streaming per control.
-	g.POST("/ai/controls/:id/explain", h.GapExplain)
+	g.POST("/ai/controls/:id/explain", h.GapExplain, aiLimit)
 	// Sprint 52 (S52-3): Risk narrative generation + persistence.
-	g.POST("/ai/risks/:id/narrative", h.RiskNarrative)
+	g.POST("/ai/risks/:id/narrative", h.RiskNarrative, aiLimit)
 	// Sprint 52 (S52-6): AI Insights list + dismiss.
 	g.GET("/ai/insights", h.ListInsights)
 	g.DELETE("/ai/insights/:id", h.DismissInsight)

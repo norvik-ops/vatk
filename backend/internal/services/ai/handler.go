@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -56,13 +57,36 @@ func (h *Handler) checkCELimit(c echo.Context) error {
 }
 
 // Status checks if the configured AI provider is reachable.
+//
+// The response includes `provider_host`, which the frontend's LocalLLMBadge
+// uses to decide whether the AI provider is local (Ollama, LM-Studio, llm-
+// proxy) or a cloud endpoint (OpenAI, Mistral, …). Without this field the
+// badge falls back to "lokal" — which would be a trust-cue lie when the
+// admin has pointed Vakt at a cloud provider. Audit finding F2.
 func (h *Handler) Status(c echo.Context) error {
 	available := h.svc.IsAvailable(c.Request().Context())
 	model := h.svc.client.model
+	providerHost := providerHostFromBaseURL(h.svc.client.baseURL)
 	return c.JSON(http.StatusOK, map[string]any{
-		"available": available,
-		"model":     model,
+		"available":     available,
+		"model":         model,
+		"provider_host": providerHost,
 	})
+}
+
+// providerHostFromBaseURL extracts the host portion of the configured AI
+// base URL. Returns an empty string when the URL cannot be parsed — the
+// frontend treats that as "unknown", which is rendered as a Cloud-Badge to
+// stay on the safe side.
+func providerHostFromBaseURL(baseURL string) string {
+	if baseURL == "" {
+		return ""
+	}
+	u, err := url.Parse(baseURL)
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	return u.Hostname()
 }
 
 // Usage returns the current CE monthly AI usage for the authenticated org.
@@ -355,6 +379,7 @@ func (h *Handler) GapExplain(c echo.Context) error {
 		return nil
 	}
 
+	start := time.Now()
 	for chunk := range stream {
 		if chunk.Done {
 			break
@@ -370,6 +395,17 @@ func (h *Handler) GapExplain(c echo.Context) error {
 	}
 	_, _ = fmt.Fprintf(resp.Writer, "data: [DONE]\n\n")
 	resp.Flush()
+	// Record so the CE monthly counter advances. Without this the gate
+	// in RequireAILimit would never trip for orgs that only use the SSE
+	// endpoints.  Audit F3.
+	if h.svc.usage != nil {
+		h.svc.usage.Record(c.Request().Context(), UsageRecord{
+			OrgID: orgID, Model: h.svc.model,
+			DurationMs: int(time.Since(start).Milliseconds()),
+			Status:     "ok",
+			RequestID:  "controls.explain",
+		})
+	}
 	return nil
 }
 
@@ -446,6 +482,14 @@ func (h *Handler) RiskNarrative(c echo.Context) error {
 		narrative, riskID, orgID,
 	); dbErr != nil {
 		log.Warn().Err(dbErr).Str("risk_id", riskID).Msg("risk_narrative: persist failed")
+	}
+
+	// Record so the CE monthly counter advances. Audit F3.
+	if h.svc.usage != nil {
+		h.svc.usage.Record(c.Request().Context(), UsageRecord{
+			OrgID: orgID, Model: h.svc.model,
+			Status: "ok", RequestID: "risks.narrative",
+		})
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"narrative": narrative})

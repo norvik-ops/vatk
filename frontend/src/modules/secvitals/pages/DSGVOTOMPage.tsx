@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Info } from 'lucide-react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Spinner } from '../../../components/Spinner'
@@ -49,6 +50,7 @@ function TOMRow({ result }: { result: MappingResult }) {
 }
 
 export default function DSGVOTOMPage() {
+  const { t } = useTranslation()
   const { data: frameworks } = useFrameworks()
   const framework = frameworks?.find((f) => f.name === 'DSGVO-TOM')
 
@@ -98,7 +100,7 @@ export default function DSGVOTOMPage() {
 
           <Card data-testid="kpi-covered">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-secondary">Abgedeckt</CardTitle>
+              <CardTitle className="text-sm font-medium text-secondary">{t('secvitals.dsgvoTom.covered')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-brand">{coveredCount}</div>
@@ -107,7 +109,7 @@ export default function DSGVOTOMPage() {
 
           <Card data-testid="kpi-open">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-secondary">Offen</CardTitle>
+              <CardTitle className="text-sm font-medium text-secondary">{t('secvitals.dsgvoTom.open')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary">{openCount}</div>

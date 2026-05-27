@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ShieldAlert, Plus, Pencil, Trash2, Paperclip, Link2 } from 'lucide-react'
 import { Spinner } from '../../../components/Spinner'
 import { PageHeader } from '../../../shared/components/PageHeader'
@@ -162,6 +163,7 @@ function ResilienceTestRow({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ResilienceTestsPage() {
+  const { t } = useTranslation()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState<CreateResilienceTestInput>(emptyForm())
@@ -341,8 +343,8 @@ export default function ResilienceTestsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="tlpt">TLPT</SelectItem>
-                  <SelectItem value="pentest">Pentest</SelectItem>
-                  <SelectItem value="scenario_based">Szenariobasiert</SelectItem>
+                  <SelectItem value="pentest">{t('secvitals.resilienceTests.kind.pentest')}</SelectItem>
+                  <SelectItem value="scenario_based">{t('secvitals.resilienceTests.kind.scenario')}</SelectItem>
                   <SelectItem value="vulnerability_assessment">
                     Vulnerability Assessment
                   </SelectItem>
@@ -378,7 +380,7 @@ export default function ResilienceTestsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Remediationsstatus</Label>
+              <Label>{t('secvitals.resilienceTests.remediationStatus')}</Label>
               <Select
                 value={form.remediation_status ?? 'open'}
                 onValueChange={(v) => { setForm((f) => ({ ...f, remediation_status: v })); }}
@@ -387,10 +389,10 @@ export default function ResilienceTestsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="open">Offen</SelectItem>
+                  <SelectItem value="open">{t('secvitals.resilienceTests.status.open')}</SelectItem>
                   <SelectItem value="in_progress">In Bearbeitung</SelectItem>
-                  <SelectItem value="completed">Abgeschlossen</SelectItem>
-                  <SelectItem value="accepted">Akzeptiert</SelectItem>
+                  <SelectItem value="completed">{t('secvitals.resilienceTests.status.completed')}</SelectItem>
+                  <SelectItem value="accepted">{t('secvitals.resilienceTests.status.accepted')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ClipboardCheck, Plus, ChevronDown, ChevronRight, Pencil, Trash2, Check, X } from 'lucide-react'
 import { Spinner } from '../../../components/Spinner'
 import { PageHeader } from '../../../shared/components/PageHeader'
@@ -58,11 +59,14 @@ const STATUS_CLASS: Record<AccessReviewCampaign['status'], string> = {
   cancelled: 'bg-red-500/20 text-red-400 border-red-500/30',
 }
 
-const STATUS_LABEL: Record<AccessReviewCampaign['status'], string> = {
-  draft: 'Entwurf',
-  active: 'Aktiv',
-  completed: 'Abgeschlossen',
-  cancelled: 'Abgebrochen',
+// STATUS_I18N_KEY / DECISION_I18N_KEY map domain enums to the corresponding
+// i18n key path. They are constants so they live at module level, but they
+// must NOT be resolved here — t() is only available inside components.
+const STATUS_I18N_KEY: Record<AccessReviewCampaign['status'], string> = {
+  draft: 'secvitals.accessReviews.status.draft',
+  active: 'secvitals.accessReviews.status.active',
+  completed: 'secvitals.accessReviews.status.completed',
+  cancelled: 'secvitals.accessReviews.status.cancelled',
 }
 
 const DECISION_CLASS: Record<AccessReviewItem['decision'], string> = {
@@ -71,10 +75,10 @@ const DECISION_CLASS: Record<AccessReviewItem['decision'], string> = {
   revoked: 'bg-red-500/20 text-red-400 border-red-500/30',
 }
 
-const DECISION_LABEL: Record<AccessReviewItem['decision'], string> = {
-  pending: 'Ausstehend',
-  approved: 'Bestätigt',
-  revoked: 'Widerrufen',
+const DECISION_I18N_KEY: Record<AccessReviewItem['decision'], string> = {
+  pending: 'secvitals.accessReviews.decision.pending',
+  approved: 'secvitals.accessReviews.decision.approved',
+  revoked: 'secvitals.accessReviews.decision.revoked',
 }
 
 // ─── Empty campaign form ──────────────────────────────────────────────────────
@@ -102,6 +106,7 @@ function campaignToForm(c: AccessReviewCampaign): CreateAccessReviewCampaignInpu
 // ─── Review Items panel ───────────────────────────────────────────────────────
 
 function ReviewItemsPanel({ campaign }: { campaign: AccessReviewCampaign }) {
+  const { t } = useTranslation()
   const { data: items = [], isLoading } = useAccessReviewItems(campaign.id)
   const createItem = useCreateAccessReviewItem()
   const updateItem = useUpdateAccessReviewItem()
@@ -148,11 +153,11 @@ function ReviewItemsPanel({ campaign }: { campaign: AccessReviewCampaign }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Benutzer</TableHead>
-                <TableHead>Zugriffsrolle</TableHead>
-                <TableHead>Entscheidung</TableHead>
-                <TableHead>Kommentar</TableHead>
-                <TableHead className="w-32">Aktionen</TableHead>
+                <TableHead>{t('secvitals.accessReviews.fields.user')}</TableHead>
+                <TableHead>{t('secvitals.accessReviews.fields.role')}</TableHead>
+                <TableHead>{t('secvitals.accessReviews.fields.decision')}</TableHead>
+                <TableHead>{t('secvitals.accessReviews.fields.comment')}</TableHead>
+                <TableHead className="w-32">{t('secvitals.accessReviews.fields.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -162,7 +167,7 @@ function ReviewItemsPanel({ campaign }: { campaign: AccessReviewCampaign }) {
                   <TableCell>{item.access_level}</TableCell>
                   <TableCell>
                     <Badge className={DECISION_CLASS[item.decision]}>
-                      {DECISION_LABEL[item.decision]}
+                      {t(DECISION_I18N_KEY[item.decision])}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
@@ -206,17 +211,17 @@ function ReviewItemsPanel({ campaign }: { campaign: AccessReviewCampaign }) {
       {addingItem ? (
         <div className="flex items-end gap-2 pt-2">
           <div className="flex-1 space-y-1">
-            <Label className="text-xs">E-Mail</Label>
+            <Label className="text-xs">{t('secvitals.accessReviews.fields.userEmail')}</Label>
             <Input
-              placeholder="benutzer@firma.de"
+              placeholder={t('secvitals.accessReviews.placeholders.userEmail')}
               value={newItemForm.user_email}
               onChange={(e) => { setNewItemForm((f) => ({ ...f, user_email: e.target.value })); }}
             />
           </div>
           <div className="flex-1 space-y-1">
-            <Label className="text-xs">Zugriffsrolle</Label>
+            <Label className="text-xs">{t('secvitals.accessReviews.fields.role')}</Label>
             <Input
-              placeholder="z.B. Admin"
+              placeholder={t('secvitals.accessReviews.placeholders.role')}
               value={newItemForm.access_level}
               onChange={(e) => { setNewItemForm((f) => ({ ...f, access_level: e.target.value })); }}
             />
@@ -257,6 +262,7 @@ function CampaignRow({
   onDelete: () => void
   onActivate: () => void
 }) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const { formatDate } = useFormatDate()
 
@@ -277,7 +283,7 @@ function CampaignRow({
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-medium">{campaign.title}</span>
                 <Badge className={STATUS_CLASS[campaign.status]}>
-                  {STATUS_LABEL[campaign.status]}
+                  {t(STATUS_I18N_KEY[campaign.status])}
                 </Badge>
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
@@ -325,6 +331,7 @@ function CampaignRow({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AccessReviewsPage() {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const isAdmin = user?.roles.includes('Admin') ?? false
 
@@ -381,13 +388,13 @@ export default function AccessReviewsPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Zugriffsüberprüfungen"
-        description="Periodische Attestierungskampagnen: Benutzerberechtigungen bestätigen oder widerrufen."
+        title={t('secvitals.accessReviews.title')}
+        description={t('secvitals.accessReviews.description')}
         actions={
           isAdmin ? (
             <Button onClick={openCreate}>
               <Plus className="w-4 h-4 mr-1" />
-              Neue Kampagne
+              {t('secvitals.accessReviews.addCampaign')}
             </Button>
           ) : undefined
         }
@@ -409,13 +416,13 @@ export default function AccessReviewsPage() {
         {!isLoading && !isError && campaigns.length === 0 && (
           <EmptyState
             icon={ClipboardCheck}
-            title="Keine Kampagnen vorhanden"
-            description="Erstellen Sie eine Zugriffsüberprüfungskampagne, um Benutzerberechtigungen periodisch zu attestieren."
+            title={t('secvitals.accessReviews.emptyTitle')}
+            description={t('secvitals.accessReviews.emptyDescription')}
             action={
               isAdmin ? (
                 <Button onClick={openCreate}>
                   <Plus className="w-4 h-4 mr-1" />
-                  Neue Kampagne
+                  {t('secvitals.accessReviews.addCampaign')}
                 </Button>
               ) : undefined
             }
@@ -442,51 +449,51 @@ export default function AccessReviewsPage() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editId ? 'Kampagne bearbeiten' : 'Neue Kampagne'}
+              {editId ? t('secvitals.accessReviews.editCampaign') : t('secvitals.accessReviews.addCampaign')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label>Titel *</Label>
+              <Label>{t('secvitals.accessReviews.fields.title')} *</Label>
               <Input
-                placeholder="z.B. Q2 2026 Zugriffsüberprüfung"
+                placeholder={t('secvitals.accessReviews.placeholders.title')}
                 value={form.title}
                 onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); }}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Beschreibung</Label>
+              <Label>{t('secvitals.accessReviews.fields.description')}</Label>
               <Textarea
                 rows={3}
-                placeholder="Ziel und Umfang dieser Kampagne …"
+                placeholder={t('secvitals.accessReviews.placeholders.description')}
                 value={form.description ?? ''}
                 onChange={(e) => { setForm((f) => ({ ...f, description: e.target.value })); }}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Prüfer-E-Mail *</Label>
+              <Label>{t('secvitals.accessReviews.fields.reviewerEmail')} *</Label>
               <Input
                 type="email"
-                placeholder="pruefer@firma.de"
+                placeholder={t('secvitals.accessReviews.placeholders.reviewerEmail')}
                 value={form.reviewer_email}
                 onChange={(e) => { setForm((f) => ({ ...f, reviewer_email: e.target.value })); }}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Geltungsbereich (Scope)</Label>
+              <Label>{t('secvitals.accessReviews.fields.scope')}</Label>
               <Input
-                placeholder="z.B. Alle Nutzer mit Admin-Rolle"
+                placeholder={t('secvitals.accessReviews.placeholders.scope')}
                 value={form.scope ?? ''}
                 onChange={(e) => { setForm((f) => ({ ...f, scope: e.target.value })); }}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Fälligkeitsdatum</Label>
+              <Label>{t('secvitals.accessReviews.fields.dueDate')}</Label>
               <Input
                 type="date"
                 value={form.due_date ?? ''}
@@ -496,7 +503,7 @@ export default function AccessReviewsPage() {
 
             {editId && (
               <div className="space-y-1.5">
-                <Label>Status</Label>
+                <Label>{t('secvitals.accessReviews.fields.status')}</Label>
                 <Select
                   value={(form as { status?: string }).status ?? 'draft'}
                   onValueChange={(v) => { setForm((f) => ({ ...f, status: v })); }}

@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/matharnica/vakt/internal/shared/notify"
 )
 
@@ -110,11 +111,11 @@ Diese E-Mail wurde automatisch von Vakt generiert.`,
 		)
 
 		if err := m.Send(r.DPOEmail, subject, body); err != nil {
-			log.Error().Err(err).Str("breach_id", r.ID).Str("to", r.DPOEmail).Msg("CheckBreachDeadlines: send failed")
+			log.Error().Err(err).Str("breach_id", r.ID).Str("to_redacted", logsafe.RedactEmail(r.DPOEmail)).Msg("CheckBreachDeadlines: send failed")
 			continue
 		}
 		markSent(ctx, db, r.OrgID, NotifBreachWarning, r.ID, r.DPOEmail)
-		log.Info().Str("breach_id", r.ID).Str("to", r.DPOEmail).Msg("CheckBreachDeadlines: alert sent")
+		log.Info().Str("breach_id", r.ID).Str("to_redacted", logsafe.RedactEmail(r.DPOEmail)).Msg("CheckBreachDeadlines: alert sent")
 	}
 	return rows.Err()
 }
@@ -173,11 +174,11 @@ Diese E-Mail wurde automatisch von Vakt generiert.`,
 		)
 
 		if err := m.Send(r.DPOEmail, subject, body); err != nil {
-			log.Error().Err(err).Str("dsr_id", r.ID).Str("to", r.DPOEmail).Msg("CheckDSRDeadlines: send failed")
+			log.Error().Err(err).Str("dsr_id", r.ID).Str("to_redacted", logsafe.RedactEmail(r.DPOEmail)).Msg("CheckDSRDeadlines: send failed")
 			continue
 		}
 		markSent(ctx, db, r.OrgID, NotifDSROverdue, r.ID, r.DPOEmail)
-		log.Info().Str("dsr_id", r.ID).Str("to", r.DPOEmail).Msg("CheckDSRDeadlines: alert sent")
+		log.Info().Str("dsr_id", r.ID).Str("to_redacted", logsafe.RedactEmail(r.DPOEmail)).Msg("CheckDSRDeadlines: alert sent")
 	}
 	return rows.Err()
 }
@@ -236,11 +237,11 @@ Diese E-Mail wurde automatisch von Vakt generiert.`,
 		)
 
 		if err := m.Send(r.DPOEmail, subject, body); err != nil {
-			log.Error().Err(err).Str("avv_id", r.ID).Str("to", r.DPOEmail).Msg("CheckAVVExpiry: send failed")
+			log.Error().Err(err).Str("avv_id", r.ID).Str("to_redacted", logsafe.RedactEmail(r.DPOEmail)).Msg("CheckAVVExpiry: send failed")
 			continue
 		}
 		markSent(ctx, db, r.OrgID, NotifAVVExpiring, r.ID, r.DPOEmail)
-		log.Info().Str("avv_id", r.ID).Str("to", r.DPOEmail).Msg("CheckAVVExpiry: alert sent")
+		log.Info().Str("avv_id", r.ID).Str("to_redacted", logsafe.RedactEmail(r.DPOEmail)).Msg("CheckAVVExpiry: alert sent")
 	}
 	return rows.Err()
 }
@@ -310,11 +311,11 @@ Diese E-Mail wurde automatisch von Vakt generiert.`,
 		)
 
 		if err := m.Send(dpoEmail, subject, body); err != nil {
-			log.Error().Err(err).Str("ccm_check_id", id).Str("to", dpoEmail).Msg("CheckCCMFailures: send failed")
+			log.Error().Err(err).Str("ccm_check_id", id).Str("to_redacted", logsafe.RedactEmail(dpoEmail)).Msg("CheckCCMFailures: send failed")
 			continue
 		}
 		markSent(ctx, db, orgID, NotifCCMFailed, id, dpoEmail)
-		log.Info().Str("ccm_check_id", id).Str("to", dpoEmail).Msg("CheckCCMFailures: alert sent")
+		log.Info().Str("ccm_check_id", id).Str("to_redacted", logsafe.RedactEmail(dpoEmail)).Msg("CheckCCMFailures: alert sent")
 	}
 	return rows.Err()
 }

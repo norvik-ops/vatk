@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/rs/zerolog/log"
 )
 
@@ -222,7 +223,7 @@ func (h *Handler) CreateUser(c echo.Context) error {
 		ExternalID:  req.ExternalID,
 	})
 	if err != nil {
-		log.Error().Err(err).Str("org_id", orgID).Str("email", email).Msg("scim: create user failed")
+		log.Error().Err(err).Str("org_id", orgID).Str("email_redacted", logsafe.RedactEmail(email)).Msg("scim: create user failed")
 		return scimError(c, http.StatusInternalServerError, "internalError", "failed to provision user")
 	}
 	return c.JSON(http.StatusCreated, userToResponse(*u))

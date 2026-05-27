@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -54,7 +55,7 @@ func (s *Service) RequestPasswordReset(ctx context.Context, email, frontendURL, 
 			_ = s.redis.Expire(ctx, throttleKey, resetThrottleTTL).Err()
 		}
 		if cnt > resetThrottleMax {
-			log.Warn().Str("email", email).Msg("password reset: per-email rate limit reached, suppressing")
+			log.Warn().Str("email_redacted", logsafe.RedactEmail(email)).Msg("password reset: per-email rate limit reached, suppressing")
 			return nil
 		}
 	} else {
@@ -91,7 +92,7 @@ func (s *Service) RequestPasswordReset(ctx context.Context, email, frontendURL, 
 	// Send email — non-fatal if SMTP fails (log and return nil).
 	resetLink := frontendURL + "/auth/reset-password?token=" + rawHex
 	if err := sendPasswordResetEmail(smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, email, resetLink, lang); err != nil {
-		log.Error().Err(err).Str("email", email).Msg("password reset: send email failed")
+		log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(email)).Msg("password reset: send email failed")
 	}
 	return nil
 }

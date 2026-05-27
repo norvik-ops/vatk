@@ -460,6 +460,135 @@
       "placeholderFindings": "Geconstateerde afwijkingen en observaties…",
       "placeholderRecommendations": "Aanbevolen herstelmaatregelen…",
       "saving": "Opslaan…"
+    },
+    "accessReviews": {
+      "title": "Toegangsbeoordelingen",
+      "description": "Periodieke beoordelingen van rechten — NIS2 Art. 21(2)(g), ISO 27001 A.5.18, BSI ORP.4.",
+      "emptyTitle": "Nog geen campagnes",
+      "emptyDescription": "Start een toegangsbeoordeling-campagne om rechten periodiek te controleren.",
+      "addCampaign": "Campagne maken",
+      "editCampaign": "Campagne bewerken",
+      "fields": {
+        "title": "Titel",
+        "description": "Beschrijving",
+        "reviewerEmail": "E-mail beoordelaar",
+        "scope": "Reikwijdte",
+        "dueDate": "Vervaldatum",
+        "status": "Status",
+        "user": "Gebruiker",
+        "userEmail": "E-mail",
+        "role": "Toegangsrol",
+        "decision": "Beslissing",
+        "comment": "Opmerking",
+        "actions": "Acties"
+      },
+      "placeholders": {
+        "userEmail": "gebruiker@bedrijf.nl",
+        "role": "bv. Admin",
+        "title": "bv. Q2 2026 Toegangsreview",
+        "description": "Doel en reikwijdte …",
+        "reviewerEmail": "beoordelaar@bedrijf.nl",
+        "scope": "bv. Alle Admin-gebruikers"
+      },
+      "status": {
+        "draft": "Concept",
+        "active": "Actief",
+        "completed": "Voltooid",
+        "cancelled": "Geannuleerd"
+      },
+      "decision": {
+        "pending": "In afwachting",
+        "approved": "Goedgekeurd",
+        "revoked": "Ingetrokken"
+      }
+    },
+    "aiSystems": {
+      "title": "AI-systeem-inventaris",
+      "description": "AI-systemen inventariseren en classificeren — EU AI Act-naleving.",
+      "emptyTitle": "Geen AI-systemen geregistreerd",
+      "emptyDescription": "Inventariseer AI-systemen voor naleving van de EU AI Act.",
+      "add": "AI-systeem toevoegen",
+      "edit": "AI-systeem bewerken",
+      "filterAll": "Alle",
+      "actions": {
+        "classify": "Risico classificeren",
+        "documentation": "Technisch dossier",
+        "cancel": "Annuleren"
+      },
+      "fields": {
+        "name": "Naam",
+        "provider": "Aanbieder",
+        "useCase": "Toepassingsgebied",
+        "description": "Beschrijving",
+        "affectedGroups": "Betrokken personen",
+        "autonomy": "Autonomiegraad",
+        "riskClass": "Risicoklasse",
+        "status": "Status",
+        "classification": "Classificatie-toelichting",
+        "classifiedBy": "Geclassificeerd door"
+      },
+      "placeholders": {
+        "name": "bv. ChatGPT-integratie",
+        "provider": "bv. OpenAI, Google, intern",
+        "useCase": "Waarvoor wordt het AI-systeem gebruikt?",
+        "description": "Technische beschrijving",
+        "affectedGroups": "bv. medewerkers, klanten, sollicitanten",
+        "select": "— kiezen —"
+      },
+      "autonomyLevel": {
+        "assistive": "Ondersteunend",
+        "semiAutonomous": "Semi-autonoom",
+        "fullyAutonomous": "Volledig autonoom"
+      },
+      "riskClassLevel": {
+        "minimal": "Minimaal",
+        "limited": "Beperkt",
+        "high": "Hoog",
+        "unacceptable": "Onaanvaardbaar",
+        "prohibited": "Verboden"
+      },
+      "statusLevel": {
+        "classified": "Geclassificeerd",
+        "approved": "Goedgekeurd",
+        "compliant": "Conform",
+        "highRisk": "Hoog risico",
+        "decommissioned": "Buiten gebruik"
+      }
+    },
+    "resilienceTests": {
+      "status": {
+        "open": "Open",
+        "completed": "Voltooid",
+        "accepted": "Geaccepteerd"
+      },
+      "kind": {
+        "pentest": "Pentest",
+        "scenario": "Scenariogericht"
+      },
+      "remediationStatus": "Remediatiestatus",
+      "cancel": "Annuleren"
+    },
+    "exceptions": {
+      "status": {
+        "active": "Actief",
+        "expired": "Verlopen",
+        "revoked": "Ingetrokken"
+      },
+      "deletePrompt": "Uitzondering verwijderen",
+      "cancel": "Annuleren"
+    },
+    "evidenceAuto": {
+      "framework": "Framework",
+      "control": "Controle",
+      "evidence": "Bewijs"
+    },
+    "tisaxMapping": {
+      "covered": "Gedekt",
+      "gaps": "Lacunes"
+    },
+    "dsgvoTom": {
+      "covered": "Gedekt",
+      "open": "Open"
     }
   },
   "secprivacy": {

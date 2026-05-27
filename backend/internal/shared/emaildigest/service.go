@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/rs/zerolog/log"
 )
 
@@ -171,9 +172,9 @@ func (s *DigestService) SendDigest(ctx context.Context, orgID string) error {
 		}
 		subject, body := s.buildEmail(orgID, severityCounts, dsr, a.Language)
 		if err := s.send(a.Email, subject, body); err != nil {
-			log.Error().Err(err).Str("org_id", orgID).Str("to", a.Email).Msg("emaildigest: send failed")
+			log.Error().Err(err).Str("org_id", orgID).Str("to_redacted", logsafe.RedactEmail(a.Email)).Msg("emaildigest: send failed")
 		} else {
-			log.Info().Str("org_id", orgID).Str("to", a.Email).Msg("emaildigest: sent")
+			log.Info().Str("org_id", orgID).Str("to_redacted", logsafe.RedactEmail(a.Email)).Msg("emaildigest: sent")
 		}
 	}
 	return nil

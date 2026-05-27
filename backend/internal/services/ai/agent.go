@@ -74,33 +74,74 @@ type ApprovalDecision struct {
 	UserID   string
 }
 
+// approvalSlot ties together a pending approval channel and the org/user that
+// owns the run. Decide() checks the caller's identity against these fields
+// before unblocking the runner — without that check any authenticated user
+// could approve a write-tool call in another org's run by guessing the run_id
+// (audit finding "Cross-Org-Hijack in ApproveRun").
+type approvalSlot struct {
+	ch     chan ApprovalDecision
+	orgID  string
+	userID string
+}
+
 // AgentRunManager verwaltet laufende Approval-Channels per RunID.
 // Thread-safe via sync.Map.
 type AgentRunManager struct {
-	channels sync.Map // key: runID (string) → chan ApprovalDecision
+	channels sync.Map // key: runID (string) → *approvalSlot
 }
 
-// Register legt einen neuen Approval-Channel für einen Lauf an und gibt ihn zurück.
-func (m *AgentRunManager) Register(runID string) chan ApprovalDecision {
+// ErrApprovalForbidden is returned by Decide when the caller's org or user
+// does not match the run owner. Callers should map this to 403.
+var ErrApprovalForbidden = fmt.Errorf("agent: approval not allowed for this run")
+
+// ErrApprovalNotFound is returned when no pending approval exists for the
+// run_id — distinguishes "wrong owner" from "expired/unknown run" so the
+// handler can return the correct status code.
+var ErrApprovalNotFound = fmt.Errorf("agent: no pending approval for run")
+
+// Register legt einen neuen Approval-Channel für einen Lauf an und merkt
+// sich, welcher orgID/userID den Run gestartet hat.  Ohne diese Owner-
+// Bindung könnte ein Caller via Decide() in einen fremden Run eingreifen.
+func (m *AgentRunManager) Register(runID, orgID, userID string) chan ApprovalDecision {
 	ch := make(chan ApprovalDecision, 1)
-	m.channels.Store(runID, ch)
+	m.channels.Store(runID, &approvalSlot{ch: ch, orgID: orgID, userID: userID})
 	return ch
 }
 
-// Decide sendet eine Entscheidung an den wartenden Runner. Gibt false zurück,
-// wenn kein Channel für runID registriert ist.
-func (m *AgentRunManager) Decide(runID string, d ApprovalDecision) bool {
+// Decide sendet eine Entscheidung an den wartenden Runner. Bevor das passiert
+// wird die Caller-Identität gegen den Owner-Snapshot abgeglichen, der bei
+// Register() gespeichert wurde. Mismatch → ErrApprovalForbidden. Kein
+// pending channel → ErrApprovalNotFound.
+//
+// callerOrgID darf nicht leer sein — sonst lassen wir nichts durch. callerUserID
+// darf leer sein für system-aufrufer (intern), wird dann auf den Slot-Owner
+// nicht geprüft (Sicherheitsentscheidung: API-Endpoints geben immer userID
+// rein, interne Aufrufer existieren aktuell nicht).
+func (m *AgentRunManager) Decide(runID, callerOrgID, callerUserID string, d ApprovalDecision) error {
 	val, ok := m.channels.Load(runID)
 	if !ok {
-		return false
+		return ErrApprovalNotFound
 	}
-	ch := val.(chan ApprovalDecision)
+	slot, ok := val.(*approvalSlot)
+	if !ok {
+		return ErrApprovalNotFound
+	}
+	if callerOrgID == "" || slot.orgID != callerOrgID {
+		return ErrApprovalForbidden
+	}
+	if callerUserID != "" && slot.userID != "" && slot.userID != callerUserID {
+		// The run was started by a different user in the same org.  Org-mates
+		// could be granted approval rights in a future iteration, but the
+		// safe default is owner-only.
+		return ErrApprovalForbidden
+	}
 	select {
-	case ch <- d:
-		return true
+	case slot.ch <- d:
+		return nil
 	default:
 		// Channel bereits befüllt (doppelter Click) — ignorieren.
-		return false
+		return ErrApprovalNotFound
 	}
 }
 
@@ -245,7 +286,9 @@ func (r *AgentRunner) Run(ctx context.Context, req AgentRunRequest, onEvent func
 			})
 
 			// Auf Benutzer-Entscheidung warten (max. 5 Minuten).
-			ch := r.runMgr.Register(req.RunID)
+			// Org/User-Binding wird beim Register hinterlegt, damit Decide()
+			// in agent_handler.go cross-org-Hijacks ablehnen kann.
+			ch := r.runMgr.Register(req.RunID, req.OrgID, req.UserID)
 			defer r.runMgr.Unregister(req.RunID)
 
 			select {

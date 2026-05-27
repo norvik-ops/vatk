@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
@@ -195,14 +196,14 @@ func (h *SecurityHandler) UnlockAccount(c echo.Context) error {
 
 	key := "login_fail:" + email
 	if err := h.rdb.Del(ctx, key).Err(); err != nil && err != redis.Nil {
-		log.Error().Err(err).Str("email", email).Msg("admin: unlock account failed")
+		log.Error().Err(err).Str("email_redacted", logsafe.RedactEmail(email)).Msg("admin: unlock account failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "failed to unlock account",
 			"code":  "ADMIN_UNLOCK_ERROR",
 		})
 	}
 
-	log.Info().Str("email", email).Msg("admin: account lockout cleared")
+	log.Info().Str("email_redacted", logsafe.RedactEmail(email)).Msg("admin: account lockout cleared")
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "account unlocked",
 	})

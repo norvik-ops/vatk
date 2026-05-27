@@ -28,6 +28,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	sharedcrypto "github.com/matharnica/vakt/internal/shared/crypto"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 )
 
 // samlAttr extracts the first value of a named attribute from a SAML assertion.
@@ -61,6 +62,28 @@ type OrgSAMLConfig struct {
 // samlConfigColumns is the SELECT list used when loading org_saml_configs.
 const samlConfigColumns = `org_id::text, entity_id, acs_url, idp_metadata, cert_pem, key_pem, enabled`
 
+// samlServiceKey returns the HKDF-derived sub-key used to encrypt SAML SP
+// private keys at rest.  The same purpose string is used by cmd/rotate-key,
+// which can migrate legacy raw-master ciphertext onto this key.  ADR-0038.
+func samlServiceKey(masterKey []byte) []byte {
+	if len(masterKey) != 32 {
+		// Pre-derived key path: caller passed in a 32-byte buffer (test) that
+		// is already a service key.  We accept it as-is to preserve the older
+		// in-process call sites until they migrate.
+		return masterKey
+	}
+	k, err := sharedcrypto.DeriveServiceKey(masterKey, "vakt-saml-v1")
+	if err != nil {
+		// HKDF is deterministic and only fails on bad inputs (32-byte key
+		// material is the only requirement, already checked above).  Log
+		// once and fall back to the raw key — this keeps the SAML flow alive
+		// for already-encrypted rows.
+		log.Warn().Err(err).Msg("saml: HKDF derive failed — falling back to raw master key")
+		return masterKey
+	}
+	return k
+}
+
 // LoadOrgSAMLConfig fetches the SAML config for an org, decrypting the private key.
 // Returns nil, nil when no config exists for the org.
 func LoadOrgSAMLConfig(ctx context.Context, db *pgxpool.Pool, orgID string, masterKey []byte) (*OrgSAMLConfig, error) {
@@ -79,8 +102,18 @@ func LoadOrgSAMLConfig(ctx context.Context, db *pgxpool.Pool, orgID string, mast
 	}
 
 	if len(masterKey) == 32 && len(keyEnc) > 0 {
-		plain, err := sharedcrypto.Decrypt(masterKey, keyEnc)
+		// New rows are encrypted under the HKDF-derived saml service key.
+		// Legacy rows (pre-ADR-0038) used the raw master key directly; we
+		// keep the fallback so installations that have not run rotate-key
+		// yet continue to work.  rotate-key migrates legacy rows on demand.
+		samlKey := samlServiceKey(masterKey)
+		plain, err := sharedcrypto.Decrypt(samlKey, keyEnc)
 		if err != nil {
+			if legacy, legErr := sharedcrypto.Decrypt(masterKey, keyEnc); legErr == nil {
+				log.Warn().Str("org_id", orgID).Msg("saml: decrypted private key with legacy raw master — run cmd/rotate-key to migrate")
+				c.KeyPEM = string(legacy)
+				return &c, nil
+			}
 			return nil, fmt.Errorf("saml: decrypt private key: %w", err)
 		}
 		c.KeyPEM = string(plain)
@@ -93,7 +126,9 @@ func LoadOrgSAMLConfig(ctx context.Context, db *pgxpool.Pool, orgID string, mast
 func UpsertOrgSAMLConfig(ctx context.Context, db *pgxpool.Pool, cfg *OrgSAMLConfig, masterKey []byte) error {
 	var keyEnc []byte
 	if len(masterKey) == 32 && cfg.KeyPEM != "" {
-		enc, err := sharedcrypto.Encrypt(masterKey, []byte(cfg.KeyPEM))
+		// Encrypt new rows with the HKDF-derived saml key (ADR-0038).
+		samlKey := samlServiceKey(masterKey)
+		enc, err := sharedcrypto.Encrypt(samlKey, []byte(cfg.KeyPEM))
 		if err != nil {
 			return fmt.Errorf("saml: encrypt private key: %w", err)
 		}
@@ -275,8 +310,15 @@ func (h *Handler) SAMLInitiate(c echo.Context) error {
 		})
 	}
 
-	// Use samlsp helper to build the redirect URL.
-	redirectURL, err := sp.MakeRedirectAuthenticationRequest("")
+	// Build the AuthnRequest directly so we can capture its ID and bind it to
+	// a short-lived cookie. The ID is matched against assertion.InResponseTo
+	// in SAMLDirectACS — without this binding, a SAML response captured from
+	// one user could be replayed against another's session (ADR-0036).
+	authReq, err := sp.MakeAuthenticationRequest(
+		sp.GetSSOBindingLocation(saml.HTTPRedirectBinding),
+		saml.HTTPRedirectBinding,
+		saml.HTTPPostBinding,
+	)
 	if err != nil {
 		log.Error().Err(err).Str("org_id", orgID).Msg("saml_initiate: make AuthnRequest failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{
@@ -284,6 +326,36 @@ func (h *Handler) SAMLInitiate(c echo.Context) error {
 			"code":  "AUTH_SAML_AUTHN_ERROR",
 		})
 	}
+	redirectURL, err := authReq.Redirect("", sp)
+	if err != nil {
+		log.Error().Err(err).Str("org_id", orgID).Msg("saml_initiate: redirect URL failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to encode AuthnRequest redirect",
+			"code":  "AUTH_SAML_AUTHN_ERROR",
+		})
+	}
+
+	// Sign the request ID with HMAC derived from the master key, set it as a
+	// short-lived HttpOnly cookie. SameSite=None because the SAML IdP will
+	// POST back from a foreign origin; Secure flag depends on the request
+	// scheme.
+	signed, err := signSAMLRequestID(masterKey, authReq.ID)
+	if err != nil {
+		log.Error().Err(err).Str("org_id", orgID).Msg("saml_initiate: sign request id failed")
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "internal error", "code": "AUTH_SAML_AUTHN_ERROR",
+		})
+	}
+	secure := c.Request().TLS != nil || c.Request().Header.Get("X-Forwarded-Proto") == "https"
+	c.SetCookie(&http.Cookie{
+		Name:     samlRequestIDCookieName,
+		Value:    signed,
+		Path:     "/api/v1/auth/saml",
+		MaxAge:   samlRequestIDTTLSeconds,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteNoneMode,
+	})
 
 	// Return redirect URL for SPA (frontend handles the redirect)
 	return c.JSON(http.StatusOK, map[string]string{"redirect_url": redirectURL.String()})
@@ -326,7 +398,32 @@ func (h *Handler) SAMLDirectACS(c echo.Context) error {
 		})
 	}
 
-	assertion, err := sp.ParseResponse(c.Request(), nil)
+	// Recover the AuthnRequest ID from the signed cookie set at /saml/initiate.
+	// The ID is passed to ParseResponse so crewjam/saml can verify the
+	// assertion's InResponseTo binding. Without this step any signed assertion
+	// from the IdP would be accepted, enabling replay attacks (ADR-0036).
+	var allowedRequestIDs []string
+	if cookie, cerr := c.Cookie(samlRequestIDCookieName); cerr == nil && cookie.Value != "" {
+		masterKey := masterKeyFromHex(h.cfg.SecretKey)
+		if id, vErr := verifySAMLRequestID(masterKey, cookie.Value); vErr == nil {
+			allowedRequestIDs = []string{id}
+		} else {
+			log.Warn().Err(vErr).Str("org_id", orgID).Msg("saml_acs: rejecting invalid saml_req_id cookie")
+		}
+	}
+	// Always expire the cookie immediately — it is single-use by design.
+	secure := c.Request().TLS != nil || c.Request().Header.Get("X-Forwarded-Proto") == "https"
+	c.SetCookie(&http.Cookie{
+		Name:     samlRequestIDCookieName,
+		Value:    "",
+		Path:     "/api/v1/auth/saml",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	assertion, err := sp.ParseResponse(c.Request(), allowedRequestIDs)
 	if err != nil {
 		log.Warn().Err(err).Str("org_id", orgID).Msg("saml_acs: assertion validation failed")
 		return c.JSON(http.StatusUnauthorized, map[string]string{
@@ -356,7 +453,7 @@ func (h *Handler) SAMLDirectACS(c echo.Context) error {
 
 	authResp, err := h.service.provisionSAMLUser(c.Request().Context(), orgID, assertion.Subject.NameID.Value, email, name, deviceHint)
 	if err != nil {
-		log.Error().Err(err).Str("org_id", orgID).Str("email", email).Msg("saml_acs: provision user failed")
+		log.Error().Err(err).Str("org_id", orgID).Str("email_redacted", logsafe.RedactEmail(email)).Msg("saml_acs: provision user failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "SAML user provisioning failed",
 			"code":  "AUTH_SAML_PROVISION_FAILED",

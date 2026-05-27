@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ShieldAlert, ExternalLink, Trash2, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
@@ -17,10 +18,11 @@ import {
   type ControlException,
 } from '../hooks/useExceptions'
 
-function statusBadge(status: ControlException['status']) {
-  if (status === 'active') return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Aktiv</Badge>
-  if (status === 'expired') return <Badge variant="secondary">Abgelaufen</Badge>
-  return <Badge variant="destructive">Widerrufen</Badge>
+function StatusBadge({ status }: { status: ControlException['status'] }) {
+  const { t } = useTranslation()
+  if (status === 'active') return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">{t('secvitals.exceptions.status.active')}</Badge>
+  if (status === 'expired') return <Badge variant="secondary">{t('secvitals.exceptions.status.expired')}</Badge>
+  return <Badge variant="destructive">{t('secvitals.exceptions.status.revoked')}</Badge>
 }
 
 function statusIcon(status: ControlException['status']) {
@@ -30,6 +32,7 @@ function statusIcon(status: ControlException['status']) {
 }
 
 export default function ExceptionsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const isAdmin = user?.roles?.includes('Admin') ?? false
@@ -145,7 +148,7 @@ export default function ExceptionsPage() {
       <Dialog open={!!confirmDelete} onOpenChange={() => { setConfirmDelete(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ausnahme löschen</DialogTitle>
+            <DialogTitle>{t('secvitals.exceptions.deletePrompt')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-slate-400">
             Soll die Ausnahme „{confirmDelete?.title}" gelöscht werden? Die Aktion kann innerhalb von 5 Sekunden rückgängig gemacht werden.
@@ -181,7 +184,7 @@ function ExceptionCard({
           <div className="flex items-center gap-2">
             {statusIcon(e.status)}
             <CardTitle className="text-sm font-medium text-slate-200">{e.title}</CardTitle>
-            {statusBadge(e.status)}
+            <StatusBadge status={e.status} />
           </div>
           <div className="flex items-center gap-2">
             <Button

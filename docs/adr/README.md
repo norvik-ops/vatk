@@ -39,6 +39,19 @@ Diese ADRs dokumentieren wichtige Architekturentscheidungen der Vakt-Plattform. 
 | [0022](0022-auth-tier-cut.md) | Auth-Tier-Cut — SAML CE, SCIM/SIEM/IP-Allowlist Pro | Accepted | SAML 2.0 ist Community-Feature; SCIM, SIEM-Forwarder und IP-Allowlist sind Pro-Features. |
 | [0028](0028-nis2-embedded-mode-security.md) | NIS2 Embedded-Mode Security — `frame-ancestors *` bewusst gewählt | Accepted | Clickjacking-Risiko-Analyse für den öffentlichen NIS2-Wizard im Embedded-Modus; Entscheidung dokumentiert. |
 | [0032](0032-ai-integrity-richtlinien.md) | AI-Integrity-Richtlinien — Prompt-Injection-Schutz und AI-Sicherheitsgrenzen | Accepted | Prompt-Separator-Standard, Input-Sanitierung, Rate-Limiting per Org, Streaming-Pflicht und Source-Attribution für alle AI-Calls. |
+| [0033](0033-oidc-email-verified-gate.md) | OIDC `email_verified`-Gate beim Linking auf bestehende Lokal-Accounts | Accepted | Linking eines OIDC-Subjects an einen bestehenden Lokal-User darf nur passieren, wenn der IdP die Email als verifiziert ausweist. |
+| [0034](0034-localllmbadge-provider-host.md) | LocalLLMBadge `providerHost` — Trust-Cue ehrlich machen | Accepted | Backend liefert `provider_host` in `/ai/status`; Frontend reicht das in den LocalLLMBadge durch, so dass „Lokal" nur dann zeigt wenn auch lokal. |
+| [0036](0036-saml-inresponseto-binding.md) | SAML `InResponseTo`-Binding über signiertes Cookie | Accepted | AuthnRequest-ID wird HMAC-signiert als HttpOnly-Cookie hinterlegt; ACS akzeptiert nur Assertions mit passendem `InResponseTo`. |
+| [0038](0038-rotate-key-coverage-und-hkdf-binding.md) | `rotate-key` Coverage + HKDF-Binding, SAML-Legacy-Migration | Accepted | rotate-key rotiert alle 8 verschlüsselten Spalten korrekt via HKDF-Sub-Keys; SAML-Legacy-rawMaster-Rows werden in-flight auf HKDF migriert. |
+| [0039](0039-pii-log-redaction.md) | PII-Logging-Redaktion (`***@domain`) | Accepted | Helper `logsafe.RedactEmail` ersetzt alle 38 Volltextexposures von Customer-Emails in strukturierten Logs durch domain-anchored Placeholder. |
+| [0040](0040-audit-log-hash-chain.md) | Audit-Log Tamper-Evidence via Per-Org Hash-Chain | Accepted | Jeder audit_log-Eintrag verkettet via SHA-256(prev_hash‖canonical(row)); `cmd/audit-verify` lokalisiert Tamper/Delete/Insert auf die exakte Row. |
+| [0041](0041-ai-counter-middleware.md) | AI-Counter als zentrale Echo-Middleware | Accepted | `RequireAILimit(svc)` gate wandert in eine Middleware, jede LLM-Route inheriert das Gate; statischer Route-Coverage-Test verhindert künftige Drift. |
+| [0042](0042-rls-theater-zurueckgenommen.md) | Row Level Security zurückgenommen — Migration 012-Theater entfernt | Accepted | RLS-Policies aus Migration 012 abgebaut, weil App-Layer alleine enforced; ehrlicher als Pseudo-DB-Defense-in-Depth ohne `app.current_org_id`. |
+| [0043](0043-webhook-secret-legacy-migration.md) | `webhooks.secret` Legacy-Plaintext-Migration | Accepted | `MigrateLegacyPlaintextSecrets`-Boot-Hook + rotate-key-Stage konvertieren historische Plaintext-Secrets idempotent auf das `enc:v1:`-Format. |
+| [0044](0044-redis-lockout-fail-closed.md) | Auth-Lockout-Checks fail closed bei Redis-Outage | Accepted | Default: 503 statt fail-open bei Redis-Outage; closes brute-force-during-outage. Opt-out via `VAKT_AUTH_FAIL_OPEN_ON_REDIS_OUTAGE=true`. |
+| [0045](0045-audit-log-range-partitioning.md) | `audit_log` Range-Partitioning auf `created_at` | Accepted | Migration 151 macht `audit_log` zur PARTITION BY RANGE-Tabelle (yearly + DEFAULT); Hash-Chain bleibt kompatibel. |
+| [0046](0046-sbom-und-slsa-provenance.md) | SBOM-Generation + SLSA-Provenance für jeden Release | Accepted | syft generiert SPDX-2.3 + CycloneDX SBOM, cosign attestiert; Pflicht-Compliance für EU CRA ab 2027. |
+| [0047](0047-bsi-content-und-i18n-coverage.md) | BSI-Content-Skalierung + i18n-Coverage-Sweep | Accepted | BSI 7 Stub-Controls → 34 vollständige Controls über alle 10 Kompendium-Schichten; i18n-Sweep für 8 Pages mit 79 neuen Keys × 4 Locales. |
 
 ### Kategorie: Produkt & Features
 
@@ -60,6 +73,12 @@ Diese ADRs dokumentieren wichtige Architekturentscheidungen der Vakt-Plattform. 
 |---|-------|--------|-----------------|
 | [0002](0002-elastic-license-v2.md) | Elastic License v2 als Lizenzmodell | Accepted | ELv2: Source-available, kostenlos für Eigenbetrieb, kein Managed-Service-Weiterverkauf. |
 | [0008](0008-kein-msp-portal.md) | Kein MSP-Portal — Phone-Home-Verstoß | Accepted | Ein zentrales MSP-Portal würde Kundendaten aggregieren und das Kern-Versprechen (kein Phone-Home) brechen. |
+
+### Kategorie: Operations & Deployment
+
+| # | Titel | Status | Zusammenfassung |
+|---|-------|--------|-----------------|
+| [0035](0035-operator-rebrand-sechealth-to-vakt.md) | Operator-Rebrand SecHealth → Vakt — CRD-Group + Kind angleichen | Accepted | Helm/RBAC/Config-CRDs auf `secrets.vakt.io / VaktSecret` umgezogen, Group-Konsistenz per Unit-Test gepinnt. |
 
 ---
 

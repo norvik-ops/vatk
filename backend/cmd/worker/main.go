@@ -304,22 +304,15 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
-	// Minimal health server on :9090 — used by the Docker Compose healthcheck.
-	// Returns 200 OK while the worker process is alive and its DB pool is healthy.
+	// Health server on :9090 — see health.go for the endpoint set.
+	// Audit P1-5 closure: the readiness probe now covers Asynq queue
+	// reachability, not just the DB ping.
 	go func() {
-		healthMux := http.NewServeMux()
-		healthMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-			if err := pool.Ping(r.Context()); err != nil {
-				http.Error(w, `{"status":"unavailable"}`, http.StatusServiceUnavailable)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"status":"ok"}`))
-		})
+		inspector := asynq.NewInspector(asynqRedisOpt(cfg.RedisUrl))
+		defer func() { _ = inspector.Close() }()
 		healthSrv := &http.Server{
 			Addr:         ":9090",
-			Handler:      healthMux,
+			Handler:      buildHealthHandlers(pool, inspector),
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 5 * time.Second,
 		}

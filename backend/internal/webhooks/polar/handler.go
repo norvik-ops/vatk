@@ -27,6 +27,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/matharnica/vakt/internal/license"
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/matharnica/vakt/internal/shared/platform/features"
 )
 
@@ -146,7 +147,7 @@ func (h *Handler) Handle(c echo.Context) error {
 		}
 		if err := h.issueKey(ctx, event.Data.Customer.Email, event.Data.Customer.Name, event.Data.ID); err != nil {
 			log.Error().Err(err).
-				Str("email", event.Data.Customer.Email).
+				Str("email_redacted", logsafe.RedactEmail(event.Data.Customer.Email)).
 				Str("subscription_id", event.Data.ID).
 				Msg("polar: issueKey failed — returning 500 so Polar retries")
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "key issuance failed"})
@@ -229,7 +230,7 @@ func (h *Handler) issueKey(ctx context.Context, email, orgName, polarSubID strin
 		return fmt.Errorf("send license email: %w", err)
 	}
 
-	log.Info().Str("email", email).Str("org", orgName).Msg("polar: Pro license issued and sent")
+	log.Info().Str("email_redacted", logsafe.RedactEmail(email)).Str("org", orgName).Msg("polar: Pro license issued and sent")
 	return nil
 }
 

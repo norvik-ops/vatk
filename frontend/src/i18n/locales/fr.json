@@ -460,6 +460,135 @@
       "placeholderFindings": "Écarts et observations constatés…",
       "placeholderRecommendations": "Mesures correctives recommandées…",
       "saving": "Enregistrement…"
+    },
+    "accessReviews": {
+      "title": "Revues d'accès",
+      "description": "Revues périodiques des autorisations — NIS2 Art. 21(2)(g), ISO 27001 A.5.18, BSI ORP.4.",
+      "emptyTitle": "Aucune campagne",
+      "emptyDescription": "Démarrez une campagne de revue d'accès pour vérifier les autorisations.",
+      "addCampaign": "Créer une campagne",
+      "editCampaign": "Modifier la campagne",
+      "fields": {
+        "title": "Titre",
+        "description": "Description",
+        "reviewerEmail": "E-mail du réviseur",
+        "scope": "Périmètre",
+        "dueDate": "Échéance",
+        "status": "Statut",
+        "user": "Utilisateur",
+        "userEmail": "E-mail",
+        "role": "Rôle",
+        "decision": "Décision",
+        "comment": "Commentaire",
+        "actions": "Actions"
+      },
+      "placeholders": {
+        "userEmail": "utilisateur@entreprise.fr",
+        "role": "ex. Admin",
+        "title": "ex. Revue d'accès Q2 2026",
+        "description": "Objectif et portée …",
+        "reviewerEmail": "reviseur@entreprise.fr",
+        "scope": "ex. Tous les utilisateurs Admin"
+      },
+      "status": {
+        "draft": "Brouillon",
+        "active": "Active",
+        "completed": "Terminée",
+        "cancelled": "Annulée"
+      },
+      "decision": {
+        "pending": "En attente",
+        "approved": "Approuvé",
+        "revoked": "Révoqué"
+      }
+    },
+    "aiSystems": {
+      "title": "Inventaire des systèmes IA",
+      "description": "Inventorier et classifier les systèmes d'IA — conformité au règlement IA de l'UE.",
+      "emptyTitle": "Aucun système IA enregistré",
+      "emptyDescription": "Inventoriez les systèmes IA pour la conformité au règlement IA de l'UE.",
+      "add": "Ajouter un système IA",
+      "edit": "Modifier le système IA",
+      "filterAll": "Tous",
+      "actions": {
+        "classify": "Classifier le risque",
+        "documentation": "Dossier technique",
+        "cancel": "Annuler"
+      },
+      "fields": {
+        "name": "Nom",
+        "provider": "Fournisseur",
+        "useCase": "Cas d'usage",
+        "description": "Description",
+        "affectedGroups": "Personnes concernées",
+        "autonomy": "Niveau d'autonomie",
+        "riskClass": "Classe de risque",
+        "status": "Statut",
+        "classification": "Justification de classification",
+        "classifiedBy": "Classifié par"
+      },
+      "placeholders": {
+        "name": "ex. Intégration ChatGPT",
+        "provider": "ex. OpenAI, Google, interne",
+        "useCase": "À quoi sert le système IA ?",
+        "description": "Description technique",
+        "affectedGroups": "ex. employés, clients, candidats",
+        "select": "— sélectionner —"
+      },
+      "autonomyLevel": {
+        "assistive": "Assistant",
+        "semiAutonomous": "Semi-autonome",
+        "fullyAutonomous": "Totalement autonome"
+      },
+      "riskClassLevel": {
+        "minimal": "Minimal",
+        "limited": "Limité",
+        "high": "Élevé",
+        "unacceptable": "Inacceptable",
+        "prohibited": "Interdit"
+      },
+      "statusLevel": {
+        "classified": "Classifié",
+        "approved": "Approuvé",
+        "compliant": "Conforme",
+        "highRisk": "Haut risque",
+        "decommissioned": "Mis hors service"
+      }
+    },
+    "resilienceTests": {
+      "status": {
+        "open": "Ouvert",
+        "completed": "Terminé",
+        "accepted": "Accepté"
+      },
+      "kind": {
+        "pentest": "Pentest",
+        "scenario": "Basé sur scénario"
+      },
+      "remediationStatus": "Statut de remédiation",
+      "cancel": "Annuler"
+    },
+    "exceptions": {
+      "status": {
+        "active": "Active",
+        "expired": "Expirée",
+        "revoked": "Révoquée"
+      },
+      "deletePrompt": "Supprimer l'exception",
+      "cancel": "Annuler"
+    },
+    "evidenceAuto": {
+      "framework": "Cadre",
+      "control": "Contrôle",
+      "evidence": "Preuve"
+    },
+    "tisaxMapping": {
+      "covered": "Couvert",
+      "gaps": "Lacunes"
+    },
+    "dsgvoTom": {
+      "covered": "Couvert",
+      "open": "Ouvert"
     }
   },
   "secprivacy": {

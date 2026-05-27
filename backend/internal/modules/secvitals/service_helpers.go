@@ -533,15 +533,154 @@ func iso27001Controls(frameworkID, orgID string) []Control {
 	}
 }
 
+// bsiControls returns the BSI IT-Grundschutz-Kompendium baseline:
+// 33 Bausteine über alle zehn Schichten (ISMS, ORP, CON, OPS, DER, APP,
+// SYS, IND, NET, INF). Aufgebaut nach dem Pattern „Anforderung →
+// Nachweis", analog zu craControls und doraControls.
+//
+// Schichten gem. BSI-Standard 200-2 / Kompendium 2023:
+//
+//	ISMS — Sicherheitsmanagement
+//	ORP  — Organisation und Personal
+//	CON  — Konzeption und Vorgehensweise
+//	OPS  — Betrieb
+//	DER  — Detektion und Reaktion
+//	APP  — Anwendungen
+//	SYS  — IT-Systeme
+//	IND  — Industrielle IT (OT)
+//	NET  — Netze und Kommunikation
+//	INF  — Infrastruktur
+//
+// Diese 33 Bausteine bilden eine Basis-Absicherung gem. Standard 200-2 für
+// kleine bis mittlere Organisationen ab. Ein Customer mit Kern-Absicherung
+// erweitert sie um sektorale (IND.*) oder anwendungsspezifische (APP.*)
+// Bausteine. Die Reihenfolge folgt dem Kompendium.
 func bsiControls(frameworkID, orgID string) []Control {
+	c := func(id, title, desc, domain, evType string, w int) Control {
+		return Control{FrameworkID: frameworkID, OrgID: orgID, ControlID: id, Title: title, Description: desc, Domain: domain, EvidenceType: evType, Weight: w}
+	}
 	return []Control{
-		{FrameworkID: frameworkID, OrgID: orgID, ControlID: "BSI-ORP.1", Title: "Organisation", Domain: "Organisation", EvidenceType: "manual", Weight: 2},
-		{FrameworkID: frameworkID, OrgID: orgID, ControlID: "BSI-ORP.2", Title: "Personnel", Domain: "Human Resources", EvidenceType: "manual", Weight: 1},
-		{FrameworkID: frameworkID, OrgID: orgID, ControlID: "BSI-CON.3", Title: "Data Backup Policy", Domain: "Data Management", EvidenceType: "automated", Weight: 3},
-		{FrameworkID: frameworkID, OrgID: orgID, ControlID: "BSI-NET.1.1", Title: "Network Architecture and Design", Domain: "Network Security", EvidenceType: "manual", Weight: 3},
-		{FrameworkID: frameworkID, OrgID: orgID, ControlID: "BSI-SYS.1.1", Title: "General Server", Domain: "System Hardening", EvidenceType: "automated", Weight: 2},
-		{FrameworkID: frameworkID, OrgID: orgID, ControlID: "BSI-OPS.1.1.2", Title: "Proper IT Administration", Domain: "Operations", EvidenceType: "manual", Weight: 2},
-		{FrameworkID: frameworkID, OrgID: orgID, ControlID: "BSI-DER.2.1", Title: "Incident Management", Domain: "Incident Management", EvidenceType: "manual", Weight: 3},
+		// ── ISMS: Sicherheitsmanagement (BSI-Standard 200-1/2) ──
+		c("BSI-ISMS.1.A1", "Sicherheitsleitlinie",
+			"Die Leitung verabschiedet eine schriftliche Informationssicherheitsleitlinie, in der Ziele, Geltungsbereich und Verantwortlichkeiten beschrieben sind. Mindestens jährlich überprüfen. Nachweis: unterzeichnete Leitlinie, Aktualisierungshistorie.",
+			"Sicherheitsmanagement", "manual", 3),
+		c("BSI-ISMS.1.A6", "Sicherheitskonzept",
+			"Erstelle ein dokumentiertes Sicherheitskonzept gemäß BSI-Standard 200-2 (Basis- oder Kern-Absicherung). Es beschreibt den Geltungsbereich, die Schutzbedarfsfeststellung und die Modellierung. Nachweis: Sicherheitskonzept-Dokument inkl. IT-Grundschutz-Check.",
+			"Sicherheitsmanagement", "manual", 3),
+		c("BSI-ISMS.1.A9", "Management-Review",
+			"Die Leitung führt mindestens jährlich ein dokumentiertes Management-Review der Informationssicherheit durch (Risiken, Vorfälle, Kennzahlen, Verbesserungen). Nachweis: Protokoll, Maßnahmenliste.",
+			"Sicherheitsmanagement", "manual", 2),
+
+		// ── ORP: Organisation und Personal ──
+		c("BSI-ORP.1.A1", "Festlegung von Sicherheitsrollen",
+			"Definiere die Sicherheitsrollen (ISB, IT-Verantwortliche, Auditoren) schriftlich mit klaren Aufgaben und Befugnissen. Nachweis: Stellenbeschreibungen, Organigramm, Rollenmatrix.",
+			"Organisation", "manual", 2),
+		c("BSI-ORP.2.A1", "Auswahl von Mitarbeitenden",
+			"Berücksichtige bei der Einstellung von Personen mit Zugang zu schützenswerten Informationen Eignungsprüfungen (Referenzen, ggf. Führungszeugnis). Dokumentiere den Prozess. Nachweis: Personalprozess, Stichproben.",
+			"Personal", "manual", 1),
+		c("BSI-ORP.2.A2", "Verpflichtung von Mitarbeitenden",
+			"Verpflichte Mitarbeitende vor Aufnahme der Tätigkeit schriftlich auf Vertraulichkeit, Datenschutz und Compliance-Vorgaben. Nachweis: unterzeichnete Vertraulichkeitsverpflichtungen.",
+			"Personal", "manual", 2),
+		c("BSI-ORP.3.A1", "Sensibilisierung und Schulung",
+			"Schule mindestens jährlich alle Mitarbeitenden in Informationssicherheit (Phishing, Passwörter, Social Engineering). Nachweis: Teilnehmerlisten, Trainingsunterlagen.",
+			"Personal", "manual", 2),
+		c("BSI-ORP.4.A1", "Identitäts- und Berechtigungsmanagement",
+			"Lege Identitätslebenszyklen (Beantragen, Genehmigen, Wieder-Entziehen) für alle Systeme schriftlich fest. Berechtigungen folgen dem Need-to-Know-Prinzip. Nachweis: IAM-Richtlinie, Berechtigungsmatrix, Rezertifizierung.",
+			"Organisation", "manual", 3),
+
+		// ── CON: Konzeption und Vorgehensweise ──
+		c("BSI-CON.1.A1", "Kryptokonzept",
+			"Erstelle ein Kryptokonzept, das eingesetzte Verfahren, Schlüssellängen und Algorithmen den Vorgaben von BSI-TR-02102 entsprechend beschreibt. Nachweis: Kryptokonzept-Dokument, Cipher-Suite-Konfiguration.",
+			"Konzeption", "manual", 2),
+		c("BSI-CON.2.A1", "Datenschutz",
+			"Stelle DSGVO-konforme Verarbeitung sicher (Art. 5, 25, 32 DSGVO). Pflege Verzeichnis der Verarbeitungstätigkeiten, prüfe TOMs jährlich. Nachweis: VVT, TOM-Dokumentation, DSFA (sofern erforderlich).",
+			"Konzeption", "manual", 3),
+		c("BSI-CON.3.A1", "Datensicherungskonzept",
+			"Definiere ein Datensicherungskonzept (Häufigkeit, Aufbewahrung, Offsite-Speicherung, Tests). Beachte die 3-2-1-Regel (3 Kopien, 2 Medien, 1 offsite). Teste Restore mindestens halbjährlich. Nachweis: Konzeptdokument, Backup-Logs, Restore-Test-Protokolle.",
+			"Konzeption", "automated", 3),
+		c("BSI-CON.8.A1", "Sichere Software-Entwicklung",
+			"Etabliere einen sicheren SDLC mit Threat-Modeling, Code-Reviews, SAST/DAST und Dependency-Scanning. Nachweis: Entwicklungsrichtlinie, CI-Pipeline mit Security-Scanning, Pen-Test-Berichte.",
+			"Konzeption", "automated", 2),
+
+		// ── OPS: Betrieb ──
+		c("BSI-OPS.1.1.2.A1", "Ordnungsgemäße IT-Administration",
+			"Trenne administrative Tätigkeiten von der täglichen Arbeit (separate Admin-Accounts, MFA-Pflicht für privilegierte Zugriffe). Dokumentiere alle Admin-Tätigkeiten. Nachweis: Admin-Account-Liste, MFA-Konfiguration, Audit-Log.",
+			"Betrieb", "automated", 3),
+		c("BSI-OPS.1.1.3.A1", "Patch- und Änderungsmanagement",
+			"Implementiere ein dokumentiertes Patch- und Change-Management. Kritische Sicherheitsupdates innerhalb von 7 Tagen, sonstige innerhalb von 30 Tagen. Nachweis: Patch-Richtlinie, Change-Tickets, Vulnerability-Scans.",
+			"Betrieb", "automated", 3),
+		c("BSI-OPS.1.1.4.A1", "Schutz vor Schadprogrammen",
+			"Setze auf allen Endpunkten und Servern zentral verwaltete Antimalware-Lösungen ein. Signaturen täglich aktualisieren. Nachweis: AV-Konfiguration, Verteil-Logs, Inzident-Statistik.",
+			"Betrieb", "automated", 2),
+		c("BSI-OPS.1.1.5.A1", "Protokollierung",
+			"Protokolliere sicherheitsrelevante Ereignisse zentral (Logins, Admin-Aktionen, Konfigurationsänderungen). Speichere Logs manipulationssicher (WORM oder Hash-Chain). Aufbewahrung mind. 1 Jahr. Nachweis: SIEM-Konfiguration, Logging-Konzept, Log-Stichproben.",
+			"Betrieb", "automated", 3),
+
+		// ── DER: Detektion und Reaktion ──
+		c("BSI-DER.1.A1", "Detektion sicherheitsrelevanter Ereignisse",
+			"Implementiere ein Verfahren zur Erkennung von Sicherheitsvorfällen (SIEM-Korrelationen, IDS/IPS, Anomalie-Erkennung). Dokumentiere die Schwellwerte und Alarme. Nachweis: SIEM-Use-Cases, IDS-Rulebase.",
+			"Detektion", "automated", 3),
+		c("BSI-DER.2.1.A1", "Behandlung von Sicherheitsvorfällen",
+			"Etabliere einen Incident-Response-Prozess mit Eskalationsmatrix, Kommunikationsplan und Meldungspflichten (BSI / Datenschutzaufsicht binnen 72h). Trainiere ihn jährlich. Nachweis: IR-Playbook, Tabletop-Exercise-Protokolle, Meldungs-Templates.",
+			"Reaktion", "manual", 3),
+		c("BSI-DER.2.2.A1", "Vorsorge für IT-Forensik",
+			"Bereite die Beweissicherung im Vorfeld vor (Forensik-Toolkits, Snapshot-Verfahren, Chain-of-Custody). Schule mindestens eine Person in der Beweissicherung. Nachweis: Forensik-Prozessdokumentation, Toolkit-Inventar.",
+			"Reaktion", "manual", 2),
+
+		// ── APP: Anwendungen ──
+		c("BSI-APP.1.1.A1", "Sichere Office-Konfiguration",
+			"Härtet Office-Anwendungen (Makros standardmäßig deaktiviert, Block bei externen Quellen, geschützte Ansicht). Nachweis: GPO-Konfiguration, MDM-Profil, Audit-Stichprobe.",
+			"Anwendungen", "automated", 2),
+		c("BSI-APP.4.4.A1", "Härtung von Active Directory / Identity Provider",
+			"Härtet das zentrale IdP (Active Directory, Casdoor, Keycloak): privilegierte Konten mit MFA, Tier-Modell, regelmäßige Anti-Kerberos-Roasting-Audits. Nachweis: Tier-Konzept, Audit-Berichte, BloodHound-Reports.",
+			"Anwendungen", "automated", 3),
+		c("BSI-APP.5.3.A1", "Schutz von E-Mail-Kommunikation",
+			"Implementiere SPF, DKIM, DMARC für eigene Domains. Schule Mitarbeitende in Erkennung von Phishing (verknüpft mit Vakt-Aware). Nachweis: DNS-Konfiguration, Phishing-Übungs-Reports.",
+			"Anwendungen", "automated", 2),
+
+		// ── SYS: IT-Systeme ──
+		c("BSI-SYS.1.1.A1", "Allgemeine Server-Härtung",
+			"Härte Server gem. CIS-Benchmarks oder BSI-Empfehlungen (deaktiviere Standarddienste, prüfe Patches, beschränke Login-Wege). Nachweis: Hardening-Guide, Compliance-Scans (CIS/Lynis).",
+			"IT-Systeme", "automated", 2),
+		c("BSI-SYS.1.2.A1", "Windows Server",
+			"Setze unterstützte Windows-Server-Versionen ein, deaktiviere SMBv1, aktiviere Credential Guard und LSA Protection. Nachweis: Versions-Inventar, GPO-Konfiguration, BSI-Härtungsbericht.",
+			"IT-Systeme", "automated", 2),
+		c("BSI-SYS.1.3.A1", "Linux-Server",
+			"Härte Linux-Server (SELinux/AppArmor enforced, SSH key-only, fail2ban, Login-Banner). Patche kritische Kernel-CVEs innerhalb 7 Tagen. Nachweis: Konfigurationsdateien, Patch-Reports.",
+			"IT-Systeme", "automated", 2),
+		c("BSI-SYS.2.2.3.A1", "Windows-Clients",
+			"Aktiviere Windows-Defender, BitLocker für mobile Geräte, Application-Allowlisting. Setze Standard-User ohne lokale Admin-Rechte ein. Nachweis: GPO-Konfiguration, Compliance-Scan.",
+			"IT-Systeme", "automated", 2),
+
+		// ── IND: Industrielle IT (OT) ──
+		c("BSI-IND.1.A1", "Schutz von Prozessleittechnik",
+			"Trenne OT-Netze strikt von IT-Netzen (DMZ, unidirektionale Gateways wo möglich). Inventarisiere alle OT-Komponenten. Nachweis: Netz-Diagramm, OT-Asset-Inventar, Penetrationstests.",
+			"Industrielle IT", "manual", 2),
+
+		// ── NET: Netze und Kommunikation ──
+		c("BSI-NET.1.1.A1", "Netzarchitektur und -design",
+			"Erstelle eine dokumentierte Netzarchitektur mit Zonenmodell (DMZ, Internes Netz, Management-Netz). Beachte das Prinzip der minimalen Sichtbarkeit. Nachweis: Architektur-Diagramm, Firewall-Regelwerk.",
+			"Netze", "manual", 3),
+		c("BSI-NET.1.2.A1", "Netzmanagement",
+			"Verwalte alle Netzkomponenten zentral aus einem dedizierten Management-Netz. SNMPv3, kein Telnet, keine Defaultpasswörter. Nachweis: Konfigurations-Backup, Management-Netz-Diagramm.",
+			"Netze", "automated", 2),
+		c("BSI-NET.3.1.A1", "Router und Switches",
+			"Härte Router und Switches: Default-Passwörter ändern, SSH/HTTPS-only, ACLs gegen Spoofing, BPDU-Guard, Port-Security. Nachweis: Konfigurations-Auditberichte.",
+			"Netze", "automated", 2),
+		c("BSI-NET.3.2.A1", "Firewall",
+			"Betreibe eine zentrale Firewall mit Default-Deny. Regelwerk halbjährlich überprüfen, Änderungen via Change-Management. Nachweis: Regelwerk-Export, Change-Log, Review-Protokoll.",
+			"Netze", "automated", 3),
+
+		// ── INF: Infrastruktur ──
+		c("BSI-INF.1.A1", "Allgemeines Gebäude",
+			"Sichere Zutritt zu Gebäuden mit Sensitivität durch Zutrittskontrollen (Schlüsselsystem, Karten, Logs). Pflege ein Zutrittsregister. Nachweis: Zutrittskonzept, Logs, Schlüsselverwaltung.",
+			"Infrastruktur", "manual", 2),
+		c("BSI-INF.2.A1", "Rechenzentrum",
+			"Stelle physische Sicherheit des Rechenzentrums sicher (Zutrittskontrolle, Klima, Brandschutz, USV, Einbruchmeldeanlage). Bei Cloud: Provider-Zertifikate prüfen (ISO 27001, BSI C5). Nachweis: RZ-Sicherheitskonzept oder Cloud-Provider-Audit-Report.",
+			"Infrastruktur", "manual", 3),
+		c("BSI-INF.10.A1", "Besprechungs-, Veranstaltungs- und Schulungsräume",
+			"Definiere Schutzanforderungen für Besprechungsräume (kein WLAN-Stick, verdeckte Whiteboard-Inhalte, Sperrbildschirm bei Verlassen). Nachweis: Hausordnung, Stichproben-Audit.",
+			"Infrastruktur", "manual", 1),
 	}
 }
 

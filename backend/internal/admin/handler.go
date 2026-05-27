@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 
+	"github.com/matharnica/vakt/internal/shared/logsafe"
 	"github.com/matharnica/vakt/internal/shared/notify"
 	"github.com/matharnica/vakt/internal/shared/platform/features"
 )
@@ -131,7 +132,7 @@ func (h *Handler) InviteUser(c echo.Context) error {
 	}
 
 	if err := h.service.InviteUser(c.Request().Context(), orgID, inviterID, input); err != nil {
-		log.Error().Err(err).Str("org_id", orgID).Str("email", input.Email).Msg("invite user failed")
+		log.Error().Err(err).Str("org_id", orgID).Str("email_redacted", logsafe.RedactEmail(input.Email)).Msg("invite user failed")
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "failed to invite user",
 			"code":  "ADMIN_INVITE_ERROR",

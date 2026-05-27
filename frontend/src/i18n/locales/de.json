@@ -460,6 +460,135 @@
       "placeholderFindings": "Festgestellte Abweichungen und Beobachtungen …",
       "placeholderRecommendations": "Empfohlene Maßnahmen zur Behebung …",
       "saving": "Speichern …"
+    },
+    "accessReviews": {
+      "title": "Zugriffsüberprüfungen",
+      "description": "Periodische Reviews von Berechtigungen — NIS2 Art. 21(2)(g), ISO 27001 A.5.18, BSI ORP.4.",
+      "emptyTitle": "Keine Kampagnen erfasst",
+      "emptyDescription": "Starten Sie eine Access-Review-Kampagne, um Berechtigungen periodisch zu überprüfen.",
+      "addCampaign": "Kampagne anlegen",
+      "editCampaign": "Kampagne bearbeiten",
+      "fields": {
+        "title": "Titel",
+        "description": "Beschreibung",
+        "reviewerEmail": "Prüfer-E-Mail",
+        "scope": "Geltungsbereich (Scope)",
+        "dueDate": "Fälligkeitsdatum",
+        "status": "Status",
+        "user": "Benutzer",
+        "userEmail": "E-Mail",
+        "role": "Zugriffsrolle",
+        "decision": "Entscheidung",
+        "comment": "Kommentar",
+        "actions": "Aktionen"
+      },
+      "placeholders": {
+        "userEmail": "benutzer@firma.de",
+        "role": "z.B. Admin",
+        "title": "z.B. Q2 2026 Zugriffsüberprüfung",
+        "description": "Ziel und Umfang dieser Kampagne …",
+        "reviewerEmail": "pruefer@firma.de",
+        "scope": "z.B. Alle Nutzer mit Admin-Rolle"
+      },
+      "status": {
+        "draft": "Entwurf",
+        "active": "Aktiv",
+        "completed": "Abgeschlossen",
+        "cancelled": "Abgebrochen"
+      },
+      "decision": {
+        "pending": "Ausstehend",
+        "approved": "Bestätigt",
+        "revoked": "Widerrufen"
+      }
+    },
+    "aiSystems": {
+      "title": "KI-System-Inventar",
+      "description": "KI-Systeme inventarisieren und klassifizieren — EU AI Act Compliance.",
+      "emptyTitle": "Keine KI-Systeme erfasst",
+      "emptyDescription": "Inventarisieren Sie KI-Systeme für die Einhaltung des EU AI Acts.",
+      "add": "KI-System erfassen",
+      "edit": "KI-System bearbeiten",
+      "filterAll": "Alle",
+      "actions": {
+        "classify": "Risikoklasse bestimmen",
+        "documentation": "Technisches Dossier",
+        "cancel": "Abbrechen"
+      },
+      "fields": {
+        "name": "Name",
+        "provider": "Anbieter",
+        "useCase": "Anwendungsfall",
+        "description": "Beschreibung",
+        "affectedGroups": "Betroffene Personengruppen",
+        "autonomy": "Autonomiegrad",
+        "riskClass": "Risikoklasse",
+        "status": "Status",
+        "classification": "Klassifizierungsbegründung",
+        "classifiedBy": "Klassifiziert durch"
+      },
+      "placeholders": {
+        "name": "z.B. ChatGPT-Integration",
+        "provider": "z.B. OpenAI, Google, intern",
+        "useCase": "Wofür wird das KI-System eingesetzt?",
+        "description": "Technische Beschreibung",
+        "affectedGroups": "z.B. Mitarbeitende, Kunden, Bewerber",
+        "select": "— auswählen —"
+      },
+      "autonomyLevel": {
+        "assistive": "Assistierend",
+        "semiAutonomous": "Teilautonom",
+        "fullyAutonomous": "Vollständig autonom"
+      },
+      "riskClassLevel": {
+        "minimal": "Minimal",
+        "limited": "Begrenzt",
+        "high": "Hoch",
+        "unacceptable": "Inakzeptabel",
+        "prohibited": "Verboten"
+      },
+      "statusLevel": {
+        "classified": "Klassifiziert",
+        "approved": "Genehmigt",
+        "compliant": "Konform",
+        "highRisk": "Hochrisiko",
+        "decommissioned": "Stillgelegt"
+      }
+    },
+    "resilienceTests": {
+      "status": {
+        "open": "Offen",
+        "completed": "Abgeschlossen",
+        "accepted": "Akzeptiert"
+      },
+      "kind": {
+        "pentest": "Pentest",
+        "scenario": "Szenariobasiert"
+      },
+      "remediationStatus": "Remediationsstatus",
+      "cancel": "Abbrechen"
+    },
+    "exceptions": {
+      "status": {
+        "active": "Aktiv",
+        "expired": "Abgelaufen",
+        "revoked": "Widerrufen"
+      },
+      "deletePrompt": "Ausnahme löschen",
+      "cancel": "Abbrechen"
+    },
+    "evidenceAuto": {
+      "framework": "Framework",
+      "control": "Kontrolle",
+      "evidence": "Nachweis"
+    },
+    "tisaxMapping": {
+      "covered": "Abgedeckt",
+      "gaps": "Lücken"
+    },
+    "dsgvoTom": {
+      "covered": "Abgedeckt",
+      "open": "Offen"
     }
   },
   "secprivacy": {

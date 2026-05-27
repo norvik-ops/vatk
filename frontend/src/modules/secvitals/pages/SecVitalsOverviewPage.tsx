@@ -402,7 +402,14 @@ export default function SecVitalsOverviewPage() {
     ),
     evidence: <ExpiringEvidenceWidget key="evidence" />,
     insights: <AIInsightsFeed key="insights" />,
-    advisor: <AIAdvisor key="advisor" aiAvailable={aiStatus?.available ?? false} />,
+    advisor: (
+      <AIAdvisor
+        key="advisor"
+        aiAvailable={aiStatus?.available ?? false}
+        providerHost={aiStatus?.provider_host ?? ''}
+        model={aiStatus?.model}
+      />
+    ),
     trend: <ScoreTrendChart key="trend" data={scoreHistory ?? []} />,
     benchmark: currentScore > 0 ? <ScoreBenchmark key="benchmark" currentScore={currentScore} /> : null,
     areas: (

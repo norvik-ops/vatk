@@ -31,6 +31,13 @@ type SAMLCallbackInput struct {
 // ErrCasdoorNotConfigured is returned when CASDOOR_URL is not set.
 var ErrCasdoorNotConfigured = errors.New("OIDC: configure CASDOOR_URL env var")
 
+// ErrEmailNotVerified is returned when an OIDC provider hands back an email
+// that has NOT been verified by the upstream IdP and a local user with that
+// email already exists. Linking would let an attacker take over the local
+// account by registering with the victim's email at any unverified-email-
+// accepting IdP. See ADR-0033.
+var ErrEmailNotVerified = errors.New("OIDC: email not verified by identity provider; refusing to link to existing account")
+
 // casdoorTokenResponse is the JSON response from Casdoor's token endpoint.
 type casdoorTokenResponse struct {
 	AccessToken string `json:"access_token"`
@@ -39,12 +46,18 @@ type casdoorTokenResponse struct {
 }
 
 // casdoorUserProfile is the JSON response from Casdoor's get-account endpoint.
+//
+// EmailVerified maps Casdoor's `emailVerified` field. If the field is missing
+// from the response the zero-value (false) is used — we treat that as
+// "unverified" and refuse to link the OIDC subject to an existing local
+// account. See ADR-0033 (OIDC email-verification gate).
 type casdoorUserProfile struct {
-	Sub      string `json:"sub"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Avatar   string `json:"avatar"`
-	Provider string `json:"provider"`
+	Sub           string `json:"sub"`
+	Name          string `json:"name"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"emailVerified"`
+	Avatar        string `json:"avatar"`
+	Provider      string `json:"provider"`
 }
 
 // casdoorSAMLResponse is the JSON response from Casdoor's SAML login endpoint.
@@ -141,7 +154,9 @@ func (s *Service) OIDCLogin(ctx context.Context, cfg *config.Config, provider, c
 	}
 
 	// Step 3: Provision or load user.
-	userID, orgID, roles, err := s.provisionOIDCUser(ctx, profile.Sub, provider, profile.Email, profile.Name, profile.Avatar)
+	// emailVerified is sourced from Casdoor's profile. False forbids linking to
+	// existing local accounts (ADR-0033).
+	userID, orgID, roles, err := s.provisionOIDCUser(ctx, profile.Sub, provider, profile.Email, profile.Name, profile.Avatar, profile.EmailVerified)
 	if err != nil {
 		// S22-3: failed OIDC-Provisionierung wird auch persistiert
 		s.recordLogin(ctx, "", "", profile.Email, deviceHint, "oidc", "oidc_failed")
@@ -206,7 +221,9 @@ func (s *Service) SAMLLogin(ctx context.Context, cfg *config.Config, samlRespons
 		samlResp.Sub = samlResp.Email
 	}
 
-	userID, orgID, roles, err := s.provisionOIDCUser(ctx, samlResp.Sub, "saml", samlResp.Email, samlResp.Name, "")
+	// SAML assertions carry an XML-DSig that Casdoor verifies before answering us,
+	// so the email is considered IdP-verified.
+	userID, orgID, roles, err := s.provisionOIDCUser(ctx, samlResp.Sub, "saml", samlResp.Email, samlResp.Name, "", true)
 	if err != nil {
 		// S22-3: failed SAML auch persistieren.
 		s.recordLogin(ctx, "", "", samlResp.Email, deviceHint, "saml", "oidc_failed")
@@ -224,7 +241,9 @@ func (s *Service) SAMLLogin(ctx context.Context, cfg *config.Config, samlRespons
 // provisionSAMLUser provisions a user from a direct SAML assertion (S21-1).
 // It reuses provisionOIDCUser with provider="saml" and then issues a token pair.
 func (s *Service) provisionSAMLUser(ctx context.Context, orgID, nameID, email, displayName, deviceHint string) (*AuthResponse, error) {
-	userID, resolvedOrgID, roles, err := s.provisionOIDCUser(ctx, nameID, "saml", email, displayName, "")
+	// Direct SAML assertions are signature-verified by saml_direct.go before
+	// this code path is reached, so the email is treated as IdP-verified.
+	userID, resolvedOrgID, roles, err := s.provisionOIDCUser(ctx, nameID, "saml", email, displayName, "", true)
 	if err != nil {
 		s.recordLogin(ctx, orgID, "", email, deviceHint, "saml_direct", "provision_failed")
 		return nil, fmt.Errorf("saml_direct: provision user: %w", err)
@@ -238,7 +257,12 @@ func (s *Service) provisionSAMLUser(ctx context.Context, orgID, nameID, email, d
 
 // provisionOIDCUser looks up or creates a user based on their OIDC subject.
 // It returns the userID, their primary orgID, and the list of role names.
-func (s *Service) provisionOIDCUser(ctx context.Context, oidcSubject, provider, email, displayName, avatarURL string) (string, string, []string, error) {
+//
+// emailVerified must reflect whether the upstream IdP has confirmed ownership
+// of the email address. When false, the function refuses to link the OIDC
+// subject to a pre-existing local account that happens to share the email —
+// this would otherwise allow a trivial account-takeover (ADR-0033).
+func (s *Service) provisionOIDCUser(ctx context.Context, oidcSubject, provider, email, displayName, avatarURL string, emailVerified bool) (string, string, []string, error) {
 	// Try to find an existing user by OIDC subject.
 	var userID string
 	err := s.db.QueryRow(ctx,
@@ -254,6 +278,12 @@ func (s *Service) provisionOIDCUser(ctx context.Context, oidcSubject, provider, 
 				email,
 			).Scan(&userID)
 			if emailErr == nil {
+				// Linking would let an unverified-email IdP take over an existing local
+				// account.  Refuse unless the IdP has confirmed ownership.
+				if !emailVerified {
+					log.Warn().Str("provider", provider).Msg("OIDC: refusing to link unverified email to existing account")
+					return "", "", nil, ErrEmailNotVerified
+				}
 				// Link existing user to this OIDC subject.
 				if _, updateErr := s.db.Exec(ctx,
 					`UPDATE users SET oidc_subject = $1, oidc_provider = $2, avatar_url = COALESCE(NULLIF($3,''), avatar_url), last_login_at = NOW() WHERE id = $4::uuid`,

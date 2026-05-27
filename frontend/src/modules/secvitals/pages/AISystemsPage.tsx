@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Bot, Plus, Pencil, Trash2, FlaskConical, FileText } from 'lucide-react'
 import { Spinner } from '../../../components/Spinner'
@@ -19,10 +20,12 @@ import { AIClassificationWizard } from '../components/AIClassificationWizard'
 import { RISK_CLASS_CSS as RISK_CLASS, RISK_CLASS_LABELS as RISK_LABELS } from '../components/aiRiskClassConfig'
 import type { AISystem, CreateAISystemInput, UpdateAISystemInput } from '../types'
 
-const AUTONOMY_LABELS: Record<string, string> = {
-  assistive: 'Assistierend',
-  partial: 'Teilautonom',
-  full: 'Vollständig autonom',
+// AUTONOMY_I18N_KEY: map domain enums → i18n keys. Resolved with t() inside
+// the component body. Module-level so the strings remain a static lookup.
+const AUTONOMY_I18N_KEY: Record<string, string> = {
+  assistive: 'secvitals.aiSystems.autonomyLevel.assistive',
+  partial: 'secvitals.aiSystems.autonomyLevel.semiAutonomous',
+  full: 'secvitals.aiSystems.autonomyLevel.fullyAutonomous',
 }
 
 function emptyForm(): CreateAISystemInput {
@@ -65,6 +68,7 @@ function AISystemCard({
   onDelete: () => void
   onClassify: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <Card>
       <CardContent className="pt-5 space-y-2">
@@ -76,13 +80,13 @@ function AISystemCard({
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-primary/70 hover:text-primary"
-              title="Risikoklasse bestimmen"
+              title={t('secvitals.aiSystems.actions.classify')}
               data-testid="classify-ai-system-btn"
               onClick={onClassify}
             >
               <FlaskConical className="w-3.5 h-3.5" />
             </Button>
-            <Link to={`ai-systems/${system.id}/documentation`} title="Technisches Dossier">
+            <Link to={`ai-systems/${system.id}/documentation`} title={t('secvitals.aiSystems.actions.documentation')}>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-primary/70 hover:text-primary">
                 <FileText className="w-3.5 h-3.5" />
               </Button>
@@ -114,7 +118,7 @@ function AISystemCard({
             </Badge>
           )}
           <Badge variant="outline" className="text-xs">
-            {AUTONOMY_LABELS[system.autonomy_level] ?? system.autonomy_level}
+            {AUTONOMY_I18N_KEY[system.autonomy_level] ? t(AUTONOMY_I18N_KEY[system.autonomy_level]) : system.autonomy_level}
           </Badge>
         </div>
         {system.affected_groups && (
@@ -126,6 +130,7 @@ function AISystemCard({
 }
 
 export default function AISystemsPage() {
+  const { t } = useTranslation()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState<CreateAISystemInput | UpdateAISystemInput>(emptyForm())
@@ -177,12 +182,12 @@ export default function AISystemsPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="KI-System-Inventar"
-        description="KI-Systeme inventarisieren und klassifizieren — EU AI Act Compliance."
+        title={t('secvitals.aiSystems.title')}
+        description={t('secvitals.aiSystems.description')}
         actions={
           <Button onClick={openCreate}>
             <Plus className="w-4 h-4 mr-1" />
-            KI-System erfassen
+            {t('secvitals.aiSystems.add')}
           </Button>
         }
       />
@@ -190,38 +195,38 @@ export default function AISystemsPage() {
       {/* Filter Toolbar */}
       <div className="px-6 pb-2 flex flex-wrap gap-3 items-center" data-testid="ai-filter-toolbar">
         <div className="flex items-center gap-2">
-          <Label className="text-xs">Risikoklasse</Label>
+          <Label className="text-xs">{t('secvitals.aiSystems.fields.riskClass')}</Label>
           <Select
             value={filterRiskClass || '_all'}
             onValueChange={(v) => { setFilterRiskClass(v === '_all' ? '' : v); }}
           >
             <SelectTrigger className="h-8 w-44" data-testid="filter-risk-class">
-              <SelectValue placeholder="Alle" />
+              <SelectValue placeholder={t('secvitals.aiSystems.filterAll')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="_all">Alle</SelectItem>
-              <SelectItem value="unacceptable">Verboten</SelectItem>
-              <SelectItem value="high">Hochrisiko</SelectItem>
-              <SelectItem value="limited">Begrenztes Risiko</SelectItem>
-              <SelectItem value="minimal">Minimales Risiko</SelectItem>
+              <SelectItem value="_all">{t('secvitals.aiSystems.filterAll')}</SelectItem>
+              <SelectItem value="unacceptable">{t('secvitals.aiSystems.riskClassLevel.prohibited')}</SelectItem>
+              <SelectItem value="high">{t('secvitals.aiSystems.riskClassLevel.high')}</SelectItem>
+              <SelectItem value="limited">{t('secvitals.aiSystems.riskClassLevel.limited')}</SelectItem>
+              <SelectItem value="minimal">{t('secvitals.aiSystems.riskClassLevel.minimal')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <Label className="text-xs">Status</Label>
+          <Label className="text-xs">{t('secvitals.aiSystems.fields.status')}</Label>
           <Select
             value={filterStatus || '_all'}
             onValueChange={(v) => { setFilterStatus(v === '_all' ? '' : v); }}
           >
             <SelectTrigger className="h-8 w-44" data-testid="filter-status">
-              <SelectValue placeholder="Alle" />
+              <SelectValue placeholder={t('secvitals.aiSystems.filterAll')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="_all">Alle</SelectItem>
-              <SelectItem value="under_review">In Prüfung</SelectItem>
-              <SelectItem value="approved">Klassifiziert</SelectItem>
-              <SelectItem value="compliant">Konform</SelectItem>
-              <SelectItem value="decommissioned">Stillgelegt</SelectItem>
+              <SelectItem value="_all">{t('secvitals.aiSystems.filterAll')}</SelectItem>
+              <SelectItem value="under_review">{t('secvitals.aiSystems.statusLevel.classified')}</SelectItem>
+              <SelectItem value="approved">{t('secvitals.aiSystems.statusLevel.approved')}</SelectItem>
+              <SelectItem value="compliant">{t('secvitals.aiSystems.statusLevel.compliant')}</SelectItem>
+              <SelectItem value="decommissioned">{t('secvitals.aiSystems.statusLevel.decommissioned')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -254,12 +259,12 @@ export default function AISystemsPage() {
         {!isLoading && !isError && systems?.length === 0 && (
           <EmptyState
             icon={Bot}
-            title="Keine KI-Systeme erfasst"
-            description="Inventarisieren Sie KI-Systeme für die Einhaltung des EU AI Acts."
+            title={t('secvitals.aiSystems.emptyTitle')}
+            description={t('secvitals.aiSystems.emptyDescription')}
             action={
               <Button onClick={openCreate}>
                 <Plus className="w-4 h-4 mr-1" />
-                KI-System erfassen
+                {t('secvitals.aiSystems.add')}
               </Button>
             }
           />
@@ -282,54 +287,54 @@ export default function AISystemsPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{isUpdate ? 'KI-System bearbeiten' : 'KI-System erfassen'}</DialogTitle>
+            <DialogTitle>{isUpdate ? t('secvitals.aiSystems.edit') : t('secvitals.aiSystems.add')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label>Name *</Label>
+              <Label>{t('secvitals.aiSystems.fields.name')} *</Label>
               <Input
-                placeholder="z.B. ChatGPT-Integration"
+                placeholder={t('secvitals.aiSystems.placeholders.name')}
                 value={form.name}
                 onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Anbieter</Label>
+              <Label>{t('secvitals.aiSystems.fields.provider')}</Label>
               <Input
-                placeholder="z.B. OpenAI, Google, intern"
+                placeholder={t('secvitals.aiSystems.placeholders.provider')}
                 value={form.provider ?? ''}
                 onChange={(e) => { setForm((f) => ({ ...f, provider: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Anwendungsfall</Label>
+              <Label>{t('secvitals.aiSystems.fields.useCase')}</Label>
               <Textarea
                 rows={2}
-                placeholder="Wofür wird das KI-System eingesetzt?"
+                placeholder={t('secvitals.aiSystems.placeholders.useCase')}
                 value={form.use_case ?? ''}
                 onChange={(e) => { setForm((f) => ({ ...f, use_case: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Beschreibung</Label>
+              <Label>{t('secvitals.aiSystems.fields.description')}</Label>
               <Textarea
                 rows={2}
-                placeholder="Technische Beschreibung"
+                placeholder={t('secvitals.aiSystems.placeholders.description')}
                 value={form.description ?? ''}
                 onChange={(e) => { setForm((f) => ({ ...f, description: e.target.value })); }}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Betroffene Personengruppen</Label>
+              <Label>{t('secvitals.aiSystems.fields.affectedGroups')}</Label>
               <Input
-                placeholder="z.B. Mitarbeitende, Kunden, Bewerber"
+                placeholder={t('secvitals.aiSystems.placeholders.affectedGroups')}
                 value={form.affected_groups ?? ''}
                 onChange={(e) => { setForm((f) => ({ ...f, affected_groups: e.target.value })); }}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Autonomiegrad</Label>
+                <Label>{t('secvitals.aiSystems.fields.autonomy')}</Label>
                 <Select
                   value={form.autonomy_level ?? 'assistive'}
                   onValueChange={(v) =>
@@ -340,34 +345,34 @@ export default function AISystemsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="assistive">Assistierend</SelectItem>
-                    <SelectItem value="partial">Teilautonom</SelectItem>
-                    <SelectItem value="full">Vollständig autonom</SelectItem>
+                    <SelectItem value="assistive">{t('secvitals.aiSystems.autonomyLevel.assistive')}</SelectItem>
+                    <SelectItem value="partial">{t('secvitals.aiSystems.autonomyLevel.semiAutonomous')}</SelectItem>
+                    <SelectItem value="full">{t('secvitals.aiSystems.autonomyLevel.fullyAutonomous')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Risikoklasse</Label>
+                <Label>{t('secvitals.aiSystems.fields.riskClass')}</Label>
                 <Select
                   value={(form as UpdateAISystemInput).risk_class ?? '_none'}
                   onValueChange={(v) => { setForm((f) => ({ ...f, risk_class: v === '_none' ? undefined : v })); }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="— auswählen —" />
+                    <SelectValue placeholder={t('secvitals.aiSystems.placeholders.select')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="_none">— auswählen —</SelectItem>
-                    <SelectItem value="minimal">Minimal</SelectItem>
-                    <SelectItem value="limited">Begrenzt</SelectItem>
-                    <SelectItem value="high">Hoch</SelectItem>
-                    <SelectItem value="unacceptable">Inakzeptabel</SelectItem>
+                    <SelectItem value="_none">{t('secvitals.aiSystems.placeholders.select')}</SelectItem>
+                    <SelectItem value="minimal">{t('secvitals.aiSystems.riskClassLevel.minimal')}</SelectItem>
+                    <SelectItem value="limited">{t('secvitals.aiSystems.riskClassLevel.limited')}</SelectItem>
+                    <SelectItem value="high">{t('secvitals.aiSystems.riskClassLevel.high')}</SelectItem>
+                    <SelectItem value="unacceptable">{t('secvitals.aiSystems.riskClassLevel.unacceptable')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             {isUpdate && (
               <div className="space-y-1.5">
-                <Label>Status</Label>
+                <Label>{t('secvitals.aiSystems.fields.status')}</Label>
                 <Select
                   value={(form as UpdateAISystemInput).status ?? 'under_review'}
                   onValueChange={(v) =>
@@ -387,19 +392,19 @@ export default function AISystemsPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label>Klassifizierungsbegründung</Label>
+              <Label>{t('secvitals.aiSystems.fields.classification')}</Label>
               <Textarea
                 rows={2}
-                placeholder="Begründung für die Risikoklassifizierung"
+                placeholder={t('secvitals.aiSystems.fields.classification')}
                 value={form.classification_rationale ?? ''}
                 onChange={(e) => { setForm((f) => ({ ...f, classification_rationale: e.target.value })); }}
               />
             </div>
             {isUpdate && (
               <div className="space-y-1.5">
-                <Label>Klassifiziert durch</Label>
+                <Label>{t('secvitals.aiSystems.fields.classifiedBy')}</Label>
                 <Input
-                  placeholder="Name der verantwortlichen Person"
+                  placeholder={t('secvitals.aiSystems.fields.classifiedBy')}
                   value={(form as UpdateAISystemInput).classified_by ?? ''}
                   onChange={(e) => { setForm((f) => ({ ...f, classified_by: e.target.value })); }}
                 />

@@ -2,6 +2,7 @@ package ai
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -101,40 +102,56 @@ func (h *AgentHandler) AgentRun(c echo.Context) error {
 	return nil
 }
 
-// ApproveRun genehmigt einen wartenden Write-Tool-Call in einem laufenden Agent-Run.
+// ApproveRun genehmigt einen wartenden Write-Tool-Call in einem laufenden
+// Agent-Run.  The caller's org and user are verified against the owner of
+// the run that was recorded at Register-time; without this check any
+// authenticated user could approve a write-tool call in another org's
+// agent run by guessing the run_id (audit finding F11/Cross-Org-Hijack).
 //
 // POST /api/v1/secvitals/ai/agent/runs/:run_id/approve
 func (h *AgentHandler) ApproveRun(c echo.Context) error {
-	if h.runMgr == nil {
-		return c.JSON(http.StatusServiceUnavailable, map[string]string{"error": "approval manager not available"})
-	}
-	runID := c.Param("run_id")
-	userID, _ := c.Get("user_id").(string)
-	if runID == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "run_id required"})
-	}
-
-	if !h.runMgr.Decide(runID, ApprovalDecision{Approved: true, UserID: userID}) {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "run not found or already decided"})
-	}
-	return c.JSON(http.StatusOK, map[string]string{"status": "approved", "run_id": runID})
+	return h.decideRun(c, true)
 }
 
-// RejectRun lehnt einen wartenden Write-Tool-Call in einem laufenden Agent-Run ab.
+// RejectRun lehnt einen wartenden Write-Tool-Call ab. Owner-Check analog
+// zu ApproveRun.
 //
 // POST /api/v1/secvitals/ai/agent/runs/:run_id/reject
 func (h *AgentHandler) RejectRun(c echo.Context) error {
+	return h.decideRun(c, false)
+}
+
+// decideRun ist die gemeinsame Implementierung für Approve und Reject.
+// Beide Endpoints haben dieselbe Auth-Logik — der einzige Unterschied ist
+// der Approved-Bool.
+func (h *AgentHandler) decideRun(c echo.Context, approve bool) error {
 	if h.runMgr == nil {
 		return c.JSON(http.StatusServiceUnavailable, map[string]string{"error": "approval manager not available"})
 	}
 	runID := c.Param("run_id")
-	userID, _ := c.Get("user_id").(string)
 	if runID == "" {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "run_id required"})
 	}
+	orgID, _ := c.Get("org_id").(string)
+	userID, _ := c.Get("user_id").(string)
+	if orgID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
 
-	if !h.runMgr.Decide(runID, ApprovalDecision{Approved: false, UserID: userID}) {
+	err := h.runMgr.Decide(runID, orgID, userID, ApprovalDecision{Approved: approve, UserID: userID})
+	switch {
+	case err == nil:
+		status := "approved"
+		if !approve {
+			status = "rejected"
+		}
+		return c.JSON(http.StatusOK, map[string]string{"status": status, "run_id": runID})
+	case errors.Is(err, ErrApprovalForbidden):
+		log.Warn().Str("run_id", runID).Str("caller_org", orgID).Msg("agent: rejected cross-org approval attempt")
+		// Return 404 (not 403) so an attacker who guesses a foreign run_id
+		// cannot distinguish "exists in another org" from "does not exist".
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "run not found or already decided"})
+	default:
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "run not found or already decided"})
 	}
-	return c.JSON(http.StatusOK, map[string]string{"status": "rejected", "run_id": runID})
 }
