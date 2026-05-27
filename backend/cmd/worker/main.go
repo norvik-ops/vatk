@@ -33,6 +33,7 @@ import (
 	"github.com/matharnica/vakt/internal/shared/bsi"
 	"github.com/matharnica/vakt/internal/shared/demo"
 	"github.com/matharnica/vakt/internal/shared/emaildigest"
+	"github.com/matharnica/vakt/internal/shared/metrics"
 	"github.com/matharnica/vakt/internal/shared/nis2wizard"
 	"github.com/matharnica/vakt/internal/shared/notifications"
 	cloudintegration "github.com/matharnica/vakt/internal/shared/platform/integrations/cloud"
@@ -49,6 +50,21 @@ func workerConcurrency() int {
 		}
 	}
 	return 8
+}
+
+// newMetricsRedis opens a Redis client used by the metrics middleware.
+// Returns nil when the URL is empty or invalid — metrics recording is then
+// silently skipped (we never want a metric write to break the worker).
+func newMetricsRedis(redisURL string) *redis.Client {
+	if redisURL == "" {
+		return nil
+	}
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		// Fall back to bare host:port form.
+		opt = &redis.Options{Addr: redisURL}
+	}
+	return redis.NewClient(opt)
 }
 
 // asynqRedisOpt converts VAKT_REDIS_URL to an asynq.RedisClientOpt.
@@ -94,6 +110,13 @@ func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 	)
 
 	mux := asynq.NewServeMux()
+
+	// S58-1: emit per-task-type duration + result into Redis so /metrics on the
+	// API side can publish Prometheus counters without needing a worker scrape
+	// endpoint. Best-effort — Redis failures never affect task execution.
+	if rdb := newMetricsRedis(cfg.RedisUrl); rdb != nil {
+		mux.Use(metrics.AsynqInstrumentingMiddleware(rdb))
+	}
 
 	// ── SecPulse scan handlers ────────────────────────────────────────────────
 	mux.HandleFunc(secpulse.TaskScanTrivy, handleScanJob(cfg, pool))

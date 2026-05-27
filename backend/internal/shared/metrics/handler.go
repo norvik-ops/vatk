@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 )
@@ -221,6 +223,11 @@ func (h *Handler) ServeMetrics(c echo.Context) error {
 		h.writeQueueDepth(ctx, w)
 	}
 
+	// S58-1: per-task job-duration counters written by the worker middleware.
+	if h.redisAddr != "" {
+		h.writeAsynqJobMetrics(ctx, w)
+	}
+
 	return nil
 }
 
@@ -415,6 +422,88 @@ func (h *Handler) collectBusinessMetrics(ctx context.Context, orgIDs []string) (
 		return nil, err
 	}
 	return bm, nil
+}
+
+// writeAsynqJobMetrics reads per-task counters that the worker's
+// AsynqInstrumentingMiddleware writes into Redis and emits them as
+// Prometheus counters. We deliberately don't use Asynq's Inspector here
+// because it only knows about queues, not the per-task-type breakdown
+// we need ("which specific job is slow / failing?").
+func (h *Handler) writeAsynqJobMetrics(ctx context.Context, w io.Writer) {
+	if h.redisAddr == "" {
+		return
+	}
+	rdb := redis.NewClient(&redis.Options{Addr: h.redisAddr})
+	defer func() { _ = rdb.Close() }()
+
+	// SCAN once for all metric keys; parse each into (kind, task, result).
+	var cursor uint64
+	var allKeys []string
+	for {
+		keys, next, err := rdb.Scan(ctx, cursor, "metric:asynq:*", 500).Result()
+		if err != nil {
+			log.Warn().Err(err).Msg("metrics: scan asynq metric keys")
+			return
+		}
+		allKeys = append(allKeys, keys...)
+		cursor = next
+		if cursor == 0 {
+			break
+		}
+	}
+	if len(allKeys) == 0 {
+		return
+	}
+
+	// Bulk MGET for values.
+	values, err := rdb.MGet(ctx, allKeys...).Result()
+	if err != nil {
+		log.Warn().Err(err).Msg("metrics: mget asynq metric keys")
+		return
+	}
+
+	type entry struct{ task, result, kind, value string }
+	entries := make([]entry, 0, len(allKeys))
+	for i, key := range allKeys {
+		// metric:asynq:<kind>:<task>:<result>
+		parts := strings.SplitN(strings.TrimPrefix(key, "metric:asynq:"), ":", 3)
+		if len(parts) != 3 {
+			continue
+		}
+		v, ok := values[i].(string)
+		if !ok || v == "" {
+			continue
+		}
+		entries = append(entries, entry{task: parts[1], result: parts[2], kind: parts[0], value: v})
+	}
+
+	// Group by kind to emit a clean Prometheus block per metric family.
+	byKind := map[string][]entry{}
+	for _, e := range entries {
+		byKind[e.kind] = append(byKind[e.kind], e)
+	}
+
+	emit := func(name, help, metricType string, kind string) {
+		es, ok := byKind[kind]
+		if !ok || len(es) == 0 {
+			return
+		}
+		fmt.Fprintln(w, "# HELP "+name+" "+help)
+		fmt.Fprintln(w, "# TYPE "+name+" "+metricType)
+		for _, e := range es {
+			fmt.Fprintf(w, "%s{task=%q,result=%q} %s\n", name, e.task, e.result, e.value)
+		}
+	}
+
+	emit("vakt_asynq_jobs_total",
+		"Total Asynq jobs processed per task type and result",
+		"counter", "count")
+	emit("vakt_asynq_jobs_duration_ms_sum",
+		"Cumulative wall-clock duration of Asynq jobs per task type and result, milliseconds",
+		"counter", "duration_ms_sum")
+	emit("vakt_asynq_jobs_duration_ms_max",
+		"Maximum observed wall-clock duration of an Asynq job per task type and result, milliseconds",
+		"gauge", "duration_ms_max")
 }
 
 // writeQueueDepth queries Asynq queue depths and writes them to w.
