@@ -325,6 +325,8 @@ export default function AssetsPage() {
                   value={form.name}
                   onChange={(e) => { setForm({ ...form, name: e.target.value }); }}
                   required
+                  onInvalid={(e) => { (e.target as HTMLInputElement).setCustomValidity(t('validation.required')); }}
+                  onInput={(e) => { (e.target as HTMLInputElement).setCustomValidity(''); }}
                 />
               </div>
 
@@ -355,6 +357,8 @@ export default function AssetsPage() {
                   value={form.target}
                   onChange={(e) => { setForm({ ...form, target: e.target.value }); }}
                   required
+                  onInvalid={(e) => { (e.target as HTMLInputElement).setCustomValidity(t('validation.required')); }}
+                  onInput={(e) => { (e.target as HTMLInputElement).setCustomValidity(''); }}
                 />
               </div>
 

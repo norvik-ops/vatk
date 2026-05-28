@@ -117,7 +117,13 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg p-4">
-      <div className="w-full max-w-sm space-y-4">
+      <a
+        href="#login-main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 bg-background px-4 py-2 rounded-lg border font-medium"
+      >
+        {t('nav.skipToContent')}
+      </a>
+      <main id="login-main" className="w-full max-w-sm space-y-4">
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2.5 mb-2">
@@ -244,7 +250,7 @@ export default function Login() {
             </div>
           </>
         )}
-      </div>
+      </main>
     </div>
   )
 }

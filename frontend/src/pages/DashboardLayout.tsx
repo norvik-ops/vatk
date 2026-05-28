@@ -125,13 +125,20 @@ export function DashboardLayout({
         <p className="text-[10px] font-semibold text-secondary uppercase tracking-wider mb-1 opacity-60">
           Security Score
         </p>
-        <div className="flex items-end gap-1">
+        <div
+          className="flex items-end gap-1"
+          title="Aggregierte Sicherheitsbewertung aus offenen Findings, Control-Coverage und Risiken. 0–49 schwach, 50–69 ausbaufähig, 70–89 gut, 90+ exzellent. Klick auf die Zahl für Konfiguration und Gewichtungen."
+        >
           {scoreLoading ? (
             <Skeleton className="h-12 w-20" />
           ) : (
-            <p className={`text-[52px] font-black leading-none ${scoreColor(scoreData?.score)}`}>
+            <Link
+              to="/settings/score-config"
+              className={`text-[52px] font-black leading-none ${scoreColor(scoreData?.score)} hover:underline decoration-2 underline-offset-4`}
+              aria-label={`Security Score: ${String(scoreData?.score ?? '—')} von 100. Klick öffnet die Score-Konfiguration.`}
+            >
               {scoreData?.score ?? '—'}
-            </p>
+            </Link>
           )}
           <p className="text-[16px] text-secondary mb-2">/ 100</p>
         </div>
