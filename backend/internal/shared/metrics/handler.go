@@ -399,7 +399,7 @@ func (h *Handler) collectBusinessMetrics(ctx context.Context, orgIDs []string) (
 		rows, err := h.db.Query(gctx, `
 			SELECT org_id::text, framework_id::text, COUNT(*)
 			FROM ck_controls
-			WHERE status = 'implemented'
+			WHERE manual_status = 'implemented'
 			GROUP BY org_id, framework_id`)
 		if err != nil {
 			log.Error().Err(err).Msg("metrics: query controls_implemented")
