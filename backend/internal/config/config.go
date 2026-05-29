@@ -145,6 +145,20 @@ func getEnv(key, def string) string {
 	return def
 }
 
+// readEnvOrFile reads a secret from a file path (fileKey) or falls back to
+// the plain env var (envKey). Use VAKT_SECRET_KEY_FILE / VAKT_DB_URL_FILE in
+// production to keep plaintext secrets out of `docker inspect` output.
+func readEnvOrFile(envKey, fileKey string) (string, error) {
+	if f := os.Getenv(fileKey); f != "" {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			return "", fmt.Errorf("cannot read %s=%q: %w", fileKey, f, err)
+		}
+		return strings.TrimSpace(string(b)), nil
+	}
+	return os.Getenv(envKey), nil
+}
+
 // getEnvInt parst eine Integer-Env-Var; bei Fehler oder leerem Wert wird der
 // Default zurueckgegeben. Sprint 15 (S15-1/2/3) nutzt das fuer numerische
 // Rate-/Quota-/Cache-Konfiguration.
@@ -174,10 +188,19 @@ func getEnvInt64(key string, def int64) int64 {
 
 // Load reads configuration from environment variables with explicit validation.
 func Load() (*Config, error) {
+	dbURL, err := readEnvOrFile("VAKT_DB_URL", "VAKT_DB_URL_FILE")
+	if err != nil {
+		return nil, err
+	}
+	secretKey, err := readEnvOrFile("VAKT_SECRET_KEY", "VAKT_SECRET_KEY_FILE")
+	if err != nil {
+		return nil, err
+	}
+
 	cfg := &Config{
-		DBUrl:               getEnv("VAKT_DB_URL", ""),
+		DBUrl:               dbURL,
 		RedisUrl:            getEnv("VAKT_REDIS_URL", ""),
-		SecretKey:           getEnv("VAKT_SECRET_KEY", ""),
+		SecretKey:           secretKey,
 		APIPort:             getEnv("VAKT_API_PORT", "8080"),
 		ModulesEnabled:      getEnv("VAKT_MODULES_ENABLED", "vaktscan,vaktcomply,vaktvault,vaktaware,vaktprivacy,hr"),
 		AutoMigrate:         getEnv("AUTO_MIGRATE", "false") == "true",

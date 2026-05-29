@@ -141,7 +141,10 @@ func handleGenerateReport(cfg *config.Config, pool *pgxpool.Pool) asynq.HandlerF
 
 		pdfBytes, err := vaktscan.GenerateReportPDF(ctx, pool, payload.OrgID, title)
 		if err != nil {
-			_ = repo.UpdateReport(ctx, payload.ReportID, "", "failed", nil)
+			if updateErr := repo.UpdateReport(ctx, payload.ReportID, "", "failed", nil); updateErr != nil {
+				log.Error().Err(updateErr).Str("report_id", payload.ReportID).
+					Msg("failed to mark report as failed — state will be inconsistent")
+			}
 			return fmt.Errorf("generate PDF: %w", err)
 		}
 
