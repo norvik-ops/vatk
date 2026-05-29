@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 
-	"github.com/matharnica/vakt/internal/modules/vakthr"
 	"github.com/matharnica/vakt/internal/modules/vaktcomply"
+	"github.com/matharnica/vakt/internal/modules/vakthr"
 	shareddb "github.com/matharnica/vakt/internal/shared/db"
 )
 

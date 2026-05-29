@@ -9,11 +9,11 @@ import (
 
 	"github.com/matharnica/vakt/internal/admin"
 	"github.com/matharnica/vakt/internal/auth"
+	"github.com/matharnica/vakt/internal/modules/vaktaware"
+	"github.com/matharnica/vakt/internal/modules/vaktcomply"
 	"github.com/matharnica/vakt/internal/modules/vaktprivacy"
 	"github.com/matharnica/vakt/internal/modules/vaktscan"
-	"github.com/matharnica/vakt/internal/modules/vaktaware"
 	"github.com/matharnica/vakt/internal/modules/vaktvault"
-	"github.com/matharnica/vakt/internal/modules/vaktcomply"
 	"github.com/matharnica/vakt/internal/services/alerting"
 	"github.com/matharnica/vakt/internal/services/crossevidence"
 	"github.com/matharnica/vakt/internal/shared/bsi"

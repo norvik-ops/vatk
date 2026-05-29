@@ -22,11 +22,11 @@ import (
 	"github.com/matharnica/vakt/internal/admin"
 	"github.com/matharnica/vakt/internal/auth"
 	"github.com/matharnica/vakt/internal/config"
+	"github.com/matharnica/vakt/internal/modules/vaktaware"
+	"github.com/matharnica/vakt/internal/modules/vaktcomply"
 	"github.com/matharnica/vakt/internal/modules/vaktprivacy"
 	"github.com/matharnica/vakt/internal/modules/vaktscan"
-	"github.com/matharnica/vakt/internal/modules/vaktaware"
 	"github.com/matharnica/vakt/internal/modules/vaktvault"
-	"github.com/matharnica/vakt/internal/modules/vaktcomply"
 	"github.com/matharnica/vakt/internal/services/alerting"
 	"github.com/matharnica/vakt/internal/services/crossevidence"
 	"github.com/matharnica/vakt/internal/services/siem"
@@ -97,8 +97,8 @@ func buildServer(pool *pgxpool.Pool) (*asynq.Server, *asynq.ServeMux) {
 				// Module-dedicated queues (S31-3): each module has its own namespace so
 				// a long-running scan batch cannot starve breach-notification or evidence jobs.
 				vaktscan.QueueScans: 8, // scanner jobs — highest module concurrency
-				vaktcomply.Queue:     5, // evidence collection, deadline checks
-				vaktprivacy.Queue:    5, // breach notifications, AVV checks
+				vaktcomply.Queue:    5, // evidence collection, deadline checks
+				vaktprivacy.Queue:   5, // breach notifications, AVV checks
 				vaktaware.Queue:     3, // campaign send, training reminders
 				// Generic queues kept for backward compat with external enqueues.
 				"critical":                10,

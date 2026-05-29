@@ -8,10 +8,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net"
 	"net/smtp"
 	"strings"
-	"html/template"
 	"time"
 
 	"github.com/jackc/pgx/v5"

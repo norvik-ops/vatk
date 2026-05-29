@@ -292,11 +292,11 @@ func mfaEnforceMiddleware(db mfaDB) echo.MiddlewareFunc {
 // authorised to access. A scope of "admin" grants full access.
 var scopePathPrefixes = map[string][]string{
 	"vaktvault":   {"/api/v1/vaktvault/"},
-	"vaktscan":   {"/api/v1/vaktscan/"},
+	"vaktscan":    {"/api/v1/vaktscan/"},
 	"vaktcomply":  {"/api/v1/vaktcomply/"},
-	"vaktaware":  {"/api/v1/vaktaware/"},
+	"vaktaware":   {"/api/v1/vaktaware/"},
 	"vaktprivacy": {"/api/v1/vaktprivacy/"},
-	"vakthr":       {"/api/v1/vakthr/"},
+	"vakthr":      {"/api/v1/vakthr/"},
 }
 
 // handleAPIKey looks up the raw API key in the database by its SHA-256 hash,

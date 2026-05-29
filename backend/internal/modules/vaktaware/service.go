@@ -9,11 +9,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net"
 	"net/smtp"
 	"regexp"
 	"strings"
-	"html/template"
 	"time"
 
 	"github.com/google/uuid"
